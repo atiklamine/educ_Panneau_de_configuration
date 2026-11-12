@@ -1,0 +1,55 @@
+/* ==========================================================================
+   RTL & Arabic Bidirectional Typography Support Layer
+   Ensures <html lang="ar" dir="rtl"> renders authentically like Windows 11 AR
+   with logical alignment, proper icon mirroring, and <bdi> isolation.
+   ========================================================================== */
+
+[dir="rtl"] body {
+    line-height: 1.62;
+}
+
+/* Isolate Latin, numeric, time/date, and technical runs */
+bdi,
+.ltr-isolate {
+    direction: ltr;
+    unicode-bidi: isolate;
+    display: inline-block;
+}
+
+.bidi-prose {
+    unicode-bidi: plaintext;
+    text-align: start;
+}
+
+/* Flip directional chevrons and back arrows automatically in RTL */
+[dir="rtl"] .win-dir-arrow svg,
+[dir="rtl"] .win-row-chevron svg,
+[dir="rtl"] .win-nav-back svg {
+    transform: scaleX(-1);
+}
+
+/* Ensure title bar controls sit cleanly at TOP-LEFT visually in RTL,
+   with Close as the outermost corner button on the far left */
+[dir="rtl"] .win-titlebar-controls {
+    direction: rtl;
+}
+
+/* Keep taskbar tray clock and date strictly LTR digits while aligned neatly */
+.tray-clock-time,
+.tray-clock-date,
+.tray-lang-tag {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+/* Custom pointer schemes simulated cleanly over workspace */
+.cursor-scheme-noir,
+.cursor-scheme-noir * {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 2 L4 19 L8.5 14.8 L11.5 21 L14 19.8 L11 13.8 L17 13.8 Z' fill='%231b1b1b' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, auto !important;
+}
+
+.cursor-scheme-limegreen,
+.cursor-scheme-limegreen * {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24'%3E%3Cpath d='M4 2 L4 19 L8.5 14.8 L11.5 21 L14 19.8 L11 13.8 L17 13.8 Z' fill='%2384cc16' stroke='%23111827' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, auto !important;
+}
+

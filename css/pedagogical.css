@@ -1,0 +1,513 @@
+/* ==========================================================================
+   1AS Algeria Pedagogical Assistant HUD, Teacher Console & Printable Report
+   ========================================================================== */
+
+#pedagogy-hud {
+    position: absolute;
+    inset-block-start: 16px;
+    inset-inline-start: 112px;
+    width: 470px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 58px);
+    min-width: 320px;
+    min-height: 240px;
+    border-radius: 10px;
+    border: 1px solid var(--win-border-window);
+    box-shadow: var(--win-shadow-window);
+    z-index: 450;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+}
+#pedagogy-hud.is-open {
+    display: flex;
+}
+#pedagogy-hud.is-maximized {
+    left: 8px !important;
+    top: 8px !important;
+    right: auto !important;
+    width: calc(100vw - 16px) !important;
+    height: calc(100vh - 58px) !important;
+    max-width: none;
+    max-height: none;
+    border-radius: 8px;
+}
+#pedagogy-hud.is-collapsed {
+    height: auto !important;
+    min-height: 0 !important;
+}
+#pedagogy-hud.is-collapsed .hud-body,
+#pedagogy-hud.is-collapsed .hud-resize-corner {
+    display: none;
+}
+
+.hud-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 8px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0 10px;
+    background: var(--win-accent-tint);
+    border-bottom: 1px solid var(--win-border-divider);
+    cursor: move;
+    flex-shrink: 0;
+    user-select: none;
+}
+.hud-header-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--win-text-primary);
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.hud-header-title > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.hud-header-stats {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 5px;
+    font-size: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+#hud-score-pill,
+#hud-time-pill {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    flex-shrink: 0;
+}
+#hud-score-pill {
+    min-width: 68px;
+}
+#hud-time-pill {
+    min-width: 78px;
+}
+
+.hud-body {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+}
+.hud-progress-card {
+    background: var(--win-surface-subtle);
+    border: 1px solid var(--win-border-card);
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.hud-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--win-text-secondary);
+}
+.hud-progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--win-border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.hud-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--win-accent);
+    border-radius: 999px;
+    transition: width 0.25s ease;
+}
+.hud-progress-fill.is-complete {
+    background: #107C41;
+}
+.hud-steps-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.hud-step-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--win-border-card);
+    background: var(--win-surface-subtle);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--win-text-secondary);
+}
+.hud-step-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.hud-step-item.is-done {
+    border-color: rgba(16, 124, 65, 0.35);
+    background: rgba(16, 124, 65, 0.08);
+    color: #065F46;
+    font-weight: 600;
+}
+.hud-step-item.is-skipped {
+    border-style: dashed;
+    border-color: rgba(148, 163, 184, 0.55);
+    background: rgba(148, 163, 184, 0.09);
+    color: var(--win-text-secondary);
+    opacity: 0.85;
+}
+.hud-step-icon {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 13px;
+}
+.hud-step-item.is-done .hud-step-icon {
+    color: #107C41;
+}
+.hud-step-item.is-skipped .hud-step-icon {
+    color: #D97706;
+}
+.hud-step-item.is-pending .hud-step-icon {
+    color: #94A3B8;
+}
+.hud-skip-step-btn {
+    min-height: 22px;
+    height: 22px;
+    padding: 1px 7px;
+    font-size: 11px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.hud-task-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.hud-task-tab {
+    flex: 1;
+    min-width: 44px;
+    height: 28px;
+    border-radius: 5px;
+    border: 1px solid var(--win-border-control);
+    background: var(--win-surface-card);
+    font-size: 12px;
+    font-weight: 600;
+}
+.hud-task-tab.is-active {
+    background: var(--win-accent);
+    color: var(--win-accent-contrast);
+    border-color: var(--win-accent);
+}
+.hud-task-tab.is-done {
+    border-color: var(--win-success);
+    color: var(--win-success);
+}
+.hud-task-tab.is-done.is-active {
+    background: var(--win-success);
+    color: #FFFFFF;
+}
+
+.hud-instruction-box {
+    background: var(--win-surface-card);
+    border: 1px solid var(--win-border-card);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.65;
+    text-align: start;
+}
+
+.hud-hint-callout {
+    background: var(--win-info-bg);
+    color: var(--win-text-primary);
+    border: 1px solid var(--win-accent);
+    border-inline-start: 4px solid var(--win-accent);
+    border-radius: 6px;
+    padding: 9px 12px;
+    text-align: start;
+}
+
+.hud-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.hud-resize-corner {
+    position: absolute;
+    bottom: 2px;
+    inset-inline-end: 2px;
+    width: 20px;
+    height: 20px;
+    z-index: 6;
+    cursor: nesw-resize;
+    opacity: 0.78;
+    background: linear-gradient(45deg, transparent 50%, var(--win-text-secondary) 52%, transparent 56%, transparent 72%, var(--win-text-secondary) 74%, transparent 78%);
+}
+[dir="ltr"] .hud-resize-corner {
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, var(--win-text-secondary) 52%, transparent 56%, transparent 72%, var(--win-text-secondary) 74%, transparent 78%);
+}
+
+/* Teacher Modal Tabs & Windows 11 Settings Cards */
+.teacher-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-bottom: 1px solid var(--win-border-divider);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+.teacher-tab-btn {
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.teacher-tab-btn.is-active {
+    background: var(--win-accent-tint);
+    color: var(--win-accent-text);
+    font-weight: 600;
+}
+.tc-dirty-banner {
+    background: var(--win-warning-bg);
+    color: var(--win-warning);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.tc-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+}
+.tc-section-card {
+    background: var(--win-surface-subtle);
+    border: 1px solid var(--win-border-card);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+.tc-token-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 1px solid var(--win-border-card);
+    border-radius: 4px;
+    background: var(--win-surface-card);
+    margin-bottom: 5px;
+    font-size: 12.5px;
+}
+
+/* A4 Printable Report Layout */
+.a4-report-sheet {
+    background: #FFFFFF;
+    color: #111827;
+    padding: 24px 28px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    direction: rtl;
+    text-align: start;
+    line-height: 1.6;
+}
+.a4-report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 12.5px;
+    table-layout: auto;
+}
+.a4-report-table th,
+.a4-report-table td {
+    border: 1px solid #CBD5E1;
+    padding: 7px 10px;
+    text-align: start;
+    vertical-align: top;
+}
+.a4-report-table th {
+    background: #F1F5F9;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.a4-report-table .col-time,
+.a4-report-table .col-num,
+.a4-report-table .col-status,
+.a4-report-table .col-event,
+.a4-report-table .col-account,
+.a4-report-table .col-role {
+    white-space: nowrap;
+    width: 1%;
+    font-variant-numeric: tabular-nums;
+}
+.a4-report-table .col-details {
+    white-space: normal;
+    word-break: break-word;
+}
+.a4-account-log-table .col-time {
+    width: 84px;
+}
+.a4-account-log-table .col-event {
+    min-width: 130px;
+}
+.a4-account-log-table .col-account {
+    min-width: 96px;
+}
+.a4-account-log-table .col-role {
+    min-width: 120px;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+    html,
+    body {
+        height: auto !important;
+        overflow: visible !important;
+        background: #FFFFFF !important;
+    }
+    body > *:not(#print-report-container) {
+        display: none !important;
+    }
+    #print-report-container {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        background: #FFFFFF !important;
+        direction: rtl;
+    }
+    .a4-report-sheet {
+        border: none;
+        padding: 0;
+    }
+}
+#print-report-container {
+    display: none;
+}
+
+/* Strict Active Task Highlighting & Locked States */
+.hud-task-tab {
+    position: relative;
+}
+.hud-task-tab.is-current-active {
+    background: var(--win-accent);
+    color: #FFFFFF;
+    border-color: var(--win-accent);
+    box-shadow: 0 0 0 2px rgba(0, 103, 192, 0.28);
+    font-weight: 700;
+}
+.hud-task-tab.is-locked-task {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.hud-task-tab.is-done-task {
+    background: #107C41;
+    color: #FFFFFF;
+    border-color: #107C41;
+}
+.hud-task-tab.is-skipped-task {
+    background: #C42B1C;
+    color: #FFFFFF;
+    border-color: #C42B1C;
+    opacity: 0.88;
+}
+.hud-active-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--win-accent);
+    color: #FFFFFF;
+}
+.ped-deduction-row-total {
+    background: #FEF2F2;
+    color: #991B1B;
+    font-weight: 700;
+}
+.shutdown-warning-card {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+}
+.shutdown-pdf-exported {
+    background: #ECFDF5;
+    border: 1px solid #6EE7B7;
+    color: #065F46;
+}
+.off-task-warning-toast {
+    position: fixed;
+    bottom: 62px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(680px, 92vw);
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: #FFFBEB;
+    color: #92400E;
+    border: 1.5px solid #F59E0B;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+    font-size: 13px;
+    font-weight: 600;
+    direction: rtl;
+}
+.off-task-toast-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #D97706;
+    flex-shrink: 0;
+}
+.off-task-toast-text {
+    line-height: 1.45;
+}
+.off-task-toast-close {
+    background: transparent;
+    border: none;
+    color: #92400E;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-inline-start: auto;
+}
+

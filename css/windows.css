@@ -1,0 +1,223 @@
+/* ==========================================================================
+   Windows 11 Window Manager, Chrome, 8-Edge Resize & Snap Layouts
+   ========================================================================== */
+
+#windows-layer {
+    position: absolute;
+    inset-block-start: 0;
+    inset-block-end: 48px;
+    inset-inline: 0;
+    pointer-events: none;
+    z-index: 200;
+}
+
+.win-window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    border: 1px solid var(--win-border-window);
+    box-shadow: var(--win-shadow-inactive);
+    overflow: hidden;
+    pointer-events: auto;
+    min-width: 340px;
+    min-height: 240px;
+    transition: opacity 150ms cubic-bezier(0.1, 0.9, 0.2, 1),
+                transform 160ms cubic-bezier(0.1, 0.9, 0.2, 1);
+    transform-origin: center bottom;
+}
+
+.win-window.is-active {
+    box-shadow: var(--win-shadow-window);
+}
+
+.win-window.is-dragging,
+.win-window.is-resizing {
+    transition: none !important;
+}
+
+.win-window.is-maximized {
+    border-radius: 0;
+    border-color: transparent;
+}
+
+.win-window.is-minimized {
+    opacity: 0;
+    transform: translateY(28px) scale(0.92);
+    pointer-events: none;
+}
+
+.win-window.is-snapped {
+    border-radius: 0;
+}
+
+/* Title Bar (Standard 32px height; Settings uses unified header height smoothly) */
+.win-titlebar {
+    height: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline-start: 10px;
+    padding-inline-end: 0;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 5;
+}
+
+.win-titlebar-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+    height: 100%;
+    cursor: default;
+}
+
+.win-titlebar-back {
+    width: 36px;
+    height: 28px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--win-text-primary);
+    transition: background-color 110ms ease;
+}
+.win-titlebar-back:hover:not(:disabled) {
+    background-color: var(--win-surface-hover);
+}
+.win-titlebar-back:disabled {
+    opacity: 0.32;
+    cursor: default;
+}
+
+.win-titlebar-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--win-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.win-titlebar-controls {
+    display: flex;
+    align-items: stretch;
+    height: 32px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.win-caption-btn {
+    width: 46px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--win-text-primary);
+    background: transparent;
+    transition: background-color 110ms ease, color 110ms ease;
+}
+.win-caption-btn:hover {
+    background-color: var(--win-surface-hover);
+}
+.win-caption-btn.is-close:hover {
+    background-color: #C42B1C;
+    color: #FFFFFF;
+}
+.win-caption-btn.is-close:active {
+    background-color: #B22014;
+    color: #FFFFFF;
+}
+
+.win-window-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 8-Edge Resize Handles */
+.win-resize-handle {
+    position: absolute;
+    z-index: 20;
+}
+.win-window.is-maximized .win-resize-handle {
+    display: none;
+}
+.win-resize-n  { top: 0; left: 6px; right: 6px; height: 5px; cursor: n-resize; }
+.win-resize-s  { bottom: 0; left: 6px; right: 6px; height: 5px; cursor: s-resize; }
+.win-resize-e  { right: 0; top: 6px; bottom: 6px; width: 5px; cursor: e-resize; }
+.win-resize-w  { left: 0; top: 6px; bottom: 6px; width: 5px; cursor: w-resize; }
+.win-resize-nw { top: 0; left: 0; width: 9px; height: 9px; cursor: nw-resize; }
+.win-resize-ne { top: 0; right: 0; width: 9px; height: 9px; cursor: ne-resize; }
+.win-resize-sw { bottom: 0; left: 0; width: 9px; height: 9px; cursor: sw-resize; }
+.win-resize-se { bottom: 0; right: 0; width: 9px; height: 9px; cursor: se-resize; }
+
+/* Snap Edge Preview Ghost */
+#snap-preview-overlay {
+    position: absolute;
+    inset-block-start: 0;
+    inset-block-end: 48px;
+    inset-inline: 0;
+    pointer-events: none;
+    z-index: 195;
+}
+.snap-ghost {
+    position: absolute;
+    background-color: var(--win-accent-tint);
+    border: 2px solid var(--win-accent);
+    border-radius: 8px;
+    opacity: 0;
+    transform: scale(0.97);
+    transition: opacity 140ms ease, transform 160ms cubic-bezier(0.1, 0.9, 0.2, 1), top 100ms ease, left 100ms ease, width 100ms ease, height 100ms ease;
+}
+.snap-ghost.is-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Snap Layouts Hover Popover on Maximize Caption Button */
+.snap-layouts-popover {
+    position: fixed;
+    z-index: 950;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: var(--win-shadow-flyout);
+    border: 1px solid var(--win-border-card);
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    gap: 10px;
+}
+.snap-layout-card {
+    width: 64px;
+    height: 44px;
+    border-radius: 4px;
+    border: 1px solid var(--win-border-control);
+    background: var(--win-surface-subtle);
+    padding: 3px;
+    display: flex;
+    gap: 3px;
+}
+.snap-layout-card.is-grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+.snap-zone-cell {
+    flex: 1;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--win-border-control);
+    cursor: pointer;
+    transition: background-color 110ms ease;
+}
+.snap-layout-card.is-split-wide .snap-zone-cell:first-child { flex: 2; }
+.snap-zone-cell:hover {
+    background: var(--win-accent);
+}
+

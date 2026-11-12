@@ -1,0 +1,163 @@
+/* ==========================================================================
+   Windows 11 Build 22631 Visual Tokens — Light, Dark, High-Contrast & Accent
+   Includes documented opaque/translucent fallbacks for browsers without blur.
+   ========================================================================== */
+
+:root,
+[data-theme="light"] {
+    --win-accent: #0067C0;
+    --win-accent-hover: #187AD7;
+    --win-accent-pressed: #004C91;
+    --win-accent-text: #005FB8;
+    --win-accent-tint: rgba(0, 103, 192, 0.12);
+    --win-accent-contrast: #FFFFFF;
+
+    --win-bg-base: #F3F3F3;
+    --win-bg-mica: rgba(243, 243, 243, 0.90);
+    --win-bg-mica-solid: #F3F3F3;
+    --win-bg-acrylic: rgba(249, 249, 249, 0.84);
+    --win-bg-acrylic-solid: #F8F9FA;
+    --win-bg-layer: #F9F9F9;
+
+    --win-surface-card: #FFFFFF;
+    --win-surface-card-alpha: rgba(255, 255, 255, 0.82);
+    --win-surface-subtle: rgba(0, 0, 0, 0.036);
+    --win-surface-hover: rgba(0, 0, 0, 0.055);
+    --win-surface-active: rgba(0, 0, 0, 0.085);
+    --win-surface-nav-active: rgba(0, 0, 0, 0.048);
+
+    --win-border-card: rgba(0, 0, 0, 0.068);
+    --win-border-control: rgba(0, 0, 0, 0.14);
+    --win-border-window: rgba(0, 0, 0, 0.16);
+    --win-border-divider: rgba(0, 0, 0, 0.07);
+
+    --win-text-primary: #1B1B1B;
+    --win-text-secondary: #5F5F5F;
+    --win-text-tertiary: #757575;
+    --win-text-disabled: #9E9E9E;
+
+    --win-taskbar-bg: rgba(243, 243, 243, 0.84);
+    --win-taskbar-solid: #EEEEEE;
+    --win-taskbar-border: rgba(0, 0, 0, 0.09);
+
+    --win-shadow-window: 0 18px 48px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.10);
+    --win-shadow-inactive: 0 8px 24px rgba(0, 0, 0, 0.14);
+    --win-shadow-flyout: 0 12px 32px rgba(0, 0, 0, 0.20), 0 0 0 1px rgba(0, 0, 0, 0.07);
+
+    --win-success: #0F7B0F;
+    --win-success-bg: #DFF6DD;
+    --win-warning: #9D5D00;
+    --win-warning-bg: #FFF4CE;
+    --win-danger: #C42B1C;
+    --win-danger-bg: #FDE7E9;
+    --win-info: #0067C0;
+    --win-info-bg: #E6F2FC;
+
+    --win-input-bg: #FFFFFF;
+    --win-switch-off-track: #FFFFFF;
+    --win-switch-off-thumb: #5F5F5F;
+    --win-switch-off-border: #8A8A8A;
+}
+
+[data-theme="dark"] {
+    --win-accent-text: #60CDFF;
+    --win-accent-tint: rgba(96, 205, 255, 0.14);
+
+    --win-bg-base: #202020;
+    --win-bg-mica: rgba(32, 32, 32, 0.90);
+    --win-bg-mica-solid: #202020;
+    --win-bg-acrylic: rgba(44, 44, 44, 0.86);
+    --win-bg-acrylic-solid: #2C2C2C;
+    --win-bg-layer: #272727;
+
+    --win-surface-card: #2B2B2B;
+    --win-surface-card-alpha: rgba(255, 255, 255, 0.055);
+    --win-surface-subtle: rgba(255, 255, 255, 0.045);
+    --win-surface-hover: rgba(255, 255, 255, 0.075);
+    --win-surface-active: rgba(255, 255, 255, 0.105);
+    --win-surface-nav-active: rgba(255, 255, 255, 0.068);
+
+    --win-border-card: rgba(255, 255, 255, 0.085);
+    --win-border-control: rgba(255, 255, 255, 0.18);
+    --win-border-window: rgba(0, 0, 0, 0.60);
+    --win-border-divider: rgba(255, 255, 255, 0.09);
+
+    --win-text-primary: #FFFFFF;
+    --win-text-secondary: #D0D0D0;
+    --win-text-tertiary: #A6A6A6;
+    --win-text-disabled: #707070;
+
+    --win-taskbar-bg: rgba(28, 28, 28, 0.84);
+    --win-taskbar-solid: #1E1E1E;
+    --win-taskbar-border: rgba(255, 255, 255, 0.09);
+
+    --win-shadow-window: 0 20px 52px rgba(0, 0, 0, 0.52), 0 2px 8px rgba(0, 0, 0, 0.30);
+    --win-shadow-inactive: 0 8px 26px rgba(0, 0, 0, 0.36);
+    --win-shadow-flyout: 0 14px 36px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+    --win-success: #6CCB5F;
+    --win-success-bg: rgba(108, 203, 95, 0.16);
+    --win-warning: #FCE100;
+    --win-warning-bg: rgba(252, 225, 0, 0.14);
+    --win-danger: #FF99A4;
+    --win-danger-bg: rgba(255, 153, 164, 0.16);
+    --win-info: #60CDFF;
+    --win-info-bg: rgba(96, 205, 255, 0.14);
+
+    --win-input-bg: #323232;
+    --win-switch-off-track: rgba(255, 255, 255, 0.04);
+    --win-switch-off-thumb: #D0D0D0;
+    --win-switch-off-border: #9E9E9E;
+}
+
+/* High-Contrast Accessibility Theme */
+[data-contrast="high"] {
+    --win-bg-base: #000000;
+    --win-bg-mica: #000000;
+    --win-bg-mica-solid: #000000;
+    --win-bg-acrylic: #000000;
+    --win-bg-acrylic-solid: #000000;
+    --win-surface-card: #000000;
+    --win-surface-card-alpha: #000000;
+    --win-text-primary: #FFFFFF;
+    --win-text-secondary: #1AEBFF;
+    --win-border-card: #FFFFFF;
+    --win-border-control: #FFFFFF;
+    --win-border-window: #1AEBFF;
+    --win-accent: #1AEBFF;
+    --win-accent-hover: #FFFF00;
+    --win-accent-contrast: #000000;
+    --win-taskbar-bg: #000000;
+    --win-taskbar-solid: #000000;
+    --win-input-bg: #000000;
+}
+
+/* Mica & Acrylic surfaces with documented fallbacks */
+.win-mica {
+    background-color: var(--win-bg-mica-solid);
+}
+.win-acrylic {
+    background-color: var(--win-bg-acrylic-solid);
+}
+.win-taskbar-surface {
+    background-color: var(--win-taskbar-solid);
+}
+
+@supports ((-webkit-backdrop-filter: blur(20px)) or (backdrop-filter: blur(20px))) {
+    .win-transparency .win-mica {
+        background-color: var(--win-bg-mica);
+        -webkit-backdrop-filter: blur(32px) saturate(145%);
+        backdrop-filter: blur(32px) saturate(145%);
+    }
+    .win-transparency .win-acrylic {
+        background-color: var(--win-bg-acrylic);
+        -webkit-backdrop-filter: blur(28px) saturate(170%);
+        backdrop-filter: blur(28px) saturate(170%);
+    }
+    .win-transparency .win-taskbar-surface {
+        background-color: var(--win-taskbar-bg);
+        -webkit-backdrop-filter: blur(26px) saturate(150%);
+        backdrop-filter: blur(26px) saturate(150%);
+    }
+}
+

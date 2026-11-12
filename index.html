@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاكي نظام Windows 11 — بيئة التعامل مع الحاسوب (1AS)</title>
+
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/rtl.css">
+    <link rel="stylesheet" href="css/windows.css">
+    <link rel="stylesheet" href="css/shell.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/pedagogical.css">
+
+    <script defer src="js/compat/compat.js"></script>
+    <script defer src="assets/icons/icons.js"></script>
+    <script defer src="js/i18n/ar.js"></script>
+    <script defer src="js/i18n/i18n.js"></script>
+    <script defer src="js/core/session-manager.js"></script>
+    <script defer src="js/core/state.js"></script>
+    <script defer src="js/registry/settings-registry.js"></script>
+    <script defer src="js/core/dialogs.js"></script>
+    <script defer src="js/core/permission-gate.js"></script>
+    <script defer src="js/core/snap-manager.js"></script>
+    <script defer src="js/core/window-manager.js"></script>
+    <script defer src="js/core/context-menu.js"></script>
+    <script defer src="js/core/quick-settings.js"></script>
+    <script defer src="js/core/notifications.js"></script>
+    <script defer src="js/core/search.js"></script>
+    <script defer src="js/core/start-menu.js"></script>
+    <script defer src="js/core/task-view.js"></script>
+    <script defer src="js/core/lock-screen.js"></script>
+    <script defer src="js/core/taskbar.js"></script>
+    <script defer src="js/apps/settings/settings-app.js"></script>
+    <script defer src="js/apps/control-panel.js"></script>
+    <script defer src="js/apps/file-explorer.js"></script>
+    <script defer src="js/apps/edge-browser.js"></script>
+    <script defer src="js/core/config-crypto.js"></script>
+    <script defer src="js/pedagogy/assessment.js"></script>
+    <script defer src="js/pedagogy/hud.js"></script>
+    <script defer src="js/pedagogy/teacher.js"></script>
+    <script defer src="js/pedagogy/report.js"></script>
+    <script defer src="js/core/boot.js"></script>
+</head>
+<body class="lang-ar" dir="rtl">
+    <div id="desktop-root">
+        <div id="desktop-icons" class="size-medium" aria-label="أيقونات سطح المكتب"></div>
+        <div id="snap-preview-overlay"></div>
+        <div id="windows-layer"></div>
+
+        <!-- Floating Pedagogical HUD (1AS Computer Science) -->
+        <aside id="pedagogy-hud" class="win-acrylic" aria-label="المساعد البيداغوجي"></aside>
+
+        <!-- Flyouts -->
+        <section id="start-menu-flyout" class="win-flyout win-acrylic" aria-label="قائمة ابدأ"></section>
+        <section id="search-flyout" class="win-flyout win-acrylic" aria-label="البحث"></section>
+        <section id="quick-settings-flyout" class="win-flyout win-acrylic" aria-label="الإعدادات السريعة"></section>
+        <section id="notifications-flyout" class="win-flyout" aria-label="مركز الإشعارات والتقويم"></section>
+
+        <!-- Bottom Taskbar (48px) -->
+        <footer id="taskbar" class="win-taskbar-surface" role="toolbar" aria-label="شريط المهام"></footer>
+    </div>
+
+    <!-- Global Overlays -->
+    <div id="task-view-overlay" aria-label="عرض المهام وأسطح المكتب"></div>
+    <div id="context-menu" class="win-acrylic" role="menu"></div>
+    <div id="dialog-backdrop"></div>
+    <div id="lock-screen" aria-label="شاشة القفل وتسجيل الدخول"></div>
+    <div id="screensaver-overlay"></div>
+    <div id="shutdown-screen" aria-label="شاشة إيقاف التشغيل"></div>
+    <div id="display-brightness-overlay"></div>
+    <div id="night-light-overlay"></div>
+    <div id="print-report-container"></div>
+</body>
+</html>
+

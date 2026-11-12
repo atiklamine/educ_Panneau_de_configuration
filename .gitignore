@@ -1,0 +1,26 @@
+# Build outputs & portable binaries (publish via GitHub Releases)
+build/
+dist/
+*.exe
+*.gz
+
+# Lab teacher configuration files (contain local institution settings & password hash)
+inf.dll
+dist/inf.dll
+
+# Automated test screenshot artifacts
+test/screenshots/
+
+# Local reference archives / non-repo folders
+win11screenshots/
+_archive_to_delete/
+ملفات وزارية/
+
+# Dependencies & OS / Editor temp files
+node_modules/
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini
+
