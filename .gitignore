@@ -8,8 +8,9 @@ dist/
 inf.dll
 dist/inf.dll
 
-# Automated test screenshot artifacts
+# Automated test screenshot & promotional assets
 test/screenshots/
+facebook_screenshots/
 
 # Local reference archives / non-repo folders
 win11screenshots/

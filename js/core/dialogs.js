@@ -172,23 +172,29 @@
                                         global.Win11Icons.get('win11', 28) +
                                     '</div>' +
                                     '<div>' +
-                                        '<div style="font-weight:700;font-size:15px">' + bidi('محاكي نظام التشغيل Windows 11 (نسخة تعليمية)') + '</div>' +
-                                        '<div style="font-size:12.5px;color:var(--win-text-secondary)">' + bidi('أستاذ الإعلام الآلي - السنة الأولى ثانوي (الجزائر)') + '</div>' +
+                                        '<div style="font-weight:700;font-size:15px">' + bidi('محاكي لوحة التحكم وإعدادات النظام (Windows 11)') + '</div>' +
+                                        '<div style="font-size:12.5px;color:var(--win-text-secondary)">' + bidi('المجال المفاهيمي الأول: بيئة التعامل مع الحاسوب — السنة الأولى ثانوي (الجزائر)') + '</div>' +
                                     '</div>' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
 
-                        '<div class="win-card" style="background:var(--win-surface-subtle);display:flex;flex-direction:column;gap:4px;font-size:13px">' +
-                            '<div><strong>' + bidi('التطبيق:') + '</strong> ' + bidi('محاكي نظام التشغيل Windows 11 (نسخة تعليمية)') + '</div>' +
-                            '<div><strong>' + bidi('المطور:') + '</strong> ' + bidi('أستاذ الإعلام الآلي - السنة الأولى ثانوي (الجزائر)') + '</div>' +
-                            '<div><strong>' + bidi('الإصدار:') + '</strong> <bdi dir="ltr">1.0.0</bdi></div>' +
-                            '<div style="color:var(--win-text-secondary);font-size:12px;margin-top:2px"><strong>' + bidi('الجهاز الحالي:') + '</strong> <bdi dir="ltr">' + global.Win11Compat.escapeHtml(st.deviceName) + '</bdi> | <bdi dir="ltr">Windows 11 Pro Education (23H2)</bdi></div>' +
+                        '<div class="win-card" style="background:var(--win-surface-subtle);display:flex;flex-direction:column;gap:5px;font-size:13px">' +
+                            '<div style="display:grid;grid-template-columns:130px 1fr;gap:6px;row-gap:4px">' +
+                                '<div><strong>' + bidi('المجال المفاهيمي:') + '</strong></div><div>' + bidi('المجال الأول: بيئة التعامل مع الحاسوب') + ' (<bdi dir="ltr">Environnement de l\'ordinateur</bdi>)</div>' +
+                                '<div><strong>' + bidi('الوحدة التعليمية:') + '</strong></div><div>' + bidi('وحدة لوحة التحكم وإعدادات النظام') + ' (<bdi dir="ltr">Panneau de configuration</bdi> — ' + bidi('الوحدة 3 في التدرج') + ')</div>' +
+                                '<div><strong>' + bidi('المستوى الدراسي:') + '</strong></div><div>' + bidi('السنة الأولى ثانوي (جذع مشترك علوم وتكنولوجيا + جذع مشترك آداب)') + '</div>' +
+                                '<div><strong>' + bidi('الكفاءة المستهدفة:') + '</strong></div><div>' + bidi('التحكم في بيئة الحاسوب، تخصيص الواجهة، ضبط الفأرة واللغة، وتسيير البرامج والحسابات بأمان') + '</div>' +
+                                '<div><strong>' + bidi('المطور والإشراف:') + '</strong></div><div>' + bidi('أستاذ مادة الإعلام الآلي — التعليم الثانوي (الجزائر)') + '</div>' +
+                                '<div><strong>' + bidi('الإصدار الميداني:') + '</strong></div><div><bdi dir="ltr">1.0.0</bdi></div>' +
+                                '<div><strong>' + bidi('محطة المخبر:') + '</strong></div><div style="color:var(--win-text-secondary)"><bdi dir="ltr">' + global.Win11Compat.escapeHtml(st.deviceName) + '</bdi> | <bdi dir="ltr">Windows 11 Pro Education (23H2)</bdi></div>' +
+                            '</div>' +
                         '</div>' +
 
                         '<div>' +
                             '<h4 style="margin:0 0 6px;font-size:14px;font-weight:700;color:var(--win-accent-text)">' + bidi('رسالة الأستاذ:') + '</h4>' +
-                            '<p style="margin:0">' + bidi('مرحباً بكم في هذا المحاكي. لقد تم تصميم هذا التطبيق ليكون أداة تفاعلية تتيح لكم استكشاف بيئة Windows 11 والتعامل معها بحرية وأمان تام، دون الخوف من ارتكاب أخطاء قد تؤثر على أجهزة حقيقية.') + '</p>' +
+                            '<p style="margin:0 0 6px">' + bidi('مرحباً بكم في هذا المحاكي البيداغوجي. لقد صُمّم هذا التطبيق خصيصاً لمرافقة أساتذة وتلاميذ السنة الأولى ثانوي في إنجاز الأنشطة التطبيقية المقررة رسمياً لوحدة «لوحة التحكم» ضمن «المجال المفاهيمي الأول: بيئة التعامل مع الحاسوب».') + '</p>' +
+                            '<p style="margin:0">' + bidi('يوفر هذا المحاكي بيئة تفاعلية مطابقة لـ Windows 11، تمكّن التلميذ من التدرب العملي الحر على تخصيص العرض، ضبط الفأرة، لغات الإدخال والمنطقة الزمنية، تثبيت وإلغاء البرامج، وإدارة حسابات المستخدمين وصلاحياتهم، دون أي خوف من إلحاق ضرر بأجهزة المخبر الحقيقية أو إرباك شبكتها.') + '</p>' +
                         '</div>' +
 
                         '<div>' +

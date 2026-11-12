@@ -2124,6 +2124,7 @@ async function main() {
                 heroImgLoaded: !!(heroImg && heroImg.complete && heroImg.naturalWidth > 0),
                 dir: body ? (body.getAttribute('dir') || getComputedStyle(body).direction) : '',
                 hasVersion: txt.includes('1.0.0'),
+                hasCurriculum: txt.includes('بيئة التعامل مع الحاسوب') && txt.includes('لوحة التحكم'),
                 hasTeacherMsg: txt.includes('رسالة الأستاذ:'),
                 hasAutonomy: txt.includes('الاستقلالية (Autonomy):'),
                 hasInteraction: txt.includes('التفاعل (Interaction):'),
@@ -2137,7 +2138,7 @@ async function main() {
         assert('Feature Addition About Sec 1-3: Settings -> System -> About opens RTL About modal with exact Arabic message, hero illustration & version',
             sysAboutBtnRes.found && sysAboutBtnRes.hasSpecs && aboutModalState.open && aboutModalState.hasBody &&
             aboutModalState.heroImgLoaded && aboutModalState.dir === 'rtl' && aboutModalState.hasVersion &&
-            aboutModalState.hasTeacherMsg && aboutModalState.hasAutonomy && aboutModalState.hasInteraction &&
+            aboutModalState.hasCurriculum && aboutModalState.hasTeacherMsg && aboutModalState.hasAutonomy && aboutModalState.hasInteraction &&
             aboutModalState.hasHelping && aboutModalState.hasEncouragement && aboutModalState.hasRoadmap && aboutModalState.hasCloseBtn,
             JSON.stringify({ sysAboutBtnRes, aboutModalState }));
 
