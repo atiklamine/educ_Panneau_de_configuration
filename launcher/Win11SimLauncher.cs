@@ -70,6 +70,91 @@ namespace Win11SimHost
                 return false;
             }
         }
+
+        public string SaveToDesktop(string filename, string contentBase64)
+        {
+            try
+            {
+                string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                if (string.IsNullOrEmpty(desktopDir) || !Directory.Exists(desktopDir))
+                {
+                    string userProf = Environment.GetEnvironmentVariable("USERPROFILE");
+                    if (!string.IsNullOrEmpty(userProf))
+                    {
+                        desktopDir = Path.Combine(userProf, "Desktop");
+                    }
+                }
+                if (!Directory.Exists(desktopDir))
+                {
+                    desktopDir = AppDomain.CurrentDomain.BaseDirectory;
+                }
+
+                string safeName = SanitizeFileName(filename);
+                if (string.IsNullOrEmpty(safeName)) safeName = "1AS_Report.html";
+                string ext = Path.GetExtension(safeName);
+                if (string.IsNullOrEmpty(ext)) ext = ".html";
+                string baseName = Path.GetFileNameWithoutExtension(safeName);
+
+                string targetPath = Path.Combine(desktopDir, safeName);
+                int counter = 1;
+                while (File.Exists(targetPath))
+                {
+                    targetPath = Path.Combine(desktopDir, string.Format("{0}_{1}{2}", baseName, counter, ext));
+                    counter++;
+                }
+
+                byte[] bytes = Convert.FromBase64String(contentBase64);
+                File.WriteAllBytes(targetPath, bytes);
+                return targetPath;
+            }
+            catch (Exception ex)
+            {
+                return "ERROR:" + ex.Message;
+            }
+        }
+
+        public bool OpenFolder(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                {
+                    Process.Start("explorer.exe", "/select,\"" + path + "\"");
+                    return true;
+                }
+                string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                if (string.IsNullOrEmpty(desktopDir) || !Directory.Exists(desktopDir))
+                {
+                    desktopDir = AppDomain.CurrentDomain.BaseDirectory;
+                }
+                string targetDir = (!string.IsNullOrEmpty(path) && Directory.Exists(path)) ? path : desktopDir;
+                Process.Start("explorer.exe", "\"" + targetDir + "\"");
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            char[] invalids = Path.GetInvalidFileNameChars();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                bool bad = false;
+                for (int j = 0; j < invalids.Length; j++)
+                {
+                    if (c == invalids[j]) { bad = true; break; }
+                }
+                if (bad || c == '/' || c == '\\') sb.Append('_');
+                else sb.Append(c);
+            }
+            return sb.ToString().Trim();
+        }
     }
 
     static class Program
@@ -259,12 +344,22 @@ namespace Win11SimHost
                 if (qIdx >= 0) path = path.Substring(0, qIdx);
 
                 int contentLength = 0;
+                string headerContentType = null;
+                string headerFilename = null;
                 for (int i = 1; i < lines.Length; i++)
                 {
                     string l = lines[i];
                     if (l.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
                     {
                         int.TryParse(l.Substring(15).Trim(), out contentLength);
+                    }
+                    else if (l.StartsWith("Content-Type:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        headerContentType = l.Substring(13).Trim();
+                    }
+                    else if (l.StartsWith("X-Filename:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        headerFilename = l.Substring(11).Trim();
                     }
                 }
 
@@ -368,6 +463,146 @@ namespace Win11SimHost
                         try { Application.Exit(); } catch { }
                     });
                     return;
+                }
+
+                // API: Save to Desktop (Zero-Privilege Classroom Auto-Save)
+                if (path == "/api/save-to-desktop" && method == "POST")
+                {
+                    try
+                    {
+                        string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                        if (string.IsNullOrEmpty(desktopDir) || !Directory.Exists(desktopDir))
+                        {
+                            string userProf = Environment.GetEnvironmentVariable("USERPROFILE");
+                            if (!string.IsNullOrEmpty(userProf))
+                            {
+                                desktopDir = Path.Combine(userProf, "Desktop");
+                            }
+                        }
+                        if (!Directory.Exists(desktopDir))
+                        {
+                            desktopDir = _exeDir;
+                        }
+
+                        string rawBody = Encoding.UTF8.GetString(body);
+                        string filename = ExtractJsonStringValue(rawBody, "filename");
+                        if (string.IsNullOrEmpty(filename) && !string.IsNullOrEmpty(headerFilename))
+                        {
+                            filename = headerFilename;
+                        }
+                        if (string.IsNullOrEmpty(filename))
+                        {
+                            filename = "1AS_Report.html";
+                        }
+
+                        string safeName = SanitizeFileName(filename);
+                        if (string.IsNullOrEmpty(safeName)) safeName = "1AS_Report.html";
+                        string ext = Path.GetExtension(safeName);
+                        if (string.IsNullOrEmpty(ext)) ext = ".html";
+                        string baseName = Path.GetFileNameWithoutExtension(safeName);
+
+                        string targetPath = Path.Combine(desktopDir, safeName);
+                        int counter = 1;
+                        while (File.Exists(targetPath))
+                        {
+                            targetPath = Path.Combine(desktopDir, string.Format("{0}_{1}{2}", baseName, counter, ext));
+                            counter++;
+                        }
+
+                        byte[] fileBytes = null;
+                        string b64 = ExtractJsonStringValue(rawBody, "base64");
+                        if (!string.IsNullOrEmpty(b64))
+                        {
+                            try { fileBytes = Convert.FromBase64String(b64); } catch { }
+                        }
+                        if (fileBytes == null)
+                        {
+                            string html = ExtractJsonStringValue(rawBody, "html");
+                            if (!string.IsNullOrEmpty(html))
+                            {
+                                fileBytes = Encoding.UTF8.GetBytes(html);
+                            }
+                            else if (headerContentType != null && (headerContentType.Contains("html") || headerContentType.Contains("octet-stream")))
+                            {
+                                fileBytes = body;
+                            }
+                            else
+                            {
+                                fileBytes = body;
+                            }
+                        }
+
+                        File.WriteAllBytes(targetPath, fileBytes ?? new byte[0]);
+
+                        string finalFilename = Path.GetFileName(targetPath);
+                        string escapedPath = targetPath.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                        string escapedDir = desktopDir.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                        string escapedName = finalFilename.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+                        string resJson = string.Format(
+                            "{{\"ok\":true,\"filename\":\"{0}\",\"path\":\"{1}\",\"desktopDir\":\"{2}\"}}",
+                            escapedName, escapedPath, escapedDir);
+
+                        byte[] resBytes = Encoding.UTF8.GetBytes(resJson);
+                        SendResponse(stream, 200, "OK", "application/json; charset=utf-8", resBytes, true);
+                        client.Close();
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        string errJson = string.Format("{{\"ok\":false,\"error\":\"{0}\"}}", ex.Message.Replace("\"", "'"));
+                        SendResponse(stream, 500, "Internal Server Error", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(errJson), true);
+                        client.Close();
+                        return;
+                    }
+                }
+
+                // API: Open Folder in Explorer
+                if (path == "/api/open-folder" && method == "POST")
+                {
+                    try
+                    {
+                        string rawBody = Encoding.UTF8.GetString(body);
+                        string targetPath = ExtractJsonStringValue(rawBody, "path");
+                        string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                        if (string.IsNullOrEmpty(desktopDir) || !Directory.Exists(desktopDir))
+                        {
+                            string userProf = Environment.GetEnvironmentVariable("USERPROFILE");
+                            if (!string.IsNullOrEmpty(userProf))
+                            {
+                                desktopDir = Path.Combine(userProf, "Desktop");
+                            }
+                        }
+                        if (!Directory.Exists(desktopDir))
+                        {
+                            desktopDir = _exeDir;
+                        }
+
+                        if (!string.IsNullOrEmpty(targetPath) && File.Exists(targetPath))
+                        {
+                            Process.Start("explorer.exe", "/select,\"" + targetPath + "\"");
+                        }
+                        else if (!string.IsNullOrEmpty(targetPath) && Directory.Exists(targetPath))
+                        {
+                            Process.Start("explorer.exe", "\"" + targetPath + "\"");
+                        }
+                        else
+                        {
+                            Process.Start("explorer.exe", "\"" + desktopDir + "\"");
+                        }
+
+                        byte[] okBytes = Encoding.UTF8.GetBytes("{\"ok\":true}");
+                        SendResponse(stream, 200, "OK", "application/json; charset=utf-8", okBytes, true);
+                        client.Close();
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        string errJson = string.Format("{{\"ok\":false,\"error\":\"{0}\"}}", ex.Message.Replace("\"", "'"));
+                        SendResponse(stream, 500, "Internal Server Error", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(errJson), true);
+                        client.Close();
+                        return;
+                    }
                 }
 
                 // Root & HTML asset
@@ -496,7 +731,7 @@ namespace Win11SimHost
                     ProcessStartInfo psi = new ProcessStartInfo();
                     psi.FileName = chromium;
                     psi.Arguments = string.Format(
-                        "--app=\"{0}\" --user-data-dir=\"{1}\" --no-first-run --no-default-browser-check --noerrdialogs --disable-sync --disable-translate --start-fullscreen",
+                        "--app=\"{0}\" --user-data-dir=\"{1}\" --no-first-run --no-default-browser-check --noerrdialogs --disable-sync --disable-translate --disable-features=Translate,msAccountSync,ChromeWhatsNewUI --start-maximized",
                         url, profileDir);
                     psi.UseShellExecute = false;
                     using (Process p = Process.Start(psi))
@@ -520,7 +755,7 @@ namespace Win11SimHost
                 {
                     ProcessStartInfo psi = new ProcessStartInfo();
                     psi.FileName = firefox;
-                    psi.Arguments = string.Format("-kiosk \"{0}\"", url);
+                    psi.Arguments = string.Format("\"{0}\"", url);
                     psi.UseShellExecute = false;
                     using (Process p = Process.Start(psi))
                     {
@@ -579,8 +814,8 @@ namespace Win11SimHost
             Form form = new Form();
             form.Text = "محاكي لوحة التحكم Windows 11 — 1AS";
             form.WindowState = FormWindowState.Maximized;
-            form.FormBorderStyle = FormBorderStyle.None;
-            form.TopMost = true;
+            form.FormBorderStyle = FormBorderStyle.Sizable;
+            form.TopMost = false;
 
             WebBrowser wb = new WebBrowser();
             wb.Dock = DockStyle.Fill;
@@ -591,6 +826,67 @@ namespace Win11SimHost
             form.Controls.Add(wb);
             form.Load += delegate { wb.Navigate(url); };
             Application.Run(form);
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            char[] invalids = Path.GetInvalidFileNameChars();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                bool bad = false;
+                for (int j = 0; j < invalids.Length; j++)
+                {
+                    if (c == invalids[j]) { bad = true; break; }
+                }
+                if (bad || c == '/' || c == '\\') sb.Append('_');
+                else sb.Append(c);
+            }
+            return sb.ToString().Trim();
+        }
+
+        private static string ExtractJsonStringValue(string json, string key)
+        {
+            if (string.IsNullOrEmpty(json) || string.IsNullOrEmpty(key)) return "";
+            string needle = "\"" + key + "\"";
+            int idx = json.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+            if (idx == -1) return "";
+            int colonIdx = json.IndexOf(':', idx + needle.Length);
+            if (colonIdx == -1) return "";
+            int quoteStart = json.IndexOf('"', colonIdx + 1);
+            if (quoteStart == -1) return "";
+            StringBuilder sb = new StringBuilder();
+            bool escaped = false;
+            for (int i = quoteStart + 1; i < json.Length; i++)
+            {
+                char c = json[i];
+                if (escaped)
+                {
+                    if (c == 'n') sb.Append('\n');
+                    else if (c == 'r') sb.Append('\r');
+                    else if (c == 't') sb.Append('\t');
+                    else if (c == '"') sb.Append('"');
+                    else if (c == '\\') sb.Append('\\');
+                    else if (c == '/') sb.Append('/');
+                    else sb.Append(c);
+                    escaped = false;
+                }
+                else if (c == '\\')
+                {
+                    escaped = true;
+                }
+                else if (c == '"')
+                {
+                    return sb.ToString();
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
         }
 
         private static void StopServer()

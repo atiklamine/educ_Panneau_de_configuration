@@ -124,11 +124,13 @@ if (!bodyMatch) throw new Error('Could not parse <body> from index.html');
 
 const singleHtml =
     '<!DOCTYPE html>\n' +
-    '<html lang="ar" dir="rtl">\n' +
+    '<html lang="ar" dir="rtl" translate="no" class="notranslate">\n' +
     '<head>\n' +
     '    <meta charset="utf-8">\n' +
     '    <meta http-equiv="X-UA-Compatible" content="IE=edge">\n' +
     '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+    '    <meta name="google" content="notranslate">\n' +
+    '    <meta name="googlebot" content="notranslate">\n' +
     '    <title>محاكي وحدة لوحة التحكم (Windows 11) — المجال 1: بيئة التعامل مع الحاسوب (1AS)</title>\n' +
     '    <style>\n' + cssBundle + '\n    </style>\n' +
     '</head>\n' +

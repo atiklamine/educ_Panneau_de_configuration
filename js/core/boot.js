@@ -12,6 +12,10 @@
                 st.displayLanguage = bootCfg.ui_language_default;
                 st.uiLanguage = bootCfg.ui_language_default;
             }
+            if (bootCfg.netsupport_offset) {
+                document.documentElement.classList.add('has-netsupport-offset');
+                document.body.classList.add('has-netsupport-offset');
+            }
         }
         global.Win11I18N.setNumerals(st.numerals || 'latin');
         global.Win11I18N.setLanguage(st.displayLanguage || st.uiLanguage || 'ar', function () {
@@ -32,6 +36,15 @@
                     if (global.Win11Report && typeof global.Win11Report.openStudentRegistration === 'function') {
                         global.Win11Report.openStudentRegistration({ mandatory: true });
                     }
+                    // Section 7.2: Fail-safe fallback if form fails to mount in DOM after 400ms
+                    setTimeout(function () {
+                        var stu = (global.Win11Assessment && global.Win11Assessment.getStudent) ? global.Win11Assessment.getStudent() : null;
+                        if (stu && !stu.activeSession && !document.getElementById('stu-reg-lastname') && !document.getElementById('plain-student-fallback-form')) {
+                            if (global.Win11Report && typeof global.Win11Report.injectPlainStudentFormFallback === 'function') {
+                                global.Win11Report.injectPlainStudentFormFallback();
+                            }
+                        }
+                    }, 400);
                 };
 
                 if (isTeacherExplicit || (infSt && infSt.status === 'missing')) {
@@ -62,12 +75,12 @@
                 }
             }
 
-            // Stage 7 Fullscreen-First behavior (gracefully arms on first user pointer interaction if browser blocks non-gestured requestFullscreen)
-            if (global.Win11Shell && typeof global.Win11Shell.enterFullscreen === 'function') {
+            // Windowed / Maximized co-existence with NetSupport School (only enter exclusive fullscreen if teacher locked it and no NetSupport)
+            var cfgNow = (global.Win11Assessment && global.Win11Assessment.getConfig) ? global.Win11Assessment.getConfig() : null;
+            if (cfgNow && cfgNow.lock_fullscreen_in_exam && !cfgNow.netsupport_offset && global.Win11Shell && typeof global.Win11Shell.enterFullscreen === 'function') {
                 global.Win11Shell.enterFullscreen();
                 var onceFs = function () {
                     document.removeEventListener('pointerdown', onceFs, true);
-                    var cfgNow = (global.Win11Assessment && global.Win11Assessment.getConfig) ? global.Win11Assessment.getConfig() : null;
                     if (cfgNow && cfgNow.lock_fullscreen_in_exam && !document.fullscreenElement && !document.webkitFullscreenElement) {
                         global.Win11Shell.enterFullscreen();
                     }

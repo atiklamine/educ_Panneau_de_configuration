@@ -1285,6 +1285,7 @@
         getConfig: function () { return config; },
         getDefaultConfig: getDefaultConfig,
         saveConfig: saveConfig,
+        updateConfig: saveConfig,
         getVault: function () { return infState.vault; },
         getStudent: function () { return student; },
         getTasks: function () { return syncConfiguredTasks(); },

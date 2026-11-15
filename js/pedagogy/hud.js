@@ -258,6 +258,9 @@
 
         el.innerHTML =
             '<div class="hud-header" id="hud-drag-bar">' +
+                '<button type="button" class="hud-mobile-fab-btn" id="hud-mobile-fab-toggle" title="' + bidi(t('pedagogy.title')) + '">' +
+                    global.Win11Icons.get('graduation', 20) +
+                '</button>' +
                 '<div class="hud-header-title">' +
                     global.Win11Icons.get('graduation', 16) +
                     '<span>' + bidi(t('pedagogy.title')) + '</span>' +
@@ -325,9 +328,21 @@
             };
         }
 
+        var fabBtn = el.querySelector('#hud-mobile-fab-toggle');
+        if (fabBtn) {
+            fabBtn.onclick = function (e) {
+                e.stopPropagation();
+                el.classList.toggle('is-mobile-fab');
+            };
+        }
+
         el.querySelector('#hud-collapse-btn').onclick = function (e) {
             e.stopPropagation();
-            el.classList.toggle('is-collapsed');
+            if (global.innerWidth <= 768) {
+                el.classList.toggle('is-mobile-fab');
+            } else {
+                el.classList.toggle('is-collapsed');
+            }
         };
         var maxBtn = el.querySelector('#hud-maximize-btn');
         if (maxBtn) {
@@ -471,9 +486,11 @@
             var ox = rect.left;
             var oy = rect.top;
 
+            var topOffset = (document.body.classList.contains('has-netsupport-offset') || document.documentElement.classList.contains('has-netsupport-offset')) ? 38 : 0;
+
             function onMove(ev) {
                 var nx = global.Win11Compat.clamp(ox + (ev.clientX - sx), 8, Math.max(8, global.innerWidth - el.offsetWidth - 8));
-                var ny = global.Win11Compat.clamp(oy + (ev.clientY - sy), 8, Math.max(8, global.innerHeight - 96));
+                var ny = global.Win11Compat.clamp(oy + (ev.clientY - sy), 8 + topOffset, Math.max(8 + topOffset, global.innerHeight - 96));
                 el.style.left = nx + 'px';
                 el.style.top = ny + 'px';
                 el.style.right = 'auto';

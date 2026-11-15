@@ -356,11 +356,22 @@
 
                     var lfsEl = wrap.querySelector('#tc-lock-fs');
                     var tlkEl = wrap.querySelector('#tc-theme-lock');
+                    var nsEl = wrap.querySelector('#tc-netsupport-offset');
                     var mulEl = wrap.querySelector('#tc-multi-user');
                     var p1El = wrap.querySelector('#tc-pass');
                     var p2El = wrap.querySelector('#tc-pass-confirm');
                     if (lfsEl) cfg.lock_fullscreen_in_exam = lfsEl.checked;
                     if (tlkEl) cfg.theme_lock = tlkEl.checked;
+                    if (nsEl) {
+                        cfg.netsupport_offset = nsEl.checked;
+                        if (cfg.netsupport_offset) {
+                            document.documentElement.classList.add('has-netsupport-offset');
+                            document.body.classList.add('has-netsupport-offset');
+                        } else {
+                            document.documentElement.classList.remove('has-netsupport-offset');
+                            document.body.classList.remove('has-netsupport-offset');
+                        }
+                    }
                     if (mulEl) cfg.multi_user_mode = (mulEl.value === 'multi');
                     if (p1El && p1El.value.length > 0) {
                         var p2v = p2El ? p2El.value : '';
@@ -611,6 +622,7 @@
                                 '<div class="tc-field-grid">' +
                                     '<label><input type="checkbox" id="tc-lock-fs"' + (cfg.lock_fullscreen_in_exam ? ' checked' : '') + '> <strong>' + bidi('قفل ملء الشاشة في وضع الامتحان') + '</strong></label>' +
                                     '<label><input type="checkbox" id="tc-theme-lock"' + (cfg.theme_lock ? ' checked' : '') + '> <strong>' + bidi('قفل تغيير المظهر والألوان') + '</strong></label>' +
+                                    '<label><input type="checkbox" id="tc-netsupport-offset"' + (cfg.netsupport_offset ? ' checked' : '') + '> <strong>' + bidi('إزاحة شريط NetSupport School (38px)') + '</strong></label>' +
                                 '</div>' +
                                 '<label style="display:block;margin-top:8px"><strong>' + bidi('تعدد المستخدمين على الجهاز:') + '</strong>' +
                                     '<select class="win-select" id="tc-multi-user">' +

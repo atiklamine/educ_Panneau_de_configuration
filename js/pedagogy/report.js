@@ -6,6 +6,232 @@
 
     var issuedExportCounts = {};
     var hasExportedPdfFlag = false;
+    var exportToastTimer = null;
+
+    function dismissExportSuccessToast() {
+        if (exportToastTimer) {
+            clearTimeout(exportToastTimer);
+            exportToastTimer = null;
+        }
+        var old = document.getElementById('export-success-toast');
+        if (old && old.parentNode) {
+            old.parentNode.removeChild(old);
+        }
+    }
+
+    function showExportSuccessToast(filename, desktopPath) {
+        dismissExportSuccessToast();
+        var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
+        var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
+
+        var toast = document.createElement('div');
+        toast.id = 'export-success-toast';
+        toast.className = 'export-success-toast';
+        toast.setAttribute('role', 'alert');
+
+        var pathAttr = desktopPath ? (' data-folder-path="' + esc(desktopPath) + '"') : '';
+        var hasFolderAction = !!desktopPath || (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0);
+
+        toast.innerHTML =
+            '<span class="export-toast-icon">✓</span>' +
+            '<div class="export-toast-body">' +
+                '<span>' + bidi('تم حفظ التقرير على سطح المكتب باسم:') + ' </span>' +
+                '<bdi dir="ltr" class="export-toast-filename">' + esc(filename) + '</bdi>' +
+            '</div>' +
+            (hasFolderAction ? '<button type="button" class="win-btn win-btn-accent export-toast-open-btn" id="export-toast-open-folder"' + pathAttr + '>' + bidi('فتح المجلد') + '</button>' : '') +
+            '<button type="button" class="export-toast-close" aria-label="Close">&times;</button>';
+
+        var openBtn = toast.querySelector('#export-toast-open-folder');
+        if (openBtn) {
+            openBtn.onclick = function () {
+                var targetPath = openBtn.getAttribute('data-folder-path') || '';
+                if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
+                    global.fetch('/api/open-folder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path: targetPath })
+                    }).catch(function () {});
+                } else if (global.external && typeof global.external.OpenFolder === 'function') {
+                    try { global.external.OpenFolder(targetPath); } catch (e) {}
+                }
+            };
+        }
+
+        var closeBtn = toast.querySelector('.export-toast-close');
+        if (closeBtn) {
+            closeBtn.onclick = dismissExportSuccessToast;
+        }
+
+        document.body.appendChild(toast);
+        exportToastTimer = setTimeout(dismissExportSuccessToast, 12000);
+    }
+
+    function saveReportToDesktop(filename, onComplete) {
+        var htmlContent = buildStandaloneHtmlDoc();
+        var cleanName = normalizeExportFilename(filename, 'html', formatSuggestedFilename('html'));
+
+        // 1. Host TCP server loopback (/api/save-to-desktop)
+        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
+            var b64 = '';
+            try {
+                b64 = global.btoa(unescape(encodeURIComponent(htmlContent)));
+            } catch (e) {
+                b64 = '';
+            }
+
+            global.fetch('/api/save-to-desktop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                body: JSON.stringify({
+                    filename: cleanName,
+                    base64: b64,
+                    html: htmlContent
+                })
+            }).then(function (r) {
+                return r.json();
+            }).then(function (data) {
+                if (data && data.ok) {
+                    showExportSuccessToast(data.filename || cleanName, data.path || null);
+                    if (onComplete) onComplete(null, data);
+                } else {
+                    downloadTextFile(cleanName, 'text/html', htmlContent);
+                    showExportSuccessToast(cleanName, null);
+                    if (onComplete) onComplete(null, { ok: true, filename: cleanName });
+                }
+            }).catch(function () {
+                downloadTextFile(cleanName, 'text/html', htmlContent);
+                showExportSuccessToast(cleanName, null);
+                if (onComplete) onComplete(null, { ok: true, filename: cleanName });
+            });
+            return;
+        }
+
+        // 2. Embedded WebBrowser COM ObjectForScripting (NativeSimulatorBridge)
+        if (global.external && typeof global.external.SaveToDesktop === 'function') {
+            try {
+                var b64COM = global.btoa(unescape(encodeURIComponent(htmlContent)));
+                var savedPath = global.external.SaveToDesktop(cleanName, b64COM);
+                if (savedPath && savedPath.indexOf('ERROR:') !== 0) {
+                    var finalName = savedPath.replace(/^.*[\\\/]/, '');
+                    showExportSuccessToast(finalName, savedPath);
+                    if (onComplete) onComplete(null, { ok: true, filename: finalName, path: savedPath });
+                    return;
+                }
+            } catch (ex) {}
+        }
+
+        // 3. Fallback: Browser downloadTextFile
+        downloadTextFile(cleanName, 'text/html', htmlContent);
+        showExportSuccessToast(cleanName, null);
+        if (onComplete) onComplete(null, { ok: true, filename: cleanName });
+    }
+
+    function injectPlainStudentFormFallback(opts) {
+        opts = opts || {};
+        var existing = document.getElementById('plain-student-fallback-form');
+        if (existing) return;
+        var stu = global.Win11Assessment ? global.Win11Assessment.getStudent() : null;
+        if (!opts.force && stu && stu.activeSession) return;
+
+        var cfg = (global.Win11Assessment && global.Win11Assessment.getConfig) ? global.Win11Assessment.getConfig() : {};
+        var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
+        var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
+
+        var groups = cfg.class_groups || ['1AS-1', '1AS-2', '1AS-3', '1AS-4', '1AS-5'];
+        var grpOpts = '';
+        for (var i = 0; i < groups.length; i++) {
+            grpOpts += '<option value="' + esc(groups[i]) + '">' + esc(groups[i]) + '</option>';
+        }
+
+        var devList = (cfg.device_numbers && cfg.device_numbers.length > 0) ? cfg.device_numbers : ['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20'];
+        var devOpts = '';
+        for (var d = 0; d < devList.length; d++) {
+            devOpts += '<option value="' + esc(devList[d]) + '">' + esc(devList[d]) + '</option>';
+        }
+
+        var wrap = document.createElement('div');
+        wrap.id = 'plain-student-fallback-form';
+        wrap.setAttribute('dir', 'rtl');
+        wrap.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(15,23,42,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,Tahoma,sans-serif;color:#1e293b;padding:16px;box-sizing:border-box;';
+
+        wrap.innerHTML =
+            '<div style="background:#ffffff;border-radius:12px;padding:24px 28px;max-width:520px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.4);border:1px solid #cbd5e1">' +
+                '<div style="text-align:center;margin-bottom:16px;border-bottom:2px solid #0067C0;padding-bottom:12px">' +
+                    '<h2 style="margin:0 0 4px;font-size:18px;color:#0067C0">' + bidi('تسجيل بيانات التلميذ — لوحة التحكم 1AS') + '</h2>' +
+                    '<p style="margin:0;font-size:12.5px;color:#64748b">' + bidi('يرجى إدخال اسمك ولقبك وفوجك للبدء في إنجاز الأنشطة البيداغوجية') + '</p>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">' +
+                    '<div>' +
+                        '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px">' + bidi('اللقب (Nom):') + '</label>' +
+                        '<input type="text" id="fallback-stu-ln" class="win-input" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid #94a3b8;border-radius:6px" placeholder="مثال: بن علي">' +
+                    '</div>' +
+                    '<div>' +
+                        '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px">' + bidi('الاسم (Prénom):') + '</label>' +
+                        '<input type="text" id="fallback-stu-fn" class="win-input" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid #94a3b8;border-radius:6px" placeholder="مثال: أمين">' +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:14px">' +
+                    '<div>' +
+                        '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px">' + bidi('الفوج التربوي:') + '</label>' +
+                        '<select id="fallback-stu-grp" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid #94a3b8;border-radius:6px">' + grpOpts + '</select>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px">' + bidi('رقم الحاسوب:') + '</label>' +
+                        '<select id="fallback-stu-pc" dir="ltr" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid #94a3b8;border-radius:6px">' + devOpts + '</select>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="margin-bottom:14px">' +
+                    '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px">' + bidi('نمط الجلسة:') + '</label>' +
+                    '<div style="display:flex;gap:16px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">' +
+                        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">' +
+                            '<input type="radio" name="fallback-stu-mode" value="training" checked> ' + bidi('استطلاع وتدريب') +
+                        '</label>' +
+                        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">' +
+                            '<input type="radio" name="fallback-stu-mode" value="exam"> ' + bidi('امتحان رسمي (تقييمي)') +
+                        '</label>' +
+                    '</div>' +
+                '</div>' +
+                '<div id="fallback-stu-err" style="color:#dc2626;font-size:12px;min-height:18px;margin-bottom:12px"></div>' +
+                '<button type="button" id="fallback-stu-submit" class="win-btn win-btn-accent" style="width:100%;padding:10px;font-size:14px;font-weight:700;border-radius:6px;background:#0067C0;color:#fff;border:none;cursor:pointer">' +
+                    bidi('بدء الجلسة والمحاكاة') +
+                '</button>' +
+            '</div>';
+
+        document.body.appendChild(wrap);
+
+        var submitBtn = wrap.querySelector('#fallback-stu-submit');
+        var lnInp = wrap.querySelector('#fallback-stu-ln');
+        var fnInp = wrap.querySelector('#fallback-stu-fn');
+        var grpSel = wrap.querySelector('#fallback-stu-grp');
+        var pcSel = wrap.querySelector('#fallback-stu-pc');
+        var errBox = wrap.querySelector('#fallback-stu-err');
+
+        submitBtn.onclick = function () {
+            var ln = lnInp ? lnInp.value.trim() : '';
+            var fn = fnInp ? fnInp.value.trim() : '';
+            if (ln.length < 2 || fn.length < 2 || !/[A-Za-z\u0600-\u06FF]/.test(ln + fn)) {
+                if (errBox) errBox.textContent = 'يرجى إدخال لقب واسم صالحين (حرفان على الأقل).';
+                return;
+            }
+            var modeRadio = wrap.querySelector('input[name="fallback-stu-mode"]:checked');
+            var chosenMode = modeRadio ? modeRadio.value : 'training';
+
+            if (global.Win11Assessment && typeof global.Win11Assessment.startSession === 'function') {
+                global.Win11Assessment.startSession({
+                    lastName: ln,
+                    firstName: fn,
+                    fullName: ln + ' ' + fn,
+                    classGroup: grpSel ? grpSel.value : (groups[0] || '1AS-1'),
+                    pcNumber: pcSel ? pcSel.value : '01',
+                    mode: chosenMode
+                });
+            }
+            if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+            if (global.Win11HUD && typeof global.Win11HUD.open === 'function') {
+                global.Win11HUD.open();
+            }
+        };
+    }
 
     var SECTION_LABELS_AR = {
         home: 'الصفحة الرئيسية',
@@ -603,6 +829,11 @@
         }
         document.title = pdfName.replace(/\.pdf$/i, '');
         hasExportedPdfFlag = true;
+
+        // Section 5: Auto-save evaluation report directly to user's Windows Desktop
+        var autoSaveName = pdfName.replace(/\.pdf$/i, '.html');
+        saveReportToDesktop(autoSaveName);
+
         try {
             if (global.print) global.print();
         } finally {
@@ -802,7 +1033,7 @@
                         } else {
                             var baseKey = (buildFilenameCore('html').base + '.html').toLowerCase();
                             issuedExportCounts[baseKey] = (issuedExportCounts[baseKey] || 0) + 1;
-                            downloadTextFile(chosenFilename, 'text/html', buildStandaloneHtmlDoc());
+                            saveReportToDesktop(chosenFilename);
                         }
                         if (typeof opts.onExported === 'function') {
                             opts.onExported(chosenFilename);
@@ -889,6 +1120,10 @@
 
     global.Win11Report = {
         openStudentRegistration: openStudentRegistration,
+        injectPlainStudentFormFallback: injectPlainStudentFormFallback,
+        saveReportToDesktop: saveReportToDesktop,
+        showExportSuccessToast: showExportSuccessToast,
+        dismissExportSuccessToast: dismissExportSuccessToast,
         confirmNewSimulation: confirmNewSimulation,
         confirmShutdown: confirmShutdown,
         triggerPdfExport: triggerPdfExport,

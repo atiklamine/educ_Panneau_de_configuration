@@ -2375,6 +2375,140 @@ async function main() {
             hudCheck.isOpen && hudCheck.isFixed && hudCheck.draggedDx === 30 && hudCheck.draggedDy === 20 && hudCheck.frontZ >= 3500,
             JSON.stringify(hudCheck));
 
+        // Test 4: NetSupport School Offset Coexistence
+        await cdp.eval(`(function(){
+            Win11Assessment.updateConfig({ netsupport_offset: true });
+            document.documentElement.classList.add('has-netsupport-offset');
+            document.body.classList.add('has-netsupport-offset');
+        })()`);
+        await sleep(100);
+        const netSupportCheck = await cdp.eval(`(function(){
+            var root = document.getElementById('desktop-root');
+            var winLayer = document.getElementById('windows-layer');
+            var hud = document.getElementById('pedagogy-hud');
+            var htmlCls = document.documentElement.classList.contains('has-netsupport-offset');
+            var bodyCls = document.body.classList.contains('has-netsupport-offset');
+            var rootTop = root ? window.getComputedStyle(root).top : '';
+            var winTop = winLayer ? window.getComputedStyle(winLayer).top : '';
+            return {
+                htmlHasClass: htmlCls,
+                bodyHasClass: bodyCls,
+                rootTop: rootTop,
+                winTop: winTop
+            };
+        })()`);
+        assert('NetSupport School: Workspace shifts down by 38px when netsupport_offset is active',
+            netSupportCheck.htmlHasClass && netSupportCheck.bodyHasClass &&
+            netSupportCheck.rootTop === '38px' && netSupportCheck.winTop === '38px',
+            JSON.stringify(netSupportCheck));
+
+        // Restore NetSupport offset
+        await cdp.eval(`(function(){
+            Win11Assessment.updateConfig({ netsupport_offset: false });
+            document.documentElement.classList.remove('has-netsupport-offset');
+            document.body.classList.remove('has-netsupport-offset');
+        })()`);
+
+        // Test 5: Browser Translation Prompt Suppression
+        const translationSuppressionCheck = await cdp.eval(`(function(){
+            var html = document.documentElement;
+            var metaGoogle = document.querySelector('meta[name="google"][content="notranslate"]');
+            var metaGooglebot = document.querySelector('meta[name="googlebot"][content="notranslate"]');
+            return {
+                htmlTranslateNo: html.getAttribute('translate') === 'no',
+                htmlNoTranslateClass: html.classList.contains('notranslate'),
+                metaGooglePresent: !!metaGoogle,
+                metaGooglebotPresent: !!metaGooglebot
+            };
+        })()`);
+        assert('Translation Prevention: HTML attributes translate="no", .notranslate class, and meta notranslate are active',
+            translationSuppressionCheck.htmlTranslateNo && translationSuppressionCheck.htmlNoTranslateClass &&
+            translationSuppressionCheck.metaGooglePresent && translationSuppressionCheck.metaGooglebotPresent,
+            JSON.stringify(translationSuppressionCheck));
+
+        // Test 6: Auto-Save to Desktop Confirmation Toast & Open Folder
+        await cdp.eval(`Win11Report.showExportSuccessToast('Class_Score_Student.html', 'C:\\\\Users\\\\Student\\\\Desktop\\\\Class_Score_Student.html')`);
+        await sleep(100);
+        const toastCheck = await cdp.eval(`(function(){
+            var toast = document.getElementById('export-success-toast');
+            var openBtn = toast ? toast.querySelector('#export-toast-open-folder') : null;
+            var text = toast ? toast.textContent.trim() : '';
+            return {
+                toastExists: !!toast,
+                hasOpenBtn: !!openBtn,
+                openBtnText: openBtn ? openBtn.textContent.trim() : '',
+                containsSuccessText: text.indexOf('تم حفظ التقرير على سطح المكتب باسم:') !== -1,
+                containsFilename: text.indexOf('Class_Score_Student.html') !== -1
+            };
+        })()`);
+        assert('Auto-Save to Desktop: Toast shows filename and "فتح المجلد" action button',
+            toastCheck.toastExists && toastCheck.hasOpenBtn &&
+            toastCheck.openBtnText === 'فتح المجلد' &&
+            toastCheck.containsSuccessText && toastCheck.containsFilename,
+            JSON.stringify(toastCheck));
+
+        await cdp.eval(`Win11Report.dismissExportSuccessToast()`);
+
+        // Test 7: Plain Fallback Student Form Injection
+        await cdp.eval(`Win11Report.injectPlainStudentFormFallback({ force: true })`);
+        await sleep(100);
+        const fallbackFormCheck = await cdp.eval(`(function(){
+            var form = document.getElementById('plain-student-fallback-form');
+            var ln = document.getElementById('fallback-stu-ln');
+            var fn = document.getElementById('fallback-stu-fn');
+            var submit = document.getElementById('fallback-stu-submit');
+            return {
+                formExists: !!form,
+                lnExists: !!ln,
+                fnExists: !!fn,
+                submitExists: !!submit
+            };
+        })()`);
+        assert('Plain Student Form Fallback: Injects directly into body with fields and submit action',
+            fallbackFormCheck.formExists && fallbackFormCheck.lnExists &&
+            fallbackFormCheck.fnExists && fallbackFormCheck.submitExists,
+            JSON.stringify(fallbackFormCheck));
+
+        // Clean up fallback form
+        await cdp.eval(`(function(){
+            var f = document.getElementById('plain-student-fallback-form');
+            if (f && f.parentNode) f.parentNode.removeChild(f);
+        })()`);
+
+        // Test 8: Mobile Viewport Support (<= 768px)
+        await cdp.send('Emulation.setDeviceMetricsOverride', {
+            width: 500,
+            height: 750,
+            deviceScaleFactor: 1,
+            mobile: true
+        });
+        await sleep(150);
+        const mobileCheck = await cdp.eval(`(function(){
+            var hud = document.getElementById('pedagogy-hud');
+            var toggleBtn = document.getElementById('hud-mobile-fab-toggle');
+            
+            // Toggle FAB mode
+            if (toggleBtn) toggleBtn.click();
+            var isFab = hud ? hud.classList.contains('is-mobile-fab') : false;
+            
+            // Toggle back
+            if (toggleBtn) toggleBtn.click();
+            var restored = hud ? !hud.classList.contains('is-mobile-fab') : false;
+
+            return {
+                hasToggleBtn: !!toggleBtn,
+                fabToggled: isFab,
+                fabRestored: restored
+            };
+        })()`);
+        assert('Mobile Support (<= 768px): HUD collapses into mobile FAB and expands on tap',
+            mobileCheck.hasToggleBtn && mobileCheck.fabToggled && mobileCheck.fabRestored,
+            JSON.stringify(mobileCheck));
+
+        // Reset device metrics
+        await cdp.send('Emulation.clearDeviceMetricsOverride');
+        await sleep(100);
+
         // Final check on Chrome console/log errors across the entire run
         for (const ev of cdp.events) {
             if (ev.method === 'Runtime.exceptionThrown') {

@@ -2,18 +2,26 @@
    Windows 11 Shell Styles (Desktop, Taskbar, Flyouts, Task View, Lock Screen)
    ========================================================================== */
 
+:root {
+    --netsupport-offset: 0px;
+}
+html.has-netsupport-offset,
+body.has-netsupport-offset {
+    --netsupport-offset: 38px;
+}
+
 #desktop-root {
     position: fixed !important;
-    top: 0 !important;
+    top: var(--netsupport-offset, 0px) !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
     width: 100vw !important;
-    height: 100vh !important;
+    height: calc(100vh - var(--netsupport-offset, 0px)) !important;
     min-width: 100vw !important;
-    min-height: 100vh !important;
+    min-height: calc(100vh - var(--netsupport-offset, 0px)) !important;
     max-width: 100vw !important;
-    max-height: 100vh !important;
+    max-height: calc(100vh - var(--netsupport-offset, 0px)) !important;
     overflow: hidden !important;
     background-size: cover !important;
     background-position: center center !important;
@@ -1125,4 +1133,41 @@ html[dir="rtl"] .ctx-submenu {
 @keyframes winSpin {
     to { transform: rotate(360deg); }
 }
+
+/* Mobile & Touch Responsive Shell Adaptations (max-width: 768px) */
+@media (max-width: 768px) {
+    #taskbar {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .taskbar-search-pill {
+        display: none !important;
+    }
+    .taskbar-pedagogy-pill {
+        display: none !important;
+    }
+    .taskbar-center {
+        gap: 3px !important;
+    }
+    .taskbar-item {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    #desktop-icons {
+        top: 8px;
+        bottom: 56px;
+        right: 8px;
+        gap: 4px;
+    }
+    .desktop-icon {
+        width: 70px;
+        padding: 4px 2px;
+    }
+    .desktop-icon-title {
+        font-size: 11px;
+    }
+}
+
 
