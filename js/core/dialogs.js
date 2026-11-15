@@ -10,7 +10,13 @@
     var activePersistent = false;
 
     function getBackdrop() {
-        return document.getElementById('dialog-backdrop');
+        var bd = document.getElementById('dialog-backdrop');
+        if (!bd) {
+            bd = document.createElement('div');
+            bd.id = 'dialog-backdrop';
+            (document.body || document.documentElement).appendChild(bd);
+        }
+        return bd;
     }
 
     function iconForTone(tone) {

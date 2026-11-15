@@ -2275,6 +2275,106 @@ async function main() {
             summaryIntegrationRes.hasOpenSummaryFn && summaryIntegrationRes.hudSumBtnPresent && summaryIntegrationRes.certSumBtnPresent,
             JSON.stringify({ summaryExists, summaryHasHeader, summaryHasCorrectedAdmin, summaryHasCorrectedLimited, summaryHasCorrectedGuest, summaryIntegrationRes }));
 
+        // =====================================================================
+        // Emergency Lab Deployment Architecture Tests (Win7 / Low-Res / Zero-Priv)
+        // =====================================================================
+
+        // Test 1: 1366x768 & 1024x768 Viewport Geometry & Fixed Bottom Taskbar
+        for (const [vw, vh] of [[1366, 768], [1024, 768]]) {
+            await cdp.send('Emulation.setDeviceMetricsOverride', {
+                width: vw, height: vh, deviceScaleFactor: 1, mobile: false
+            });
+            await sleep(150);
+
+            const geomCheck = await cdp.eval(`(function(){
+                var tb = document.getElementById('taskbar').getBoundingClientRect();
+                var dk = document.getElementById('desktop-root').getBoundingClientRect();
+                var docW = document.documentElement.scrollWidth;
+                var winW = window.innerWidth;
+                var winH = window.innerHeight;
+                return {
+                    taskbarAtBottom: Math.abs(tb.bottom - winH) <= 1,
+                    taskbarHeight: Math.round(tb.height),
+                    taskbarFullWidth: Math.abs(tb.width - winW) <= 1,
+                    taskbarNeverTop: tb.top > (winH - 60),
+                    noHorizontalScroll: docW <= winW,
+                    desktopCoversAll: dk.top === 0 && dk.left === 0 && Math.abs(dk.width - winW) <= 1 && Math.abs(dk.height - winH) <= 1
+                };
+            })()`);
+
+            assert(`Responsive UI: ${vw}x${vh} taskbar strictly pinned to bottom (never top) with 100% viewport coverage`,
+                geomCheck.taskbarAtBottom && geomCheck.taskbarHeight === 48 && geomCheck.taskbarFullWidth &&
+                geomCheck.taskbarNeverTop && geomCheck.noHorizontalScroll && geomCheck.desktopCoversAll,
+                JSON.stringify(geomCheck));
+        }
+
+        // Test 2: Student Info Modal Display & Dom Injection
+        await cdp.eval(`Win11Report.openStudentRegistration({ mandatory: true })`);
+        await sleep(150);
+        const stuModalCheck = await cdp.eval(`(function(){
+            var bd = document.getElementById('dialog-backdrop');
+            var dlg = document.querySelector('#dialog-backdrop .win-dialog');
+            var ln = document.getElementById('stu-reg-lastname');
+            var fn = document.getElementById('stu-reg-firstname');
+            var grp = document.getElementById('stu-reg-grp');
+            var bdRect = bd ? bd.getBoundingClientRect() : null;
+            var isVisible = bd && window.getComputedStyle(bd).display === 'flex';
+            var coversScreen = bdRect && bdRect.top === 0 && bdRect.left === 0 &&
+                Math.abs(bdRect.width - window.innerWidth) <= 1 &&
+                Math.abs(bdRect.height - window.innerHeight) <= 1;
+            return {
+                bdExists: !!bd,
+                dlgExists: !!dlg,
+                inputsPresent: !!(ln && fn && grp),
+                isVisible: isVisible,
+                coversScreen: coversScreen,
+                zIndex: bd ? parseInt(window.getComputedStyle(bd).zIndex, 10) : 0
+            };
+        })()`);
+        assert('Student Info Form: Appears with full-screen backdrop coverage and high z-index',
+            stuModalCheck.bdExists && stuModalCheck.dlgExists && stuModalCheck.inputsPresent &&
+            stuModalCheck.isVisible && stuModalCheck.coversScreen && stuModalCheck.zIndex >= 3000,
+            JSON.stringify(stuModalCheck));
+
+        // Close student modal
+        await cdp.eval(`Win11Dialogs.close(false)`);
+
+        // Test 3: Pedagogical Assistant HUD Auto-Open, Drag & Click-to-Front
+        await cdp.eval(`Win11HUD.open()`);
+        await sleep(150);
+        const hudCheck = await cdp.eval(`(function(){
+            var hud = document.getElementById('pedagogy-hud');
+            var isOpen = Win11HUD.isOpen();
+            var style = window.getComputedStyle(hud);
+            var initRect = hud.getBoundingClientRect();
+            var initZ = parseInt(style.zIndex, 10);
+
+            // Simulate drag bar mousedown + mousemove
+            var bar = document.getElementById('hud-drag-bar');
+            bar.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: initRect.left + 50, clientY: initRect.top + 15, bubbles: true }));
+            window.dispatchEvent(new MouseEvent('mousemove', { clientX: initRect.left + 80, clientY: initRect.top + 35, bubbles: true }));
+            window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+
+            var movedRect = hud.getBoundingClientRect();
+
+            // Simulate click to bring to front
+            hud.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            var clickedZ = parseInt(window.getComputedStyle(hud).zIndex, 10);
+
+            return {
+                isOpen: isOpen,
+                isFixed: style.position === 'fixed',
+                initialZ: initZ,
+                draggedDx: Math.round(movedRect.left - initRect.left),
+                draggedDy: Math.round(movedRect.top - initRect.top),
+                frontZ: clickedZ
+            };
+        })()`);
+
+        assert('Pedagogical Assistant HUD: Auto-opens, position:fixed, smooth drag, and click-to-front z-index >= 3500',
+            hudCheck.isOpen && hudCheck.isFixed && hudCheck.draggedDx === 30 && hudCheck.draggedDy === 20 && hudCheck.frontZ >= 3500,
+            JSON.stringify(hudCheck));
+
         // Final check on Chrome console/log errors across the entire run
         for (const ev of cdp.events) {
             if (ev.method === 'Runtime.exceptionThrown') {

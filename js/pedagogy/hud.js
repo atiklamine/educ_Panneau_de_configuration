@@ -444,20 +444,32 @@
             };
         }
 
+        // Bring HUD to front whenever clicked
+        function bringToFront() {
+            el.style.zIndex = '3500';
+        }
+        el.addEventListener('mousedown', bringToFront);
+        if (window.PointerEvent) {
+            el.addEventListener('pointerdown', bringToFront);
+        }
+
         // Dragging with strict viewport bounds clamping
         var bar = el.querySelector('#hud-drag-bar');
         bar.addEventListener('dblclick', function (e) {
             if (global.Win11Compat.closest(e.target, 'button')) return;
             toggleMaximize();
         });
-        bar.addEventListener('mousedown', function (e) {
+
+        function startDrag(e) {
             if (e.button !== 0 || global.Win11Compat.closest(e.target, 'button')) return;
             if (el.classList.contains('is-maximized')) return;
             e.preventDefault();
+            el.style.zIndex = '3500';
             var sx = e.clientX;
             var sy = e.clientY;
-            var ox = el.offsetLeft;
-            var oy = el.offsetTop;
+            var rect = el.getBoundingClientRect();
+            var ox = rect.left;
+            var oy = rect.top;
 
             function onMove(ev) {
                 var nx = global.Win11Compat.clamp(ox + (ev.clientX - sx), 8, Math.max(8, global.innerWidth - el.offsetWidth - 8));
@@ -469,10 +481,22 @@
             function onUp() {
                 global.removeEventListener('mousemove', onMove);
                 global.removeEventListener('mouseup', onUp);
+                if (window.PointerEvent) {
+                    global.removeEventListener('pointermove', onMove);
+                    global.removeEventListener('pointerup', onUp);
+                }
             }
             global.addEventListener('mousemove', onMove);
             global.addEventListener('mouseup', onUp);
-        });
+            if (window.PointerEvent) {
+                global.addEventListener('pointermove', onMove);
+                global.addEventListener('pointerup', onUp);
+            }
+        }
+        bar.addEventListener('mousedown', startDrag);
+        if (window.PointerEvent) {
+            bar.addEventListener('pointerdown', startDrag);
+        }
 
         // 2D Corner Resize Handle (Anchor opposite corner so dragging bottom-left in RTL / bottom-right in LTR expands outwards & down cleanly)
         var grip = el.querySelector('#hud-resize-handle');

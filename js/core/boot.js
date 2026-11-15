@@ -23,26 +23,22 @@
                     global.Win11Assessment.evaluate();
                 }
                 var infSt = global.Win11Assessment.getInfStatus ? global.Win11Assessment.getInfStatus() : null;
+                var isTeacherExplicit = !!(
+                    global.__WIN11_TEACHER_MODE__ ||
+                    (global.location && /[?&](teacher(=1)?|mode=teacher)(&|$)/i.test(global.location.search))
+                );
+
                 var launchStudentForm = function () {
                     if (global.Win11Report && typeof global.Win11Report.openStudentRegistration === 'function') {
                         global.Win11Report.openStudentRegistration({ mandatory: true });
                     }
                 };
-                if (infSt && infSt.status === 'tampered' && global.Win11Dialogs) {
-                    setTimeout(function () {
-                        global.Win11Dialogs.showMessage(
-                            global.Win11I18N.t('pedagogy.infTamperTitle'),
-                            global.Win11I18N.t('pedagogy.infTamperMsg'),
-                            'warning',
-                            launchStudentForm
-                        );
-                    }, 90);
-                } else if (infSt && infSt.status === 'missing') {
-                    // Section 1.1: If inf.dll is not found next to the app, launch directly into Teacher Settings Panel
+
+                if (isTeacherExplicit || (infSt && infSt.status === 'missing')) {
                     setTimeout(function () {
                         if (global.Win11Teacher && typeof global.Win11Teacher.openPanel === 'function') {
                             global.Win11Teacher.openPanel({
-                                firstTimeSetup: true,
+                                firstTimeSetup: (infSt && infSt.status === 'missing'),
                                 onDone: function () {
                                     if (!global.Win11Assessment.getStudent().activeSession) {
                                         launchStudentForm();
@@ -51,8 +47,17 @@
                             });
                         }
                     }, 90);
+                } else if (infSt && infSt.status === 'tampered' && global.Win11Dialogs) {
+                    setTimeout(function () {
+                        global.Win11Dialogs.showMessage(
+                            global.Win11I18N.t('pedagogy.infTamperTitle'),
+                            global.Win11I18N.t('pedagogy.infTamperMsg'),
+                            'warning',
+                            launchStudentForm
+                        );
+                    }, 90);
                 } else {
-                    // Section 1.1 & Section 3: inf.dll loaded silently -> mandatory non-skippable Student Info Form before timers begin
+                    // Mandatory non-skippable Student Info Form on EVERY launch before simulation and timers begin
                     setTimeout(launchStudentForm, 90);
                 }
             }

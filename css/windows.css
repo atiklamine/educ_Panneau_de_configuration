@@ -4,9 +4,12 @@
 
 #windows-layer {
     position: absolute;
-    inset-block-start: 0;
-    inset-block-end: 48px;
-    inset-inline: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 48px;
+    width: 100vw;
+    height: calc(100vh - 48px);
     pointer-events: none;
     z-index: 200;
 }
@@ -58,11 +61,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-inline-start: 10px;
-    padding-inline-end: 0;
+    padding-left: 10px;
+    padding-right: 0;
     flex-shrink: 0;
     position: relative;
     z-index: 5;
+}
+html[dir="rtl"] .win-titlebar {
+    padding-left: 0;
+    padding-right: 10px;
 }
 
 .win-titlebar-main {
@@ -161,9 +168,12 @@
 /* Snap Edge Preview Ghost */
 #snap-preview-overlay {
     position: absolute;
-    inset-block-start: 0;
-    inset-block-end: 48px;
-    inset-inline: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 48px;
+    width: 100%;
+    height: calc(100% - 48px);
     pointer-events: none;
     z-index: 195;
 }

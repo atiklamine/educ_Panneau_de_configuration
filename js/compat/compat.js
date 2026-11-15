@@ -1,9 +1,361 @@
 /**
- * Compatibility & Feature Detection Layer (Win7 Chrome 109 / Firefox 115 ESR Safe)
- * Provides polyfills, safe storage fallback, DOM utilities, and CORS-free lazy script loading.
+ * Compatibility & Feature Detection Layer (Win7 Chrome 109 / Firefox 115 ESR / Legacy WebView Safe)
+ * Provides robust ES5/ES6 polyfills, safe storage fallback, DOM utilities, and CORS-free lazy script loading.
  */
 (function (global) {
     'use strict';
+
+    // --------------------------------------------------------------------------
+    // Standard Polyfills for Windows 7 & Legacy Browsers
+    // --------------------------------------------------------------------------
+
+    // 1. Object helpers
+    if (!Object.assign) {
+        Object.assign = function (target) {
+            if (target === null || target === undefined) target = {};
+            for (var i = 1; i < arguments.length; i++) {
+                var src = arguments[i];
+                if (!src) continue;
+                for (var k in src) {
+                    if (Object.prototype.hasOwnProperty.call(src, k)) {
+                        target[k] = src[k];
+                    }
+                }
+            }
+            return target;
+        };
+    }
+    if (!Object.keys) {
+        Object.keys = function (obj) {
+            var keys = [];
+            for (var k in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, k)) keys.push(k);
+            }
+            return keys;
+        };
+    }
+    if (!Object.values) {
+        Object.values = function (obj) {
+            var vals = [];
+            for (var k in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, k)) vals.push(obj[k]);
+            }
+            return vals;
+        };
+    }
+    if (!Object.entries) {
+        Object.entries = function (obj) {
+            var entries = [];
+            for (var k in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, k)) entries.push([k, obj[k]]);
+            }
+            return entries;
+        };
+    }
+
+    // 2. Array helpers
+    if (!Array.isArray) {
+        Array.isArray = function (arg) {
+            return Object.prototype.toString.call(arg) === '[object Array]';
+        };
+    }
+    if (!Array.from) {
+        Array.from = function (iterable) {
+            if (iterable === null || iterable === undefined) return [];
+            var res = [];
+            for (var i = 0; i < iterable.length; i++) res.push(iterable[i]);
+            return res;
+        };
+    }
+    if (!Array.prototype.find) {
+        Array.prototype.find = function (predicate) {
+            if (this === null || typeof predicate !== 'function') return undefined;
+            for (var i = 0; i < this.length; i++) {
+                if (predicate(this[i], i, this)) return this[i];
+            }
+            return undefined;
+        };
+    }
+    if (!Array.prototype.findIndex) {
+        Array.prototype.findIndex = function (predicate) {
+            if (this === null || typeof predicate !== 'function') return -1;
+            for (var i = 0; i < this.length; i++) {
+                if (predicate(this[i], i, this)) return i;
+            }
+            return -1;
+        };
+    }
+    if (!Array.prototype.includes) {
+        Array.prototype.includes = function (searchElement, fromIndex) {
+            var idx = fromIndex || 0;
+            if (idx < 0) idx = Math.max(0, this.length + idx);
+            for (var i = idx; i < this.length; i++) {
+                if (this[i] === searchElement || (searchElement !== searchElement && this[i] !== this[i])) return true;
+            }
+            return false;
+        };
+    }
+
+    // 3. String helpers
+    if (!String.prototype.includes) {
+        String.prototype.includes = function (search, start) {
+            return this.indexOf(search, start || 0) !== -1;
+        };
+    }
+    if (!String.prototype.startsWith) {
+        String.prototype.startsWith = function (search, pos) {
+            return this.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
+        };
+    }
+    if (!String.prototype.endsWith) {
+        String.prototype.endsWith = function (search, thisLen) {
+            if (thisLen === undefined || thisLen > this.length) thisLen = this.length;
+            return this.substring(thisLen - search.length, thisLen) === search;
+        };
+    }
+    if (!String.prototype.padStart) {
+        String.prototype.padStart = function (targetLength, padString) {
+            var str = String(this);
+            targetLength = targetLength >> 0;
+            padString = String((typeof padString !== 'undefined' ? padString : ' '));
+            if (str.length > targetLength) return String(str);
+            targetLength = targetLength - str.length;
+            if (targetLength > padString.length) {
+                padString += padString.repeat(targetLength / padString.length);
+            }
+            return padString.slice(0, targetLength) + str;
+        };
+    }
+    if (!String.prototype.padEnd) {
+        String.prototype.padEnd = function (targetLength, padString) {
+            var str = String(this);
+            targetLength = targetLength >> 0;
+            padString = String((typeof padString !== 'undefined' ? padString : ' '));
+            if (str.length > targetLength) return String(str);
+            targetLength = targetLength - str.length;
+            if (targetLength > padString.length) {
+                padString += padString.repeat(targetLength / padString.length);
+            }
+            return str + padString.slice(0, targetLength);
+        };
+    }
+    if (!String.prototype.trim) {
+        String.prototype.trim = function () {
+            return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+        };
+    }
+
+    // 4. Number helpers
+    if (!Number.isInteger) {
+        Number.isInteger = function (val) {
+            return typeof val === 'number' && isFinite(val) && Math.floor(val) === val;
+        };
+    }
+    if (!Number.isNaN) {
+        Number.isNaN = function (val) {
+            return typeof val === 'number' && val !== val;
+        };
+    }
+
+    // 5. CustomEvent polyfill
+    if (typeof global.CustomEvent !== 'function') {
+        var CustomEventPolyfill = function (event, params) {
+            params = params || { bubbles: false, cancelable: false, detail: null };
+            var evt = document.createEvent('CustomEvent');
+            evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+            return evt;
+        };
+        CustomEventPolyfill.prototype = (global.Event && global.Event.prototype) || {};
+        global.CustomEvent = CustomEventPolyfill;
+    }
+
+    // 6. Minimal reliable Promise polyfill if missing
+    if (!global.Promise) {
+        var PromisePolyfill = function (executor) {
+            var self = this;
+            self.state = 'pending';
+            self.value = undefined;
+            self.handlers = [];
+
+            function resolve(val) {
+                if (self.state !== 'pending') return;
+                if (val && typeof val.then === 'function') {
+                    val.then(resolve, reject);
+                    return;
+                }
+                self.state = 'fulfilled';
+                self.value = val;
+                for (var i = 0; i < self.handlers.length; i++) {
+                    self.handlers[i]();
+                }
+            }
+
+            function reject(err) {
+                if (self.state !== 'pending') return;
+                self.state = 'rejected';
+                self.value = err;
+                for (var i = 0; i < self.handlers.length; i++) {
+                    self.handlers[i]();
+                }
+            }
+
+            try {
+                executor(resolve, reject);
+            } catch (ex) {
+                reject(ex);
+            }
+        };
+
+        PromisePolyfill.prototype.then = function (onFulfilled, onRejected) {
+            var self = this;
+            return new PromisePolyfill(function (resolve, reject) {
+                function execute() {
+                    setTimeout(function () {
+                        if (self.state === 'fulfilled') {
+                            if (typeof onFulfilled === 'function') {
+                                try { resolve(onFulfilled(self.value)); } catch (e) { reject(e); }
+                            } else {
+                                resolve(self.value);
+                            }
+                        } else if (self.state === 'rejected') {
+                            if (typeof onRejected === 'function') {
+                                try { resolve(onRejected(self.value)); } catch (e) { reject(e); }
+                            } else {
+                                reject(self.value);
+                            }
+                        }
+                    }, 0);
+                }
+                if (self.state === 'pending') {
+                    self.handlers.push(execute);
+                } else {
+                    execute();
+                }
+            });
+        };
+
+        PromisePolyfill.prototype.catch = function (onRejected) {
+            return this.then(null, onRejected);
+        };
+
+        PromisePolyfill.resolve = function (val) {
+            return new PromisePolyfill(function (r) { r(val); });
+        };
+
+        PromisePolyfill.reject = function (err) {
+            return new PromisePolyfill(function (_, rej) { rej(err); });
+        };
+
+        PromisePolyfill.all = function (promises) {
+            return new PromisePolyfill(function (resolve, reject) {
+                if (!promises || promises.length === 0) { resolve([]); return; }
+                var results = [];
+                var count = 0;
+                for (var i = 0; i < promises.length; i++) {
+                    (function (idx) {
+                        PromisePolyfill.resolve(promises[idx]).then(function (res) {
+                            results[idx] = res;
+                            count++;
+                            if (count === promises.length) resolve(results);
+                        }, reject);
+                    })(i);
+                }
+            });
+        };
+
+        global.Promise = PromisePolyfill;
+    }
+
+    // 7. Minimal reliable fetch() polyfill using XMLHttpRequest if missing
+    if (!global.fetch) {
+        global.fetch = function (url, options) {
+            options = options || {};
+            var method = (options.method || 'GET').toUpperCase();
+            return new global.Promise(function (resolve, reject) {
+                var xhr = new XMLHttpRequest();
+                xhr.open(method, url, true);
+                if (options.headers) {
+                    for (var h in options.headers) {
+                        if (Object.prototype.hasOwnProperty.call(options.headers, h)) {
+                            xhr.setRequestHeader(h, options.headers[h]);
+                        }
+                    }
+                }
+                if (options.cache === 'no-store' || options.cache === 'no-cache') {
+                    xhr.setRequestHeader('Cache-Control', 'no-cache');
+                }
+                xhr.onload = function () {
+                    var status = xhr.status;
+                    var ok = (status >= 200 && status < 300);
+                    var resp = {
+                        status: status,
+                        ok: ok,
+                        statusText: xhr.statusText,
+                        text: function () {
+                            return global.Promise.resolve(xhr.responseText || '');
+                        },
+                        json: function () {
+                            try {
+                                return global.Promise.resolve(JSON.parse(xhr.responseText));
+                            } catch (e) {
+                                return global.Promise.reject(e);
+                            }
+                        },
+                        arrayBuffer: function () {
+                            // If responseType was arraybuffer or Uint8Array fallback
+                            if (xhr.response && xhr.response.byteLength !== undefined) {
+                                return global.Promise.resolve(xhr.response);
+                            }
+                            var str = xhr.responseText || '';
+                            var buf = new ArrayBuffer(str.length);
+                            var bufView = new Uint8Array(buf);
+                            for (var i = 0; i < str.length; i++) {
+                                bufView[i] = str.charCodeAt(i) & 0xff;
+                            }
+                            return global.Promise.resolve(buf);
+                        }
+                    };
+                    resolve(resp);
+                };
+                xhr.onerror = function () {
+                    reject(new TypeError('Network request failed'));
+                };
+                xhr.ontimeout = function () {
+                    reject(new TypeError('Network request timed out'));
+                };
+                if (options.body) {
+                    xhr.send(options.body);
+                } else {
+                    xhr.send();
+                }
+            });
+        };
+    }
+
+    // 8. Element.prototype.matches & closest
+    if (typeof Element !== 'undefined') {
+        if (!Element.prototype.matches) {
+            Element.prototype.matches =
+                Element.prototype.msMatchesSelector ||
+                Element.prototype.webkitMatchesSelector ||
+                function (s) {
+                    var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+                        i = matches.length;
+                    while (--i >= 0 && matches.item(i) !== this) {}
+                    return i > -1;
+                };
+        }
+        if (!Element.prototype.closest) {
+            Element.prototype.closest = function (s) {
+                var el = this;
+                while (el && el.nodeType === 1) {
+                    if (el.matches(s)) return el;
+                    el = el.parentElement || el.parentNode;
+                }
+                return null;
+            };
+        }
+    }
 
     var ramStore = {};
     var loadedScripts = {};

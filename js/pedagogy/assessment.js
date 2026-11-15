@@ -1172,6 +1172,19 @@
     function fetchSidecarFromHost(doneCb) {
         var finish = function () { if (typeof doneCb === 'function') doneCb(); };
         var host = (global.location && global.location.hostname) ? String(global.location.hostname) : '';
+
+        // Check native COM bridge first (Trident / WinForms host)
+        try {
+            if (global.external && (typeof global.external.ReadInfBase64 === 'unknown' || typeof global.external.ReadInfBase64 === 'function')) {
+                var b64 = global.external.ReadInfBase64();
+                if (b64 && typeof b64 === 'string') {
+                    applyLoadedSidecar(global.Win11Crypto.base64ToBytes(b64));
+                    finish();
+                    return;
+                }
+            }
+        } catch (eBridge) { }
+
         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch && host.indexOf('github.io') === -1) {
             global.fetch('/api/inf', { cache: 'no-store' }).then(function (resp) {
                 if (resp.status === 204 || resp.status === 404) {
@@ -1209,6 +1222,19 @@
             if (typeof cb === 'function') cb({ ok: false, error: err.message });
             return;
         }
+
+        // Check native COM bridge first
+        try {
+            if (global.external && (typeof global.external.WriteInfBase64 === 'unknown' || typeof global.external.WriteInfBase64 === 'function')) {
+                var b64Data = global.Win11Crypto.bytesToBase64(bin);
+                var written = global.external.WriteInfBase64(b64Data);
+                if (written) {
+                    if (typeof cb === 'function') cb({ ok: true, savedToHost: true, bytes: bin });
+                    return;
+                }
+            }
+        } catch (eBridgeWrite) { }
+
         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
             global.fetch('/api/inf', {
                 method: 'POST',

@@ -1,7 +1,8 @@
 /**
- * Windows 11 Arabic Educational Simulator - Portable Single-File Loopback Host (.NET 3.5 SP1 / Win7+ Safe)
- * Embeds Win11_Simulator_1AS.html.gz as a native resource, serves it purely over 127.0.0.1:<port>,
- * manages encrypted sibling inf.dll sidecar via /api/inf, and guarantees zero temp leftovers next to EXE.
+ * Windows 11 Arabic Educational Simulator - Portable Single-File Host
+ * Pure User-Space TCP Loopback Server (WinSock) - ZERO Administrator Privileges Required.
+ * Compatible with Windows 7 SP1 through Windows 11 (Both 32-bit & 64-bit).
+ * Serves embedded simulator asset and manages sibling inf.dll configuration file.
  */
 using System;
 using System.Diagnostics;
@@ -11,19 +12,72 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using Microsoft.Win32;
 
 namespace Win11SimHost
 {
+    [ComVisible(true)]
+    public class NativeSimulatorBridge
+    {
+        private readonly string _infPath;
+
+        public NativeSimulatorBridge(string infPath)
+        {
+            _infPath = infPath;
+        }
+
+        public string ReadInfBase64()
+        {
+            try
+            {
+                if (!File.Exists(_infPath)) return "";
+                byte[] bytes = File.ReadAllBytes(_infPath);
+                return Convert.ToBase64String(bytes);
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        public bool WriteInfBase64(string base64Data)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(base64Data)) return false;
+                byte[] bytes = Convert.FromBase64String(base64Data);
+                if (bytes.Length < 100 || bytes[0] != 0x57 || bytes[1] != 0x31 || bytes[2] != 0x31 || bytes[3] != 0x53 || bytes[4] != 0x02)
+                {
+                    return false;
+                }
+                string tmp = _infPath + ".tmp";
+                File.WriteAllBytes(tmp, bytes);
+                if (File.Exists(_infPath))
+                {
+                    File.Replace(tmp, _infPath, null);
+                }
+                else
+                {
+                    File.Move(tmp, _infPath);
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
     static class Program
     {
         private static byte[] _htmlBytes;
         private static string _exeDir;
         private static string _infPath;
-        private static HttpListener _listener;
+        private static TcpListener _tcpListener;
         private static volatile bool _running = true;
         private static Process _browserProcess = null;
 
@@ -35,6 +89,9 @@ namespace Win11SimHost
 
             int requestedPort = 0;
             bool noBrowser = false;
+            bool teacherMode = false;
+            bool embeddedBrowser = false;
+
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i] ?? "";
@@ -45,6 +102,14 @@ namespace Win11SimHost
                 else if (string.Equals(a, "--no-browser", StringComparison.OrdinalIgnoreCase))
                 {
                     noBrowser = true;
+                }
+                else if (string.Equals(a, "--teacher", StringComparison.OrdinalIgnoreCase))
+                {
+                    teacherMode = true;
+                }
+                else if (string.Equals(a, "--embedded", StringComparison.OrdinalIgnoreCase))
+                {
+                    embeddedBrowser = true;
                 }
             }
 
@@ -59,21 +124,23 @@ namespace Win11SimHost
                 return 1;
             }
 
-            int port = requestedPort > 0 ? requestedPort : FindFreeTcpPort();
-            string prefix = string.Format("http://127.0.0.1:{0}/", port);
-
-            _listener = new HttpListener();
-            _listener.Prefixes.Add(prefix);
+            // Bind pure user-space TCP socket on 127.0.0.1 (No HttpListener / No http.sys / No Admin rights needed)
+            int port = requestedPort;
             try
             {
-                _listener.Start();
+                _tcpListener = new TcpListener(IPAddress.Loopback, port);
+                _tcpListener.Start();
+                port = ((IPEndPoint)_tcpListener.LocalEndpoint).Port;
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Unable to start local loopback server on " + prefix + "\n" + ex.Message,
+                MessageBox.Show("Unable to open local user-space port on 127.0.0.1:\n" + ex.Message,
                     "Windows 11 Simulator", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 2;
             }
+
+            string baseUrl = string.Format("http://127.0.0.1:{0}/", port);
+            string launchUrl = teacherMode ? (baseUrl + "?teacher=1") : baseUrl;
 
             Thread serverThread = new Thread(ListenLoop);
             serverThread.IsBackground = true;
@@ -81,7 +148,7 @@ namespace Win11SimHost
 
             if (noBrowser)
             {
-                Console.WriteLine("WIN11_SIM_HOST_READY=" + prefix);
+                Console.WriteLine("WIN11_SIM_HOST_READY=" + baseUrl);
                 Console.Out.Flush();
                 ManualResetEvent waitExit = new ManualResetEvent(false);
                 Console.CancelKeyPress += delegate(object sender, ConsoleCancelEventArgs e)
@@ -97,7 +164,15 @@ namespace Win11SimHost
                 return 0;
             }
 
-            LaunchUiSession(prefix);
+            if (embeddedBrowser)
+            {
+                LaunchEmbeddedWebBrowser(launchUrl);
+            }
+            else
+            {
+                LaunchUiSession(launchUrl);
+            }
+
             StopServer();
             return 0;
         }
@@ -122,26 +197,17 @@ namespace Win11SimHost
             }
         }
 
-        private static int FindFreeTcpPort()
-        {
-            TcpListener tcp = new TcpListener(IPAddress.Loopback, 0);
-            tcp.Start();
-            int port = ((IPEndPoint)tcp.LocalEndpoint).Port;
-            tcp.Stop();
-            return port;
-        }
-
         private static void ListenLoop()
         {
-            while (_running && _listener != null && _listener.IsListening)
+            while (_running && _tcpListener != null)
             {
                 try
                 {
-                    HttpListenerContext ctx = _listener.GetContext();
+                    TcpClient client = _tcpListener.AcceptTcpClient();
                     ThreadPool.QueueUserWorkItem(delegate(object state)
                     {
-                        HandleRequest((HttpListenerContext)state);
-                    }, ctx);
+                        HandleTcpClient((TcpClient)state);
+                    }, client);
                 }
                 catch
                 {
@@ -150,59 +216,115 @@ namespace Win11SimHost
             }
         }
 
-        private static void HandleRequest(HttpListenerContext ctx)
+        private static void HandleTcpClient(TcpClient client)
         {
             try
             {
-                string path = (ctx.Request.Url != null) ? ctx.Request.Url.AbsolutePath : "/";
-                ctx.Response.AddHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+                client.ReceiveTimeout = 5000;
+                client.SendTimeout = 5000;
+                NetworkStream stream = client.GetStream();
 
+                // Read HTTP request header
+                byte[] buffer = new byte[8192];
+                int totalRead = 0;
+                int headerEnd = -1;
+
+                while (totalRead < buffer.Length)
+                {
+                    int n = stream.Read(buffer, totalRead, buffer.Length - totalRead);
+                    if (n <= 0) break;
+                    totalRead += n;
+                    headerEnd = FindHeaderEnd(buffer, totalRead);
+                    if (headerEnd != -1) break;
+                }
+
+                if (headerEnd == -1)
+                {
+                    client.Close();
+                    return;
+                }
+
+                string headerText = Encoding.ASCII.GetString(buffer, 0, headerEnd);
+                string[] lines = headerText.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+                if (lines.Length == 0) { client.Close(); return; }
+
+                string requestLine = lines[0];
+                string[] parts = requestLine.Split(' ');
+                if (parts.Length < 2) { client.Close(); return; }
+
+                string method = parts[0].ToUpperInvariant();
+                string fullPath = parts[1];
+                string path = fullPath;
+                int qIdx = path.IndexOf('?');
+                if (qIdx >= 0) path = path.Substring(0, qIdx);
+
+                int contentLength = 0;
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    string l = lines[i];
+                    if (l.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int.TryParse(l.Substring(15).Trim(), out contentLength);
+                    }
+                }
+
+                byte[] body = new byte[0];
+                if (contentLength > 0 && contentLength < 16 * 1024 * 1024)
+                {
+                    body = new byte[contentLength];
+                    int alreadyReadBody = totalRead - headerEnd;
+                    if (alreadyReadBody > 0)
+                    {
+                        int copyLen = Math.Min(alreadyReadBody, contentLength);
+                        Array.Copy(buffer, headerEnd, body, 0, copyLen);
+                    }
+                    int bodyRead = Math.Min(alreadyReadBody, contentLength);
+                    while (bodyRead < contentLength)
+                    {
+                        int n = stream.Read(body, bodyRead, contentLength - bodyRead);
+                        if (n <= 0) break;
+                        bodyRead += n;
+                    }
+                }
+
+                // Handle CORS preflight
+                if (method == "OPTIONS")
+                {
+                    SendResponse(stream, 204, "No Content", "text/plain", new byte[0], true);
+                    client.Close();
+                    return;
+                }
+
+                // API: INF sidecar
                 if (path == "/api/inf")
                 {
-                    if (string.Equals(ctx.Request.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase))
+                    if (method == "GET")
                     {
                         if (!File.Exists(_infPath))
                         {
-                            ctx.Response.StatusCode = 204;
-                            ctx.Response.Close();
-                            return;
+                            SendResponse(stream, 204, "No Content", "application/octet-stream", new byte[0], true);
                         }
-                        byte[] infBytes = File.ReadAllBytes(_infPath);
-                        ctx.Response.StatusCode = 200;
-                        ctx.Response.ContentType = "application/octet-stream";
-                        ctx.Response.ContentLength64 = infBytes.Length;
-                        ctx.Response.OutputStream.Write(infBytes, 0, infBytes.Length);
-                        ctx.Response.Close();
+                        else
+                        {
+                            byte[] infBytes = File.ReadAllBytes(_infPath);
+                            SendResponse(stream, 200, "OK", "application/octet-stream", infBytes, true);
+                        }
+                        client.Close();
                         return;
                     }
-                    if (string.Equals(ctx.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase))
+
+                    if (method == "POST")
                     {
-                        byte[] incoming;
-                        using (MemoryStream ms = new MemoryStream())
+                        if (body.Length < 100 || body[0] != 0x57 || body[1] != 0x31 || body[2] != 0x31 || body[3] != 0x53 || body[4] != 0x02)
                         {
-                            byte[] buf = new byte[16384];
-                            int n;
-                            while ((n = ctx.Request.InputStream.Read(buf, 0, buf.Length)) > 0)
-                            {
-                                ms.Write(buf, 0, n);
-                            }
-                            incoming = ms.ToArray();
-                        }
-                        if (incoming.Length < 100 || incoming.Length > 8 * 1024 * 1024)
-                        {
-                            ctx.Response.StatusCode = 400;
-                            ctx.Response.Close();
+                            byte[] errJson = Encoding.UTF8.GetBytes("{\"ok\":false,\"error\":\"invalid_envelope\"}");
+                            SendResponse(stream, 400, "Bad Request", "application/json; charset=utf-8", errJson, true);
+                            client.Close();
                             return;
                         }
-                        // Verify binary encrypted inf.dll v2 magic header ('W11S\x02') before touching disk
-                        if (incoming[0] != 0x57 || incoming[1] != 0x31 || incoming[2] != 0x31 || incoming[3] != 0x53 || incoming[4] != 0x02)
-                        {
-                            ctx.Response.StatusCode = 400;
-                            ctx.Response.Close();
-                            return;
-                        }
+
                         string tmpPath = _infPath + ".tmp";
-                        File.WriteAllBytes(tmpPath, incoming);
+                        File.WriteAllBytes(tmpPath, body);
                         if (File.Exists(_infPath))
                         {
                             File.Replace(tmpPath, _infPath, null);
@@ -211,27 +333,24 @@ namespace Win11SimHost
                         {
                             File.Move(tmpPath, _infPath);
                         }
+
                         byte[] okJson = Encoding.UTF8.GetBytes("{\"ok\":true}");
-                        ctx.Response.StatusCode = 200;
-                        ctx.Response.ContentType = "application/json; charset=utf-8";
-                        ctx.Response.ContentLength64 = okJson.Length;
-                        ctx.Response.OutputStream.Write(okJson, 0, okJson.Length);
-                        ctx.Response.Close();
+                        SendResponse(stream, 200, "OK", "application/json; charset=utf-8", okJson, true);
+                        client.Close();
                         return;
                     }
                 }
 
-                if (path == "/api/shutdown" && string.Equals(ctx.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase))
+                // API: Shutdown
+                if (path == "/api/shutdown" && method == "POST")
                 {
                     byte[] byeJson = Encoding.UTF8.GetBytes("{\"ok\":true,\"shuttingDown\":true}");
-                    ctx.Response.StatusCode = 200;
-                    ctx.Response.ContentType = "application/json; charset=utf-8";
-                    ctx.Response.ContentLength64 = byeJson.Length;
-                    ctx.Response.OutputStream.Write(byeJson, 0, byeJson.Length);
-                    ctx.Response.Close();
+                    SendResponse(stream, 200, "OK", "application/json; charset=utf-8", byeJson, true);
+                    client.Close();
+
                     ThreadPool.QueueUserWorkItem(delegate
                     {
-                        Thread.Sleep(220);
+                        Thread.Sleep(200);
                         _running = false;
                         try
                         {
@@ -251,23 +370,60 @@ namespace Win11SimHost
                     return;
                 }
 
+                // Root & HTML asset
                 if (path == "/" || path == "/index.html")
                 {
-                    ctx.Response.StatusCode = 200;
-                    ctx.Response.ContentType = "text/html; charset=utf-8";
-                    ctx.Response.ContentLength64 = _htmlBytes.Length;
-                    ctx.Response.OutputStream.Write(_htmlBytes, 0, _htmlBytes.Length);
-                    ctx.Response.Close();
+                    SendResponse(stream, 200, "OK", "text/html; charset=utf-8", _htmlBytes, true);
+                    client.Close();
                     return;
                 }
 
-                ctx.Response.StatusCode = 404;
-                ctx.Response.Close();
+                // Fallback 404
+                byte[] notFound = Encoding.UTF8.GetBytes("Not Found");
+                SendResponse(stream, 404, "Not Found", "text/plain", notFound, true);
+                client.Close();
             }
             catch
             {
-                try { ctx.Response.Abort(); } catch { }
+                try { client.Close(); } catch { }
             }
+        }
+
+        private static int FindHeaderEnd(byte[] buf, int len)
+        {
+            for (int i = 0; i <= len - 4; i++)
+            {
+                if (buf[i] == '\r' && buf[i + 1] == '\n' && buf[i + 2] == '\r' && buf[i + 3] == '\n')
+                {
+                    return i + 4;
+                }
+            }
+            return -1;
+        }
+
+        private static void SendResponse(NetworkStream stream, int statusCode, string statusReason, string contentType, byte[] data, bool cors)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("HTTP/1.1 {0} {1}\r\n", statusCode, statusReason);
+            sb.AppendFormat("Content-Type: {0}\r\n", contentType);
+            sb.AppendFormat("Content-Length: {0}\r\n", data != null ? data.Length : 0);
+            sb.Append("Cache-Control: no-store, no-cache, must-revalidate\r\n");
+            sb.Append("Connection: close\r\n");
+            if (cors)
+            {
+                sb.Append("Access-Control-Allow-Origin: *\r\n");
+                sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
+                sb.Append("Access-Control-Allow-Headers: *\r\n");
+            }
+            sb.Append("\r\n");
+
+            byte[] headerBytes = Encoding.ASCII.GetBytes(sb.ToString());
+            stream.Write(headerBytes, 0, headerBytes.Length);
+            if (data != null && data.Length > 0)
+            {
+                stream.Write(data, 0, data.Length);
+            }
+            stream.Flush();
         }
 
         private static string FindChromiumBrowser()
@@ -275,14 +431,49 @@ namespace Win11SimHost
             string pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? "";
             string pf64 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) ?? "";
             string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) ?? "";
+
             string[] candidates = new string[]
             {
+                // Microsoft Edge
                 string.IsNullOrEmpty(pf86) ? "" : Path.Combine(pf86, @"Microsoft\Edge\Application\msedge.exe"),
                 string.IsNullOrEmpty(pf64) ? "" : Path.Combine(pf64, @"Microsoft\Edge\Application\msedge.exe"),
+                // Google Chrome
                 string.IsNullOrEmpty(pf64) ? "" : Path.Combine(pf64, @"Google\Chrome\Application\chrome.exe"),
                 string.IsNullOrEmpty(pf86) ? "" : Path.Combine(pf86, @"Google\Chrome\Application\chrome.exe"),
-                string.IsNullOrEmpty(localApp) ? "" : Path.Combine(localApp, @"Google\Chrome\Application\chrome.exe")
+                string.IsNullOrEmpty(localApp) ? "" : Path.Combine(localApp, @"Google\Chrome\Application\chrome.exe"),
+                // Portable Browsers in simulator folder
+                Path.Combine(_exeDir, @"chrome-win\chrome.exe"),
+                Path.Combine(_exeDir, @"browser\chrome.exe"),
+                Path.Combine(_exeDir, @"App\Chrome\chrome.exe"),
+                // Brave
+                string.IsNullOrEmpty(pf64) ? "" : Path.Combine(pf64, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
+                string.IsNullOrEmpty(pf86) ? "" : Path.Combine(pf86, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
+                // Opera
+                string.IsNullOrEmpty(localApp) ? "" : Path.Combine(localApp, @"Programs\Opera\launcher.exe")
             };
+
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(candidates[i]) && File.Exists(candidates[i]))
+                {
+                    return candidates[i];
+                }
+            }
+            return null;
+        }
+
+        private static string FindFirefoxBrowser()
+        {
+            string pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? "";
+            string pf64 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) ?? "";
+
+            string[] candidates = new string[]
+            {
+                string.IsNullOrEmpty(pf64) ? "" : Path.Combine(pf64, @"Mozilla Firefox\firefox.exe"),
+                string.IsNullOrEmpty(pf86) ? "" : Path.Combine(pf86, @"Mozilla Firefox\firefox.exe"),
+                Path.Combine(_exeDir, @"firefox\firefox.exe")
+            };
+
             for (int i = 0; i < candidates.Length; i++)
             {
                 if (!string.IsNullOrEmpty(candidates[i]) && File.Exists(candidates[i]))
@@ -305,7 +496,7 @@ namespace Win11SimHost
                     ProcessStartInfo psi = new ProcessStartInfo();
                     psi.FileName = chromium;
                     psi.Arguments = string.Format(
-                        "--kiosk \"{0}\" --app=\"{0}\" --user-data-dir=\"{1}\" --no-first-run --no-default-browser-check --noerrdialogs --disable-sync --disable-translate --disable-features=Translate,msAccountSync,ChromeWhatsNewUI --start-fullscreen",
+                        "--app=\"{0}\" --user-data-dir=\"{1}\" --no-first-run --no-default-browser-check --noerrdialogs --disable-sync --disable-translate --start-fullscreen",
                         url, profileDir);
                     psi.UseShellExecute = false;
                     using (Process p = Process.Start(psi))
@@ -322,13 +513,33 @@ namespace Win11SimHost
                 return;
             }
 
-            // Fallback (e.g. Windows 7 with Firefox ESR only): open default browser + show clean control window
+            string firefox = FindFirefoxBrowser();
+            if (firefox != null)
+            {
+                try
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.FileName = firefox;
+                    psi.Arguments = string.Format("-kiosk \"{0}\"", url);
+                    psi.UseShellExecute = false;
+                    using (Process p = Process.Start(psi))
+                    {
+                        _browserProcess = p;
+                        if (p != null) p.WaitForExit();
+                        _browserProcess = null;
+                    }
+                    return;
+                }
+                catch { }
+            }
+
+            // Fallback: Launch default browser & show companion window
             try { Process.Start(url); } catch { }
 
             Application.EnableVisualStyles();
             Form hostForm = new Form();
-            hostForm.Text = "محاكي Windows 11 — 1AS";
-            hostForm.Size = new Size(420, 170);
+            hostForm.Text = "محاكي لوحة التحكم Windows 11 — 1AS";
+            hostForm.Size = new Size(460, 180);
             hostForm.StartPosition = FormStartPosition.CenterScreen;
             hostForm.RightToLeft = RightToLeft.Yes;
             hostForm.RightToLeftLayout = true;
@@ -336,23 +547,24 @@ namespace Win11SimHost
             hostForm.MaximizeBox = false;
 
             Label lbl = new Label();
-            lbl.Text = "الخادم المحلي للمحاكي يعمل حالياً.\nلا تغلق هذه النافذة أثناء عمل التلميذ في المتصفح.";
+            lbl.Text = "خادم المحاكي المحلي قيد التشغيل (بدون أي صلاحيات إدارية).\nلا تغلق هذه النافذة أثناء عمل التلميذ.";
             lbl.Dock = DockStyle.Top;
-            lbl.Height = 76;
+            lbl.Height = 72;
             lbl.TextAlign = ContentAlignment.MiddleCenter;
+            lbl.Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
 
             Button openBtn = new Button();
             openBtn.Text = "فتح نافذة المحاكي";
-            openBtn.Location = new Point(220, 92);
-            openBtn.Width = 150;
-            openBtn.Height = 32;
+            openBtn.Location = new Point(240, 92);
+            openBtn.Width = 170;
+            openBtn.Height = 34;
             openBtn.Click += delegate { try { Process.Start(url); } catch { } };
 
             Button exitBtn = new Button();
             exitBtn.Text = "إنهاء وإغلاق المحاكي";
-            exitBtn.Location = new Point(36, 92);
-            exitBtn.Width = 160;
-            exitBtn.Height = 32;
+            exitBtn.Location = new Point(40, 92);
+            exitBtn.Width = 170;
+            exitBtn.Height = 34;
             exitBtn.Click += delegate { hostForm.Close(); };
 
             hostForm.Controls.Add(lbl);
@@ -361,15 +573,34 @@ namespace Win11SimHost
             Application.Run(hostForm);
         }
 
+        private static void LaunchEmbeddedWebBrowser(string url)
+        {
+            Application.EnableVisualStyles();
+            Form form = new Form();
+            form.Text = "محاكي لوحة التحكم Windows 11 — 1AS";
+            form.WindowState = FormWindowState.Maximized;
+            form.FormBorderStyle = FormBorderStyle.None;
+            form.TopMost = true;
+
+            WebBrowser wb = new WebBrowser();
+            wb.Dock = DockStyle.Fill;
+            wb.ScriptErrorsSuppressed = true;
+            wb.IsWebBrowserContextMenuEnabled = false;
+            wb.ObjectForScripting = new NativeSimulatorBridge(_infPath);
+
+            form.Controls.Add(wb);
+            form.Load += delegate { wb.Navigate(url); };
+            Application.Run(form);
+        }
+
         private static void StopServer()
         {
             _running = false;
             try
             {
-                if (_listener != null)
+                if (_tcpListener != null)
                 {
-                    _listener.Stop();
-                    _listener.Close();
+                    _tcpListener.Stop();
                 }
             }
             catch { }

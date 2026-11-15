@@ -154,7 +154,8 @@ const cscPath = cscCandidates.find(p => fs.existsSync(p));
 if (!cscPath) throw new Error('No .NET csc.exe found to compile portable EXE');
 
 const csSource = path.join(ROOT, 'launcher', 'Win11SimLauncher.cs');
-execFileSync(cscPath, [
+const manifestPath = path.join(ROOT, 'launcher', 'app.manifest');
+const cscArgs = [
     '/nologo',
     '/target:winexe',
     '/platform:anycpu',
@@ -163,11 +164,16 @@ execFileSync(cscPath, [
     '/r:System.dll',
     '/r:System.Core.dll',
     '/r:System.Drawing.dll',
-    '/r:System.Windows.Forms.dll',
-    '/resource:' + outGzPath + ',Win11_Simulator_1AS.html.gz',
-    '/out:' + outExePath,
-    csSource
-], { stdio: 'inherit' });
+    '/r:System.Windows.Forms.dll'
+];
+if (fs.existsSync(manifestPath)) {
+    cscArgs.push('/win32manifest:' + manifestPath);
+}
+cscArgs.push('/resource:' + outGzPath + ',Win11_Simulator_1AS.html.gz');
+cscArgs.push('/out:' + outExePath);
+cscArgs.push(csSource);
+
+execFileSync(cscPath, cscArgs, { stdio: 'inherit' });
 
 const exeStat = fs.statSync(outExePath);
 console.log('Portable EXE compiled:', outExePath, '(' + (exeStat.size / (1024 * 1024)).toFixed(2) + ' MB)');

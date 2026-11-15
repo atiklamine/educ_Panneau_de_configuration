@@ -3,9 +3,10 @@
    ========================================================================== */
 
 #pedagogy-hud {
-    position: absolute;
-    inset-block-start: 16px;
-    inset-inline-start: 112px;
+    position: fixed !important;
+    top: 16px;
+    left: 112px;
+    right: auto;
     width: 470px;
     max-width: calc(100vw - 24px);
     max-height: calc(100vh - 58px);
@@ -14,10 +15,14 @@
     border-radius: 10px;
     border: 1px solid var(--win-border-window);
     box-shadow: var(--win-shadow-window);
-    z-index: 450;
+    z-index: 2500;
     display: none;
     flex-direction: column;
     overflow: hidden;
+}
+html[dir="rtl"] #pedagogy-hud {
+    left: auto;
+    right: 112px;
 }
 #pedagogy-hud.is-open {
     display: flex;
@@ -247,10 +252,15 @@
     background: var(--win-info-bg);
     color: var(--win-text-primary);
     border: 1px solid var(--win-accent);
-    border-inline-start: 4px solid var(--win-accent);
+    border-left: 4px solid var(--win-accent);
+    border-right: 1px solid var(--win-accent);
     border-radius: 6px;
     padding: 9px 12px;
     text-align: start;
+}
+html[dir="rtl"] .hud-hint-callout {
+    border-left: 1px solid var(--win-accent);
+    border-right: 4px solid var(--win-accent);
 }
 
 .hud-actions {
@@ -263,7 +273,8 @@
 .hud-resize-corner {
     position: absolute;
     bottom: 2px;
-    inset-inline-end: 2px;
+    right: auto;
+    left: 2px;
     width: 20px;
     height: 20px;
     z-index: 6;
@@ -271,7 +282,9 @@
     opacity: 0.78;
     background: linear-gradient(45deg, transparent 50%, var(--win-text-secondary) 52%, transparent 56%, transparent 72%, var(--win-text-secondary) 74%, transparent 78%);
 }
-[dir="ltr"] .hud-resize-corner {
+html[dir="ltr"] .hud-resize-corner {
+    right: 2px;
+    left: auto;
     cursor: nwse-resize;
     background: linear-gradient(135deg, transparent 50%, var(--win-text-secondary) 52%, transparent 56%, transparent 72%, var(--win-text-secondary) 74%, transparent 78%);
 }
@@ -508,6 +521,11 @@
     line-height: 1;
     cursor: pointer;
     padding: 2px 6px;
-    margin-inline-start: auto;
+    margin-left: auto;
+    margin-right: 0;
+}
+html[dir="rtl"] .off-task-toast-close {
+    margin-left: 0;
+    margin-right: auto;
 }
 

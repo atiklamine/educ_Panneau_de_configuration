@@ -143,11 +143,11 @@ async function main() {
     assert(exeReady, 'Isolated EXE failed to answer on 127.0.0.1:' + hostPort);
 
     try {
-        // B1: Startup with NO inf.dll -> safe defaults + zero sibling files created
+        // B1: Teacher explicitly launches in Teacher Mode (--teacher / ?teacher=1) with NO inf.dll -> opens Teacher Settings Panel directly
         const filesBeforeSave = fs.readdirSync(isoDir);
         assert.deepStrictEqual(filesBeforeSave, ['Win11_Simulator_1AS.exe'], 'Unexpected files next to EXE: ' + filesBeforeSave);
 
-        const s1 = await openChrome(9356, `http://127.0.0.1:${hostPort}/`);
+        const s1 = await openChrome(9356, `http://127.0.0.1:${hostPort}/?teacher=1`);
         let first64Hex = '';
         try {
             // Section 1.1: EXE with NO inf.dll must automatically launch directly into Teacher Settings Panel (no password prompt!)
