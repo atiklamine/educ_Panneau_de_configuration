@@ -68,7 +68,9 @@
 
     function saveReportToDesktop(filename, onComplete) {
         var htmlContent = buildStandaloneHtmlDoc();
-        var cleanName = normalizeExportFilename(filename, 'html', formatSuggestedFilename('html'));
+        var isPdfReq = filename && /\.pdf$/i.test(filename);
+        var targetExt = isPdfReq ? 'pdf' : 'html';
+        var cleanName = normalizeExportFilename(filename, targetExt, formatSuggestedFilename(targetExt));
 
         // 1. Host TCP server loopback (/api/save-to-desktop)
         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
@@ -94,12 +96,12 @@
                     showExportSuccessToast(data.filename || cleanName, data.path || null);
                     if (onComplete) onComplete(null, data);
                 } else {
-                    downloadTextFile(cleanName, 'text/html', htmlContent);
+                    downloadTextFile(cleanName, isPdfReq ? 'application/pdf' : 'text/html', htmlContent);
                     showExportSuccessToast(cleanName, null);
                     if (onComplete) onComplete(null, { ok: true, filename: cleanName });
                 }
             }).catch(function () {
-                downloadTextFile(cleanName, 'text/html', htmlContent);
+                downloadTextFile(cleanName, isPdfReq ? 'application/pdf' : 'text/html', htmlContent);
                 showExportSuccessToast(cleanName, null);
                 if (onComplete) onComplete(null, { ok: true, filename: cleanName });
             });
@@ -1092,6 +1094,14 @@
                     }
                 },
                 {
+                    id: 'btn-print-paper',
+                    label: 'طباعة على طابعة ورقية',
+                    primary: false,
+                    onClick: function () {
+                        triggerPdfExport();
+                    }
+                },
+                {
                     id: 'btn-export-html',
                     label: t('pedagogy.exportHtmlBtn'),
                     primary: false,
@@ -1107,15 +1117,95 @@
         });
     }
 
+    function openSummaryModal() {
+        var summaryContent = (typeof window !== 'undefined' && window.__WIN11_SUMMARY_HTML__)
+            ? window.__WIN11_SUMMARY_HTML__
+            : '';
+
+        global.Win11Dialogs.showCustom({
+            title: 'وثيقة ملخص الدرس: وحدة لوحة التحكم (السنة الأولى ثانوي)',
+            tone: 'info',
+            wide: true,
+            renderBody: function (wrap, dialog) {
+                wrap.style.display = 'flex';
+                wrap.style.flexDirection = 'column';
+                wrap.style.gap = '8px';
+                wrap.innerHTML =
+                    '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px">' +
+                        '<span style="font-size:12.5px;color:#334155;font-weight:600">📄 ملخص الدرس المعتمد لكراس التلميذ (Panneau de configuration — 1AS)</span>' +
+                        '<div style="display:flex;gap:8px">' +
+                            '<button type="button" class="win-btn win-btn-accent" id="btn-modal-print-summary" style="padding:4px 14px;font-size:12px">🖨️ طباعة الملخص الآن</button>' +
+                            '<button type="button" class="win-btn win-btn-secondary" id="btn-modal-open-tab" style="padding:4px 12px;font-size:12px">فتح في نافذة كاملة</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<iframe id="summary-preview-frame" style="width:100%;height:62vh;border:1px solid #CBD5E1;border-radius:4px;background:#FFF" src="/summary.html"></iframe>';
+
+                var iframe = wrap.querySelector('#summary-preview-frame');
+                if (iframe && summaryContent && (!global.location || global.location.protocol.indexOf('http') !== 0)) {
+                    try {
+                        iframe.srcdoc = summaryContent;
+                    } catch (e) {}
+                }
+
+                var printBtn = wrap.querySelector('#btn-modal-print-summary');
+                if (printBtn) {
+                    printBtn.onclick = function () {
+                        if (iframe && iframe.contentWindow) {
+                            try {
+                                iframe.contentWindow.focus();
+                                iframe.contentWindow.print();
+                            } catch (e) {
+                                window.print();
+                            }
+                        }
+                    };
+                }
+
+                var tabBtn = wrap.querySelector('#btn-modal-open-tab');
+                if (tabBtn) {
+                    tabBtn.onclick = function () {
+                        try { window.open('/summary.html', '_blank'); } catch (e) {}
+                    };
+                }
+            },
+            buttons: [
+                {
+                    id: 'btn-summary-print-direct',
+                    label: '🖨️ طباعة الملخص (Print)',
+                    primary: true,
+                    onClick: function () {
+                        var iframe = document.getElementById('summary-preview-frame');
+                        if (iframe && iframe.contentWindow) {
+                            try {
+                                iframe.contentWindow.focus();
+                                iframe.contentWindow.print();
+                            } catch (e) {
+                                window.print();
+                            }
+                        }
+                        return false;
+                    }
+                },
+                {
+                    label: global.Win11I18N.t('app.close'),
+                    primary: false,
+                    value: false
+                }
+            ]
+        });
+    }
+
     function openSummarySheet() {
-        if (typeof window !== 'undefined' && window.open) {
-            var w = window.open('summary.html', '_blank');
-            if (w) {
-                try {
-                    w.focus();
-                } catch (e) {}
-            }
+        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0) {
+            try {
+                var w = window.open('/summary.html', '_blank');
+                if (w) {
+                    try { w.focus(); } catch (e) {}
+                    return;
+                }
+            } catch (e2) {}
         }
+        openSummaryModal();
     }
 
     global.Win11Report = {

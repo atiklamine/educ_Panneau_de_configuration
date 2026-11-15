@@ -166,6 +166,7 @@ namespace Win11SimHost
         private static volatile bool _running = true;
         private static Process _browserProcess = null;
         private static string _tempProfileDir = null;
+        private static byte[] _summaryBytes = null;
         private static DateTime _lastPingUtc = DateTime.UtcNow;
         private static volatile bool _hasReceivedPing = false;
 
@@ -220,6 +221,7 @@ namespace Win11SimHost
             try
             {
                 _htmlBytes = LoadEmbeddedHtmlBytes();
+                _summaryBytes = LoadEmbeddedSummaryBytes();
             }
             catch (Exception ex)
             {
@@ -304,6 +306,40 @@ namespace Win11SimHost
                     return ms.ToArray();
                 }
             }
+        }
+
+        private static byte[] LoadEmbeddedSummaryBytes()
+        {
+            try
+            {
+                Assembly asm = Assembly.GetExecutingAssembly();
+                using (Stream raw = asm.GetManifestResourceStream("summary.html.gz"))
+                {
+                    if (raw != null)
+                    {
+                        using (GZipStream gz = new GZipStream(raw, CompressionMode.Decompress))
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            byte[] buf = new byte[65536];
+                            int read;
+                            while ((read = gz.Read(buf, 0, buf.Length)) > 0)
+                            {
+                                ms.Write(buf, 0, read);
+                            }
+                            return ms.ToArray();
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            try
+            {
+                string p = Path.Combine(_exeDir, "summary.html");
+                if (File.Exists(p)) return File.ReadAllBytes(p);
+            }
+            catch { }
+            return null;
         }
 
         private static void ListenLoop()
@@ -570,12 +606,12 @@ namespace Win11SimHost
                         {
                             try { fileBytes = Convert.FromBase64String(b64); } catch { }
                         }
+                        string htmlStr = ExtractJsonStringValue(rawBody, "html");
                         if (fileBytes == null)
                         {
-                            string html = ExtractJsonStringValue(rawBody, "html");
-                            if (!string.IsNullOrEmpty(html))
+                            if (!string.IsNullOrEmpty(htmlStr))
                             {
-                                fileBytes = Encoding.UTF8.GetBytes(html);
+                                fileBytes = Encoding.UTF8.GetBytes(htmlStr);
                             }
                             else if (headerContentType != null && (headerContentType.Contains("html") || headerContentType.Contains("octet-stream")))
                             {
@@ -587,7 +623,57 @@ namespace Win11SimHost
                             }
                         }
 
-                        File.WriteAllBytes(targetPath, fileBytes ?? new byte[0]);
+                        if (ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                        {
+                            bool pdfDone = false;
+                            if (string.IsNullOrEmpty(htmlStr) && fileBytes != null)
+                            {
+                                try { htmlStr = Encoding.UTF8.GetString(fileBytes); } catch { }
+                            }
+
+                            string chromium = FindChromiumBrowser();
+                            if (!string.IsNullOrEmpty(chromium) && File.Exists(chromium) && !string.IsNullOrEmpty(htmlStr))
+                            {
+                                string tmpHtml = Path.Combine(Path.GetTempPath(), "print_doc_" + Guid.NewGuid().ToString("N") + ".html");
+                                try
+                                {
+                                    File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
+                                    ProcessStartInfo pPsi = new ProcessStartInfo();
+                                    pPsi.FileName = chromium;
+                                    pPsi.Arguments = string.Format(
+                                        "--headless=new --disable-gpu --no-sandbox --run-all-compositor-stages-before-draw --print-to-pdf=\"{0}\" \"{1}\"",
+                                        targetPath, tmpHtml);
+                                    pPsi.UseShellExecute = false;
+                                    pPsi.CreateNoWindow = true;
+                                    using (Process p = Process.Start(pPsi))
+                                    {
+                                        if (p != null)
+                                        {
+                                            p.WaitForExit(8000);
+                                            if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 200)
+                                            {
+                                                pdfDone = true;
+                                            }
+                                        }
+                                    }
+                                }
+                                catch { }
+                                finally
+                                {
+                                    try { File.Delete(tmpHtml); } catch { }
+                                }
+                            }
+
+                            if (!pdfDone)
+                            {
+                                targetPath = Path.Combine(desktopDir, baseName + ".html");
+                                File.WriteAllBytes(targetPath, fileBytes ?? (htmlStr != null ? Encoding.UTF8.GetBytes(htmlStr) : new byte[0]));
+                            }
+                        }
+                        else
+                        {
+                            File.WriteAllBytes(targetPath, fileBytes ?? new byte[0]);
+                        }
 
                         string finalFilename = Path.GetFileName(targetPath);
                         string escapedPath = targetPath.Replace("\\", "\\\\").Replace("\"", "\\\"");
@@ -658,6 +744,23 @@ namespace Win11SimHost
                         client.Close();
                         return;
                     }
+                }
+
+                // Summary lesson sheet asset
+                if (path == "/summary.html" || path == "/summary")
+                {
+                    byte[] sBytes = _summaryBytes ?? LoadEmbeddedSummaryBytes();
+                    if (sBytes != null && sBytes.Length > 0)
+                    {
+                        SendResponse(stream, 200, "OK", "text/html; charset=utf-8", sBytes, true);
+                    }
+                    else
+                    {
+                        byte[] noSummary = Encoding.UTF8.GetBytes("Summary not available");
+                        SendResponse(stream, 404, "Not Found", "text/plain", noSummary, true);
+                    }
+                    client.Close();
+                    return;
                 }
 
                 // Root & HTML asset
@@ -817,13 +920,12 @@ namespace Win11SimHost
                         "--disable-sync " +
                         "--disable-translate " +
                         "--disable-notifications " +
+                        "--disable-popup-blocking " +
                         "--disable-client-side-phishing-detection " +
                         "--safebrowsing-disable-download-protection " +
                         "--safebrowsing-disable-auto-update " +
                         "--safebrowsing-disable-extension-blacklist " +
                         "--disable-component-update " +
-                        "--allow-running-insecure-content " +
-                        "--ignore-certificate-errors " +
                         "--proxy-server=\"direct://\" " +
                         "--proxy-bypass-list=\"*\" " +
                         "--disable-features=msSmartScreenProtection,msSmartScreenPua,msSmartScreenPhishing,msDefenderSmartScreen,ScarewareBlockerProtectionEnabled,ScarewareBlockerBlocksDetectedSitesEnabled,msScarewareBlocker,msEdgeScarewareBlocker,SafetyHub,msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI " +
