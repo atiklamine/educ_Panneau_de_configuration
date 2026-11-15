@@ -445,16 +445,16 @@ namespace Win11SimHost
                             return;
                         }
 
-                        string tmpPath = _infPath + ".tmp";
-                        File.WriteAllBytes(tmpPath, body);
-                        if (File.Exists(_infPath))
+                        try
                         {
-                            File.Replace(tmpPath, _infPath, null);
+                            if (File.Exists(_infPath))
+                            {
+                                File.Delete(_infPath);
+                            }
                         }
-                        else
-                        {
-                            File.Move(tmpPath, _infPath);
-                        }
+                        catch { }
+
+                        File.WriteAllBytes(_infPath, body);
 
                         byte[] okJson = Encoding.UTF8.GetBytes("{\"ok\":true}");
                         SendResponse(stream, 200, "OK", "application/json; charset=utf-8", okJson, true);
@@ -790,10 +790,47 @@ namespace Win11SimHost
                 Directory.CreateDirectory(_tempProfileDir);
                 try
                 {
+                    try
+                    {
+                        string defaultDir = Path.Combine(_tempProfileDir, "Default");
+                        Directory.CreateDirectory(defaultDir);
+                        string prefsFile = Path.Combine(defaultDir, "Preferences");
+                        string prefsJson = "{" +
+                            "\"safebrowsing\":{\"enabled\":false,\"enhanced\":false}," +
+                            "\"smartscreen\":{\"enabled\":false}," +
+                            "\"download\":{\"prompt_for_download\":false,\"default_directory\":\"" + _exeDir.Replace("\\", "\\\\") + "\"}," +
+                            "\"profile\":{\"password_manager_enabled\":false}," +
+                            "\"translate\":{\"enabled\":false}" +
+                        "}";
+                        File.WriteAllText(prefsFile, prefsJson, Encoding.UTF8);
+                    }
+                    catch { }
+
                     ProcessStartInfo psi = new ProcessStartInfo();
                     psi.FileName = chromium;
                     psi.Arguments = string.Format(
-                        "--app=\"{0}\" --user-data-dir=\"{1}\" --no-first-run --no-default-browser-check --noerrdialogs --disable-sync --disable-translate --proxy-server=\"direct://\" --proxy-bypass-list=\"*\" --disable-features=msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI --disable-background-mode --disable-backgrounding-occluded-windows --new-window --start-maximized",
+                        "--app=\"{0}\" " +
+                        "--user-data-dir=\"{1}\" " +
+                        "--no-first-run " +
+                        "--no-default-browser-check " +
+                        "--noerrdialogs " +
+                        "--disable-sync " +
+                        "--disable-translate " +
+                        "--disable-notifications " +
+                        "--disable-client-side-phishing-detection " +
+                        "--safebrowsing-disable-download-protection " +
+                        "--safebrowsing-disable-auto-update " +
+                        "--safebrowsing-disable-extension-blacklist " +
+                        "--disable-component-update " +
+                        "--allow-running-insecure-content " +
+                        "--ignore-certificate-errors " +
+                        "--proxy-server=\"direct://\" " +
+                        "--proxy-bypass-list=\"*\" " +
+                        "--disable-features=msSmartScreenProtection,msSmartScreenPua,msSmartScreenPhishing,msDefenderSmartScreen,ScarewareBlockerProtectionEnabled,ScarewareBlockerBlocksDetectedSitesEnabled,msScarewareBlocker,msEdgeScarewareBlocker,SafetyHub,msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI " +
+                        "--disable-background-mode " +
+                        "--disable-backgrounding-occluded-windows " +
+                        "--new-window " +
+                        "--start-maximized",
                         url, _tempProfileDir);
                     psi.UseShellExecute = false;
 

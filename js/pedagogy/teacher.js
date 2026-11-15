@@ -150,7 +150,11 @@
                         }
                         global.Win11Assessment.setActivePasswordInRam(v1);
                         global.Win11Assessment.saveSidecarToHost(v1, function (res) {
-                            if (res && !res.savedToHost && res.bytes) {
+                            if (res && res.savedToHost) {
+                                if (global.Win11Dialogs && typeof global.Win11Dialogs.showToast === 'function') {
+                                    global.Win11Dialogs.showToast('تم حفظ ملف الإعدادات المشفر (inf.dll) بنجاح بجانب البرنامج.');
+                                }
+                            } else if (res && !res.savedToHost && res.bytes) {
                                 triggerBinaryDownload(res.bytes, 'inf.dll');
                             }
                             closeDlg(true);
@@ -919,6 +923,9 @@
                             var pwd = pendingNewPass || global.Win11Assessment.getActivePasswordInRam();
                             if (!pwd) return;
                             triggerBinaryDownload(global.Win11Assessment.exportBinaryInfDll(pwd), 'inf.dll');
+                            if (global.Win11Dialogs && typeof global.Win11Dialogs.showToast === 'function') {
+                                global.Win11Dialogs.showToast('جاري تصدير inf.dll. إذا ظهر تنبيه أمان بالمتصفح، اختر الاحتفاظ (Conserver).');
+                            }
                         };
                     }
                     var bkpBtn = wrap.querySelector('#tc-backup-btn');
@@ -1010,7 +1017,11 @@
                     var pwd = pendingNewPass || global.Win11Assessment.getActivePasswordInRam();
                     if (pwd) {
                         global.Win11Assessment.saveSidecarToHost(pwd, function (res) {
-                            if (res && !res.savedToHost && res.bytes) {
+                            if (res && res.savedToHost) {
+                                if (global.Win11Dialogs && typeof global.Win11Dialogs.showToast === 'function') {
+                                    global.Win11Dialogs.showToast('تم حفظ ملف الإعدادات المشفر (inf.dll) بنجاح بجانب البرنامج.');
+                                }
+                            } else if (res && !res.savedToHost && res.bytes) {
                                 triggerBinaryDownload(res.bytes, 'inf.dll');
                             }
                             if (typeof doneCb === 'function') doneCb();
