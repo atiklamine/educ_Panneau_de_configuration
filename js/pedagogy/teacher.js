@@ -466,26 +466,59 @@
 
                         var totalWeight = 0;
                         var tasksHtml = '';
+                        var catMap = (global.Win11Assessment && typeof global.Win11Assessment.getSubstepsCatalog === 'function')
+                            ? global.Win11Assessment.getSubstepsCatalog()
+                            : {};
+
                         for (var tkIdx = 0; tkIdx < cfg.tasks_config.length; tkIdx++) {
                             var tcItem = cfg.tasks_config[tkIdx];
-                            if (tcItem.enabled !== false) totalWeight += (Number(tcItem.weight) || 0);
-                            var tier = getTierMeta(tcItem.weight);
+                            var curCoef = (tcItem.coefficient !== undefined && tcItem.coefficient !== null)
+                                ? Number(tcItem.coefficient)
+                                : (Number(tcItem.weight) || (tcItem.complexity === 'complex' ? 3 : 1));
+                            curCoef = Math.floor(Math.max(1, curCoef));
+                            tcItem.coefficient = curCoef;
+                            tcItem.weight = curCoef;
+
+                            if (tcItem.enabled !== false) totalWeight += curCoef;
+                            var tier = getTierMeta(curCoef);
+
+                            var cat = catMap[tcItem.id];
+                            var subtasksHtml = '';
+                            if (cat && cat.length > 0) {
+                                var disabledSubs = Array.isArray(tcItem.disabled_subtasks) ? tcItem.disabled_subtasks : [];
+                                subtasksHtml += '<div style="margin:4px 32px 8px 12px;padding:6px 10px;background:rgba(0,0,0,0.025);border-radius:4px;border-right:3px solid #0078D4">';
+                                subtasksHtml += '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:4px">' + bidi('الخطوات الفرعية (إلغاء التحديد يُعفي التلميذ منها ولا يحسب في التقييم):') + '</div>';
+                                for (var si = 0; si < cat.length; si++) {
+                                    var sub = cat[si];
+                                    var isSubEn = disabledSubs.indexOf(sub.id) === -1;
+                                    subtasksHtml +=
+                                        '<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin:2px 0;cursor:pointer' + (tcItem.enabled === false ? ';opacity:0.5' : '') + '">' +
+                                            '<input type="checkbox" data-subtask-en="' + tkIdx + ':' + sub.id + '"' + (isSubEn ? ' checked' : '') + (tcItem.enabled === false ? ' disabled' : '') + '>' +
+                                            '<span>' + bidi(sub.labelAr) + '</span>' +
+                                        '</label>';
+                                }
+                                subtasksHtml += '</div>';
+                            }
+
                             tasksHtml +=
-                                '<div class="tc-token-row">' +
-                                    '<label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer">' +
-                                        '<input type="checkbox" data-task-en="' + tkIdx + '"' + (tcItem.enabled !== false ? ' checked' : '') + '>' +
-                                        '<span>' + bidi(titleById[tcItem.id] || ('مهمة ' + tcItem.id)) + '</span>' +
-                                    '</label>' +
-                                    '<span class="win-badge" data-task-tier="' + tkIdx + '" style="background:' + tier.bg + ';color:' + tier.color + ';font-size:11px">' + bidi(tier.label) + '</span>' +
-                                    '<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer" title="الكل أو لا شيء">' +
-                                        '<input type="checkbox" data-task-crit="' + tkIdx + '"' + (tcItem.critical ? ' checked' : '') + '>' +
-                                        '<span>' + bidi('حرج') + '</span>' +
-                                    '</label>' +
-                                    '<label style="display:inline-flex;align-items:center;gap:4px"><span>' + bidi('النقطة:') + '</span>' +
-                                        '<input type="number" class="win-input" data-task-w="' + tkIdx + '" value="' + esc(tcItem.weight) + '" min="0" max="20" step="0.5" style="width:68px;min-height:26px;padding:2px 6px" dir="ltr">' +
-                                    '</label>' +
-                                    '<button type="button" class="win-btn win-btn-secondary" data-task-up="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === 0 ? ' disabled' : '') + '>▲</button>' +
-                                    '<button type="button" class="win-btn win-btn-secondary" data-task-dn="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === cfg.tasks_config.length - 1 ? ' disabled' : '') + '>▼</button>' +
+                                '<div style="margin-bottom:8px;border:1px solid #E2E8F0;border-radius:6px;padding:6px 8px;background:#FFF">' +
+                                    '<div class="tc-token-row" style="margin-bottom:2px">' +
+                                        '<label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer">' +
+                                            '<input type="checkbox" data-task-en="' + tkIdx + '"' + (tcItem.enabled !== false ? ' checked' : '') + '>' +
+                                            '<strong>' + bidi(titleById[tcItem.id] || ('مهمة ' + tcItem.id)) + '</strong>' +
+                                        '</label>' +
+                                        '<span class="win-badge" data-task-tier="' + tkIdx + '" style="background:' + tier.bg + ';color:' + tier.color + ';font-size:11px">' + bidi(tier.label) + '</span>' +
+                                        '<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer" title="الكل أو لا شيء">' +
+                                            '<input type="checkbox" data-task-crit="' + tkIdx + '"' + (tcItem.critical ? ' checked' : '') + '>' +
+                                            '<span>' + bidi('حرج') + '</span>' +
+                                        '</label>' +
+                                        '<label style="display:inline-flex;align-items:center;gap:4px"><span>' + bidi('المعامل:') + '</span>' +
+                                            '<input type="number" class="win-input" data-task-coef="' + tkIdx + '" data-task-w="' + tkIdx + '" value="' + esc(curCoef) + '" min="1" max="20" step="1" style="width:58px;min-height:26px;padding:2px 6px" dir="ltr"' + (tcItem.enabled === false ? ' disabled' : '') + '>' +
+                                        '</label>' +
+                                        '<button type="button" class="win-btn win-btn-secondary" data-task-up="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === 0 ? ' disabled' : '') + '>▲</button>' +
+                                        '<button type="button" class="win-btn win-btn-secondary" data-task-dn="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === cfg.tasks_config.length - 1 ? ' disabled' : '') + '>▼</button>' +
+                                    '</div>' +
+                                    subtasksHtml +
                                 '</div>';
                         }
                         var isBalanced20 = Math.abs(totalWeight - 20) < 0.01;
@@ -679,10 +712,14 @@
                         var sum = 0;
                         for (var x = 0; x < cfg.tasks_config.length; x++) {
                             var row = cfg.tasks_config[x];
-                            if (row.enabled !== false) sum += (Number(row.weight) || 0);
+                            var curC = (row.coefficient !== undefined && row.coefficient !== null)
+                                ? Number(row.coefficient)
+                                : (Number(row.weight) || (row.complexity === 'complex' ? 3 : 1));
+                            curC = Math.floor(Math.max(1, curC));
+                            if (row.enabled !== false) sum += curC;
                             var badge = wrap.querySelector('[data-task-tier="' + x + '"]');
                             if (badge) {
-                                var nw = Number(row.weight) || 0;
+                                var nw = curC;
                                 var tLbl = nw <= 2 ? 'بسيطة (1–2)' : (nw <= 5 ? 'متوسطة (3–5)' : 'معقدة (6–10)');
                                 var tBg = nw <= 2 ? '#ECFDF5' : (nw <= 5 ? '#EFF6FF' : '#FFFBEB');
                                 var tCol = nw <= 2 ? '#065F46' : (nw <= 5 ? '#0369A1' : '#B45309');
@@ -693,10 +730,9 @@
                         }
                         var sumEl = wrap.querySelector('#tc-weights-summary');
                         if (sumEl) {
-                            var bal = Math.abs(sum - 20) < 0.01;
-                            sumEl.style.background = bal ? '#ECFDF5' : '#FEF3C7';
-                            sumEl.style.color = bal ? '#065F46' : '#B45309';
-                            sumEl.innerHTML = bidi('مجموع الأوزان المفعّلة:') + ' <bdi dir="ltr">' + sum.toFixed(2) + ' / 20.00</bdi>';
+                            sumEl.style.background = '#ECFDF5';
+                            sumEl.style.color = '#065F46';
+                            sumEl.innerHTML = bidi('مجموع المعاملات النشطة (Total Weight):') + ' <bdi dir="ltr">' + sum + '</bdi>';
                         }
                     }
 
@@ -704,18 +740,11 @@
                     var eqBtn = wrap.querySelector('#tc-equal-weights');
                     if (eqBtn) {
                         eqBtn.onclick = function () {
-                            var enCount = cfg.tasks_config.filter(function (x) { return x.enabled !== false; }).length;
-                            if (enCount <= 0) return;
-                            var each = Math.floor((20 / enCount) * 100) / 100;
-                            var rem = Number((20 - (each * enCount)).toFixed(2));
-                            var seen = 0;
                             for (var ei = 0; ei < cfg.tasks_config.length; ei++) {
-                                if (cfg.tasks_config[ei].enabled !== false) {
-                                    seen += 1;
-                                    cfg.tasks_config[ei].weight = Number((each + (seen === enCount ? rem : 0)).toFixed(2));
-                                } else {
-                                    cfg.tasks_config[ei].weight = 0;
-                                }
+                                var row = cfg.tasks_config[ei];
+                                var defC = (row.complexity === 'complex') ? 3 : 1;
+                                row.coefficient = defC;
+                                row.weight = defC;
                             }
                             isDirty = true;
                             draw();
@@ -724,9 +753,10 @@
                     var tkEns = wrap.querySelectorAll('[data-task-en]');
                     for (var eIdx = 0; eIdx < tkEns.length; eIdx++) {
                         tkEns[eIdx].onchange = function () {
-                            cfg.tasks_config[Number(this.getAttribute('data-task-en'))].enabled = this.checked;
+                            var idx = Number(this.getAttribute('data-task-en'));
+                            cfg.tasks_config[idx].enabled = this.checked;
                             isDirty = true;
-                            refreshTaskWeightSummary();
+                            draw();
                         };
                     }
                     var tkCrits = wrap.querySelectorAll('[data-task-crit]');
@@ -736,12 +766,33 @@
                             isDirty = true;
                         };
                     }
-                    var tkWs = wrap.querySelectorAll('[data-task-w]');
-                    for (var wIdx = 0; wIdx < tkWs.length; wIdx++) {
-                        tkWs[wIdx].oninput = function () {
-                            cfg.tasks_config[Number(this.getAttribute('data-task-w'))].weight = Math.max(0, Number(this.value) || 0);
+                    var tkCoefs = wrap.querySelectorAll('[data-task-coef]');
+                    for (var wIdx = 0; wIdx < tkCoefs.length; wIdx++) {
+                        tkCoefs[wIdx].oninput = function () {
+                            var v = Math.floor(Math.max(1, parseInt(this.value, 10) || 1));
+                            var idx = Number(this.getAttribute('data-task-coef'));
+                            cfg.tasks_config[idx].coefficient = v;
+                            cfg.tasks_config[idx].weight = v;
                             isDirty = true;
                             refreshTaskWeightSummary();
+                        };
+                    }
+                    var subEns = wrap.querySelectorAll('[data-subtask-en]');
+                    for (var sIdx = 0; sIdx < subEns.length; sIdx++) {
+                        subEns[sIdx].onchange = function () {
+                            var parts = this.getAttribute('data-subtask-en').split(':');
+                            var tIdx = Number(parts[0]);
+                            var subId = Number(parts[1]);
+                            if (!Array.isArray(cfg.tasks_config[tIdx].disabled_subtasks)) {
+                                cfg.tasks_config[tIdx].disabled_subtasks = [];
+                            }
+                            var arr = cfg.tasks_config[tIdx].disabled_subtasks;
+                            if (this.checked) {
+                                cfg.tasks_config[tIdx].disabled_subtasks = arr.filter(function (x) { return x !== subId; });
+                            } else {
+                                if (arr.indexOf(subId) === -1) arr.push(subId);
+                            }
+                            isDirty = true;
                         };
                     }
                     var tkUps = wrap.querySelectorAll('[data-task-up]');

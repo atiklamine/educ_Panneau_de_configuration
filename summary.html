@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ملخص الدرس: لوحة التحكم (Panneau de configuration) — السنة الأولى ثانوي</title>
+    <style>
+        /* Base Screen & Print Typography */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Tahoma", sans-serif;
+            font-size: 11pt;
+            line-height: 1.45;
+            color: #000;
+            background: #f5f5f5;
+            direction: rtl;
+        }
+
+        .no-print-toolbar {
+            max-width: 210mm;
+            margin: 12px auto;
+            padding: 10px 16px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+
+        .btn-print {
+            background: #0067C0;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            font-size: 11pt;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-print:hover {
+            background: #005299;
+        }
+
+        .page-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto 16px auto;
+            background: #fff;
+            padding: 14mm 16mm;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+            position: relative;
+        }
+
+        /* Header Layout */
+        .doc-header {
+            border: 1.5px solid #000;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #666;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+            font-size: 9.5pt;
+        }
+
+        .header-main {
+            text-align: center;
+        }
+
+        .doc-title {
+            font-size: 16pt;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .doc-subtitle {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #222;
+        }
+
+        .header-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #666;
+            font-size: 9.5pt;
+        }
+
+        /* Section Headings */
+        h2.sec-title {
+            font-size: 12.5pt;
+            font-weight: 700;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 3px;
+            margin: 12px 0 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h2.sec-title svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        h3.sub-title {
+            font-size: 11pt;
+            font-weight: 700;
+            margin: 6px 0 3px 0;
+            color: #111;
+        }
+
+        p, li {
+            font-size: 10.5pt;
+            text-align: justify;
+        }
+
+        ul {
+            list-style-type: square;
+            padding-right: 22px;
+            margin: 4px 0 8px 0;
+        }
+
+        li {
+            margin-bottom: 3px;
+        }
+
+        /* Clean Laser-Friendly Grid & Boxes */
+        .definition-box {
+            border: 1px solid #000;
+            border-right: 4px solid #000;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+
+        .two-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .bordered-card {
+            border: 1px solid #444;
+            padding: 6px 10px;
+            border-radius: 3px;
+        }
+
+        /* High-Contrast B&W Table */
+        table.curriculum-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0 10px 0;
+            font-size: 10pt;
+        }
+
+        table.curriculum-table th,
+        table.curriculum-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        table.curriculum-table th {
+            background: #e6e6e6;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .highlight-col {
+            font-weight: 700;
+        }
+
+        .tag-badge {
+            display: inline-block;
+            border: 1px solid #000;
+            padding: 1px 6px;
+            font-size: 8.5pt;
+            font-weight: bold;
+            border-radius: 2px;
+            margin-left: 4px;
+        }
+
+        /* Evaluation / Stamp Footer Block */
+        .eval-footer-box {
+            border: 1.5px solid #000;
+            margin-top: 14px;
+            padding: 8px 12px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1.2fr;
+            gap: 10px;
+            font-size: 9.5pt;
+        }
+
+        .eval-footer-box div {
+            min-height: 52px;
+        }
+
+        .page-footer-note {
+            position: absolute;
+            bottom: 6mm;
+            left: 16mm;
+            right: 16mm;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5pt;
+            color: #444;
+            border-top: 1px solid #999;
+            padding-top: 3px;
+        }
+
+        /* Print Media Styles (Max 2 pages A4 portrait strictly) */
+        @media print {
+            body {
+                background: #fff;
+                color: #000;
+            }
+            .no-print-toolbar {
+                display: none !important;
+            }
+            .page-container {
+                width: 100% !important;
+                min-height: auto !important;
+                margin: 0 !important;
+                padding: 10mm 12mm !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .page-break {
+                page-break-before: always !important;
+                break-before: page !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 10mm 12mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- No-Print Toolbar for Browser Preview -->
+    <div class="no-print-toolbar">
+        <div>
+            <strong>وثيقة ملخص الدرس البيداغوجي (المجال 1 - الوحدة 4: لوحة التحكم)</strong>
+            <span style="font-size:9.5pt;color:#555;display:block">جاهزة للطباعة على ورقتين A4 بالأبيض والأسود للطابعات المدرسية (Laser B&W)</span>
+        </div>
+        <button type="button" class="btn-print" onclick="window.print()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+                <path d="M6 14h12v8H6z"/>
+            </svg>
+            طباعة الملخص (Print A4)
+        </button>
+    </div>
+
+    <!-- ==================== PAGE 1 ==================== -->
+    <div class="page-container">
+
+        <!-- Official Header -->
+        <header class="doc-header">
+            <div class="header-top">
+                <span>الجمهورية الجزائرية الديمقراطية الشعبية</span>
+                <span>وزارة التربية الوطنية</span>
+            </div>
+            <div class="header-main">
+                <h1 class="doc-title">المجال المفاهيمي الأول: بيئة التعامل مع الحاسوب</h1>
+                <div class="doc-subtitle">الوحدة التعليمية الرابعة: لوحة التحكم (Panneau de configuration)</div>
+            </div>
+            <div class="header-meta">
+                <div><strong>المستوى:</strong> الأولى ثانوي (جذع مشترك ع / آ)</div>
+                <div style="text-align:center"><strong>المدة الزمنية:</strong> 01 ساعة (حصة تطبيقية)</div>
+                <div style="text-align:left"><strong>السنة الدراسية:</strong> 2026 / 2027</div>
+            </div>
+        </header>
+
+        <!-- Competency -->
+        <div style="font-size:10pt;margin-bottom:8px">
+            <strong>الكفاءة المستهدفة:</strong> ينجز التلميذ بعض عمليات التحكم في الحاسوب مع التعود على لوحة التحكم والتركيز على إدارة حسابات المستخدمين وصلاحياتها.
+        </div>
+
+        <!-- 1. Notion -->
+        <h2 class="sec-title">
+            <!-- Inline Crisp SVG: Computer Settings -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            1. مفهوم لوحة التحكم (Notion du Panneau de configuration)
+        </h2>
+        <div class="definition-box">
+            <strong>لوحة التحكم:</strong> هي برنامج تطبيقي مدمج مع نظام التشغيل (Windows)، تسمح للمستخدم بالتحكم في أغلب الميزات والخصائص والإعدادات الأساسية للنظام (عتاداً وبرمجيات) وتخصيصها بالطريقة التي تناسب احتياجاته ومستوى صلاحياته.
+        </div>
+
+        <!-- 2. Ways to access -->
+        <h2 class="sec-title">
+            <!-- Inline Crisp SVG: Start Menu / Control -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
+                <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>
+            </svg>
+            2. طرق الوصول إلى لوحة التحكم
+        </h2>
+        <div class="two-cols">
+            <div class="bordered-card">
+                <strong>أ) الطريقة التقليدية (Panneau de configuration):</strong>
+                <ul>
+                    <li>النقر على زر <strong>ابدأ (Démarrer)</strong>.</li>
+                    <li>اختيار <strong>لوحة التحكم (Panneau de configuration)</strong> من قائمة البرامج أو الأدوات المساعدة.</li>
+                </ul>
+            </div>
+            <div class="bordered-card">
+                <strong>ب) الطريقة الحديثة (Paramètres / Settings):</strong>
+                <ul>
+                    <li>النقر على زر <strong>ابدأ (Démarrer)</strong> ← <strong>الإعدادات (Paramètres)</strong>.</li>
+                    <li>أو الضغط على اختصار لوحة المفاتيح <bdi dir="ltr">[ Win + I ]</bdi>.</li>
+                </ul>
+            </div>
+        </div>
+        <div style="font-size:9.5pt;font-style:italic;margin-bottom:8px">
+            * <strong>ملاحظة بيداغوجية:</strong> يمكن عرض إعدادات لوحة التحكم وفق نوعين: نمط العرض كفئات ومجموعات وظيفية (Par catégorie)، أو نمط العرض الكلاسيكي بالأيقونات الكبيرة أو الصغيرة (Grandes / Petites icônes).
+        </div>
+
+        <!-- 3. Main Functions -->
+        <h2 class="sec-title">
+            <!-- Inline Crisp SVG: Sliders / Tuning -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
+                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+            3. من بين أهم وظائف لوحة التحكم
+        </h2>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="bordered-card">
+                <h3 class="sub-title">1) العرض وخصائصه (Affichage & Personnalisation):</h3>
+                <p>تسمح بتغيير المظهر وإضفاء الطابع الشخصي على بيئة العمل:</p>
+                <ul>
+                    <li>تغيير خلفية سطح المكتب (Arrière-plan du bureau) من المعرض أو من مجلد الصور الخاص بالمستخدم.</li>
+                    <li>تحديد ألوان النوافذ ولون التمييز (Couleur d'accentuation).</li>
+                    <li><strong>شاشة التوقف (Écran de veille):</strong> خلفية أو حركة تظهر تلقائياً بعد فترة زمنية محددة من عدم استعمال الحاسوب لتوفير الطاقة وحماية الخصوصية.</li>
+                </ul>
+            </div>
+
+            <div class="bordered-card">
+                <h3 class="sub-title">2) الفأرة (Souris):</h3>
+                <p>التحكم في العتاد وسلوك المؤشر:</p>
+                <ul>
+                    <li>التحكم في سرعة النقر المزدوج (Vitesse du double-clic: بطيئة / سريعة).</li>
+                    <li>تغيير مظهر ونظام مؤشر الفأرة (Curseur / Modèles).</li>
+                    <li>تبديل الزر الأساسي للفأرة لاستعمال اليد اليسرى.</li>
+                </ul>
+            </div>
+
+            <div class="bordered-card">
+                <h3 class="sub-title">3) الخيارات الإقليمية واللغة (Région et langue):</h3>
+                <p>تكييف الحاسوب مع المحيط الجغرافي واللغوي:</p>
+                <ul>
+                    <li>تحديد المنطقة الزمنية (مثل: الجزائر <bdi dir="ltr">GMT+1</bdi>).</li>
+                    <li>تعديل تنسيق الوقت، التاريخ، والعملة.</li>
+                    <li>إضافة أو إزالة لغات الإدخال في لوحة المفاتيح وتغيير لغة العرض للنظام.</li>
+                </ul>
+            </div>
+
+            <div class="bordered-card">
+                <h3 class="sub-title">4) إضافة وإزالة البرامج (Applications et fonctionnalités):</h3>
+                <p>التدبير السليم للبرمجيات والمساحة التخزينية:</p>
+                <ul>
+                    <li>تثبيت برامج جديدة عبر معالجات الإعداد (<bdi dir="ltr">Setup.exe</bdi>).</li>
+                    <li>إلغاء تثبيت البرامج الزائدة لحماية النظام وتسريعه.</li>
+                    <li>تفعيل أو تعطيل الميزات الاختيارية للنظام (Fonctionnalités facultatives).</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="page-footer-note">
+            <span>منهاج مادة الإعلام الآلي — السنة الأولى ثانوي (وثيقة الملخص للتلميذ)</span>
+            <span>الصفحة 1 من 2</span>
+        </div>
+    </div>
+
+    <!-- ==================== PAGE 2 ==================== -->
+    <div class="page-container page-break">
+
+        <!-- 4. User Accounts (Core of Algerian 1AS Curriculum) -->
+        <h2 class="sec-title">
+            <!-- Inline Crisp SVG: Users Group -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            4. حسابات المستخدمين (Comptes d'utilisateurs)
+        </h2>
+        <div class="definition-box">
+            <strong>مفهوم حساب المستخدم:</strong> هو مساحة شخصية ومستقلة في نظام التشغيل مخصصة لمستخدم محدد، توفر له بيئة عمل خاصة تضم برامجه، ملفاته، مجلداته، وخلفية واجهته، وتفصل بين خصوصيات مختلف مستخدمي نفس الحاسوب.
+        </div>
+
+        <h3 class="sub-title">أ) مقارنة علمية دقيقة بين أنواع الحسابات وصلاحياتها (جدول مصحح ومعتمد):</h3>
+        <table class="curriculum-table">
+            <thead>
+                <tr>
+                    <th style="width:22%">نوع الحساب (Type de compte)</th>
+                    <th style="width:40%">الصلاحيات والامتيازات (Droits d'accès)</th>
+                    <th style="width:20%">الحماية بكلمة مرور (Mot de passe)</th>
+                    <th style="width:18%">إنشاء وإدارة الحساب</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="highlight-col">
+                        <strong>حساب مسؤول الكمبيوتر</strong><br>
+                        <span style="font-size:9pt;color:#333">(Administrateur)</span>
+                    </td>
+                    <td>
+                        <strong>له كافة الصلاحيات والتحكم الكامل:</strong>
+                        تغيير كافة إعدادات النظام، تثبيت وحذف البرامج، إدارة وبناء وتعديل وحذف باقي الحسابات، والوصول إلى كافة الملفات المشتركة.
+                    </td>
+                    <td>
+                        <strong>نعم</strong><br>
+                        (يُستحسن ويُنصح بشدة حمايته بكلمة مرور قوية).
+                    </td>
+                    <td>
+                        نستطيع إنشاء أكثر من حساب مسؤول في النظام الواحد.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="highlight-col">
+                        <strong>الحساب القياسي / المحدود</strong><br>
+                        <span style="font-size:9pt;color:#333">(Standard / Utilisateur)</span>
+                    </td>
+                    <td>
+                        <strong>صلاحياته شخصية ومحدودة:</strong>
+                        يستطيع تشغيل البرامج وتعديل ملفاته الخاصة وتخصيص مظهره، <em>ولا يمكنه</em> تثبيت برامج تؤثر على النظام أو تغيير إعدادات الحسابات الأخرى.
+                    </td>
+                    <td>
+                        <strong>نعم</strong><br>
+                        (يمكن حمايته بكلمة مرور خاصة به وتغييرها).
+                    </td>
+                    <td>
+                        يُنشأ ويُدار ويُعدل بواسطة حساب المسؤول فقط.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="highlight-col">
+                        <strong>حساب الضيف</strong><br>
+                        <span style="font-size:9pt;color:#333">(Invité / Guest)</span>
+                    </td>
+                    <td>
+                        <strong>صلاحيات مؤقتة ومقيدة جداً:</strong>
+                        يُخصص للاستعمال العابر والمؤقت للحاسوب؛ ليس له أي صلاحيات إدارية وتُمنع عنه كافة العمليات التي تمس بأمان النظام (حظر <bdi dir="ltr">UAC</bdi>).
+                    </td>
+                    <td>
+                        <strong>لا</strong><br>
+                        (لا يمكن حمايته بكلمة مرور إطلاقاً).
+                    </td>
+                    <td>
+                        حساب وحيد ومدمج بالنظام؛ <strong>لا نستطيع</strong> إنشاء حساب جديد من هذا النوع بل نفعّله أو نعطّله فقط.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Operations on accounts -->
+        <h3 class="sub-title">ب) العمليات الأساسية المنجزة على الحسابات:</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+            <div class="bordered-card">
+                <strong>1) إنشاء حساب جديد:</strong>
+                <p style="font-size:9.5pt;margin-top:4px">
+                    <bdi dir="ltr">(Créer un nouveau compte)</bdi><br>
+                    تحديد اسم الحساب، نوعه (مسؤول أو قياسي)، وكلمة المرور الابتدائية.
+                </p>
+            </div>
+            <div class="bordered-card">
+                <strong>2) التعديل في الحساب:</strong>
+                <p style="font-size:9.5pt;margin-top:4px">
+                    <bdi dir="ltr">(Modifier un compte)</bdi><br>
+                    تغيير الاسم، إنشاء/تغيير كلمة المرور، تعديل نوع الحساب، وتغيير الصورة الرمزية (<bdi dir="ltr">Avatar</bdi>).
+                </p>
+            </div>
+            <div class="bordered-card">
+                <strong>3) إزالة الحساب:</strong>
+                <p style="font-size:9.5pt;margin-top:4px">
+                    <bdi dir="ltr">(Supprimer un compte)</bdi><br>
+                    حذف الحساب القياسي نهائياً مع خيار الاحتفاظ بملفاته أو حذفها تماماً.
+                </p>
+            </div>
+        </div>
+
+        <!-- 5. Evaluation / Laboratory Activity Stub -->
+        <h2 class="sec-title">
+            <!-- Inline Crisp SVG: Evaluation Clipboard -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
+                <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1"/>
+                <path d="M9 14l2 2 4-4"/>
+            </svg>
+            5. شبكة التقييم والتقويم المرحلي للحصة التطبيقية (المخبر)
+        </h2>
+
+        <div class="eval-footer-box">
+            <div>
+                <strong>معلومات التلميذ:</strong><br>
+                <span>اللقب والاسم: ............................................</span><br>
+                <span>القسم / الفوج: .................... الحاسوب: #..........</span>
+            </div>
+            <div>
+                <strong>التقييم الرقمي للمحاكاة:</strong><br>
+                <span>العلامة الممنوحة: ................ / 20</span><br>
+                <span>مجموع المعاملات: ................</span>
+            </div>
+            <div style="text-align:center">
+                <strong>ملاحظة وتوقيع الأستاذ:</strong><br>
+                <div style="border:1px dashed #777;height:38px;margin-top:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:8.5pt">
+                    ختم الأستاذ / المؤسسة
+                </div>
+            </div>
+        </div>
+
+        <div class="page-footer-note">
+            <span>تطبيق محاكي لوحة التحكم ونظام التشغيل — الأستاذ: حاج عيسى | ثانوية الشهيد أحمد رضا حوحو</span>
+            <span>الصفحة 2 من 2</span>
+        </div>
+
+    </div>
+
+</body>
+</html>

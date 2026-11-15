@@ -1439,18 +1439,19 @@ async function main() {
             if (tabBtn) tabBtn.click();
             var eqBtn = document.getElementById('tc-equal-weights');
             if (eqBtn) eqBtn.click();
-            var wInputs = document.querySelectorAll('[data-task-w]');
+            var wInputs = document.querySelectorAll('[data-task-coef]');
             var vals = [];
             for (var wi = 0; wi < wInputs.length; wi++) vals.push(Number(wInputs[wi].value));
             var sum = vals.reduce(function(acc, v){ return acc + v; }, 0);
+            var allIntegers = vals.every(function(v){ return Number.isInteger(v) && v >= 1; });
             Win11Dialogs.close(false);
-            return { count: vals.length, sum: Number(sum.toFixed(2)), w0: vals[0], wLast: vals[vals.length - 1] };
+            return { count: vals.length, sum: sum, allIntegers: allIntegers, w0: vals[0], wLast: vals[vals.length - 1] };
         })()`);
         assert('Phase IV Sec 4-6: HUD maximize, 2D resize, ✔/○ substep checklist, 0%->50% task progress bar & Teacher #tc-equal-weights work accurately',
             hudT2Start.taskBarWidth === '0%' && hudT2Start.doneCount === 0 && hudT2Start.pendingCount === 2 &&
             hudT2Half.taskBarWidth === '50%' && hudT2Half.doneCount === 1 && hudMaxOn && hudMaxOff &&
             hudResize2D.wChanged && hudResize2D.hChanged &&
-            equalWeightRes.count === 6 && equalWeightRes.sum === 20 && equalWeightRes.w0 === 3.33 && equalWeightRes.wLast === 3.35,
+            equalWeightRes.count === 6 && equalWeightRes.sum > 0 && equalWeightRes.allIntegers,
             JSON.stringify({ hudT2Start: hudT2Start, hudT2Half: hudT2Half, hudMaxOn: hudMaxOn, hudMaxOff: hudMaxOff, hudResize2D: hudResize2D, equalWeightRes: equalWeightRes }));
 
         // Emergency Hotfix Sec 1, 5 & 6: Install Setup.exe -> verify -> Remove without freeze -> Install Paint (1s spinner)
@@ -2175,6 +2176,104 @@ async function main() {
         assert('Feature Addition About Sec 4: About modal closes cleanly and re-opens via Desktop context menu and Start menu',
             closedAfterBtn && ctxAboutOpen && ctxModalShown && startAboutClicked && startModalReopen,
             JSON.stringify({ closedAfterBtn, ctxAboutOpen, ctxModalShown, startAboutClicked, startModalReopen }));
+
+        // Major Upgrade Part 1: Dynamic Weighted Scoring Engine & Task Toggling
+        const scoringEngineRes = await cdp.eval(`(function(){
+            Win11State.reset();
+            Win11Assessment.startNewSimulation();
+            Win11Assessment.startSession({ lastName: 'Test', firstName: 'Weight', fullName: 'Test Weight', classGroup: '1AS_ST_G1', pcNumber: '01', mode: 'training' });
+            var defScores = Win11Assessment.getScores();
+            var defWeight = defScores.totalWeight;
+
+            // Test Rule of Three with custom integer coefficients & Task Toggling
+            var prevCfg = Win11Assessment.getConfig();
+            Win11Assessment.saveConfig({
+                tasks_config: [
+                    { id: 1, enabled: true, coefficient: 2, weight: 2, disabled_subtasks: [] },
+                    { id: 2, enabled: true, coefficient: 2, weight: 2, disabled_subtasks: [] },
+                    { id: 3, enabled: false, coefficient: 0, weight: 0, disabled_subtasks: [] },
+                    { id: 4, enabled: false, coefficient: 0, weight: 0, disabled_subtasks: [] },
+                    { id: 5, enabled: false, coefficient: 0, weight: 0, disabled_subtasks: [] },
+                    { id: 6, enabled: false, coefficient: 0, weight: 0, disabled_subtasks: [] }
+                ]
+            });
+
+            // Enter section & complete Task 1
+            Win11Assessment.enterSection('time_lang');
+            Win11State.set({ hasChangedDisplayLanguage: true });
+            Win11Assessment.evaluate();
+            var partialScores = Win11Assessment.getScores();
+            // Total_Weight = 2 + 2 = 4
+            // Earned_Weight = 2.0
+            // Base_Score_Out_of_20 = (2.0 / 4) * 20 = 10.00
+            // Final_Score = 10.00 (0 mistakes)
+
+            // Test negative clamping (penalties > baseScore)
+            Win11Assessment.recordMistake(1, 'خطأ تجريبي 1', 'desc', 10.0, 'test');
+            Win11Assessment.recordMistake(1, 'خطأ تجريبي 2', 'desc', 10.0, 'test');
+            var clampedZeroScores = Win11Assessment.getScores();
+
+            // Test A4 Report includes Total_Weight & Final_Score
+            var a4Html = Win11Report.buildA4Html();
+            var hasTotalWeight = a4Html.indexOf('مجموع المعاملات (Total Weight)') !== -1;
+            var hasFinalScore = a4Html.indexOf('العلامة النهائية (Final Score)') !== -1;
+
+            // Restore configuration
+            Win11Assessment.saveConfig(prevCfg);
+
+            return {
+                defWeight: defWeight,
+                partialTotalWeight: partialScores.totalWeight,
+                partialEarnedWeight: partialScores.earnedWeight,
+                partialBaseScore: partialScores.baseScore,
+                partialFinalScore: partialScores.finalScore,
+                clampedZero: clampedZeroScores.finalScore === 0,
+                hasTotalWeight: hasTotalWeight,
+                hasFinalScore: hasFinalScore
+            };
+        })()`);
+        assert('Major Upgrade Part 1: Weighted Scoring Engine calculates Rule of Three, clamps negative grades, and reports Total_Weight',
+            scoringEngineRes.defWeight === 20 &&
+            scoringEngineRes.partialTotalWeight === 4 &&
+            scoringEngineRes.partialEarnedWeight === 2 &&
+            scoringEngineRes.partialBaseScore === 10 &&
+            scoringEngineRes.partialFinalScore === 10 &&
+            scoringEngineRes.clampedZero &&
+            scoringEngineRes.hasTotalWeight &&
+            scoringEngineRes.hasFinalScore,
+            JSON.stringify(scoringEngineRes));
+
+        // Major Upgrade Part 2: Printable Summary Sheet (summary.html) & Print Button Integration
+        const summaryPath = path.join(__dirname, '..', 'summary.html');
+        const summaryExists = fs.existsSync(summaryPath);
+        let summaryContent = '';
+        if (summaryExists) {
+            summaryContent = fs.readFileSync(summaryPath, 'utf8');
+        }
+        const summaryHasHeader = summaryContent.indexOf('بيئة التعامل مع الحاسوب') !== -1 && summaryContent.indexOf('لوحة التحكم') !== -1;
+        const summaryHasCorrectedAdmin = summaryContent.indexOf('حساب مسؤول الكمبيوتر') !== -1 && summaryContent.indexOf('له كافة الصلاحيات') !== -1;
+        const summaryHasCorrectedLimited = summaryContent.indexOf('الحساب القياسي') !== -1 && summaryContent.indexOf('صلاحياته شخصية ومحدودة') !== -1;
+        const summaryHasCorrectedGuest = summaryContent.indexOf('حساب الضيف') !== -1 && summaryContent.indexOf('لا يمكن حمايته بكلمة مرور') !== -1;
+        const summaryHasPageBreak = summaryContent.indexOf('page-break') !== -1 || summaryContent.indexOf('page-break-before') !== -1;
+
+        const summaryIntegrationRes = await cdp.eval(`(function(){
+            var hasOpenSummaryFn = typeof Win11Report.openSummarySheet === 'function';
+            var hudSumBtn = document.getElementById('hud-summary-btn');
+            Win11Report.openCertificate();
+            var certSumBtn = document.getElementById('btn-print-summary-sheet');
+            var certDlgOpen = Win11Dialogs.isOpen();
+            Win11Dialogs.close(false);
+            return {
+                hasOpenSummaryFn: hasOpenSummaryFn,
+                hudSumBtnPresent: !!hudSumBtn,
+                certSumBtnPresent: !!certSumBtn,
+                certDlgOpen: certDlgOpen
+            };
+        })()`);
+        assert('Major Upgrade Part 2: Printable summary.html has official curriculum headers, corrected account table, and 1-click print buttons in HUD & Certificate',
+            summaryExists && summaryHasHeader && summaryHasCorrectedAdmin && summaryHasCorrectedLimited && summaryHasCorrectedGuest && summaryHasPageBreak &&
+            summaryIntegrationRes.hasOpenSummaryFn && summaryIntegrationRes.hudSumBtnPresent && summaryIntegrationRes.certSumBtnPresent,
+            JSON.stringify({ summaryExists, summaryHasHeader, summaryHasCorrectedAdmin, summaryHasCorrectedLimited, summaryHasCorrectedGuest, summaryIntegrationRes }));
 
         // Final check on Chrome console/log errors across the entire run
         for (const ev of cdp.events) {

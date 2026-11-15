@@ -20,6 +20,42 @@
         accounts: 'حسابات المستخدمين'
     };
 
+    var TASK_SUBSTEPS_CATALOG = {
+        1: [
+            { id: 0, labelAr: 'تغيير لغة عرض واجهة Windows من الإعدادات', labelFr: 'Modifier la langue d\'affichage' }
+        ],
+        2: [
+            { id: 0, labelAr: 'ضبط سرعة النقر المزدوج على "سريعة"', labelFr: 'Régler la vitesse du double-clic sur Rapide' },
+            { id: 1, labelAr: 'اختيار نظام مؤشر مخصص (LimeGreen أو Noir)', labelFr: 'Choisir le curseur LimeGreen ou Noir' }
+        ],
+        3: [
+            { id: 0, labelAr: 'إضافة لغة الإدخال العربية (الجزائر) إلى لوحات المفاتيح', labelFr: 'Ajouter la langue Arabe (Algérie)' },
+            { id: 1, labelAr: 'ضبط المنطقة الزمنية على الجزائر (GMT+1)', labelFr: 'Régler le fuseau horaire sur GMT+1' }
+        ],
+        4: [
+            { id: 0, labelAr: 'فتح مستعرض الصور عبر زر "استعراض صور" (Browse)', labelFr: 'Ouvrir Parcourir dans Arrière-plan' },
+            { id: 1, labelAr: 'اختيار صورة من مجلد الصور (Pictures)', labelFr: 'Choisir une image dans Pictures' },
+            { id: 2, labelAr: 'تغيير لون التمييز للنظام (Accent Color)', labelFr: 'Modifier la couleur d\'accentuation' }
+        ],
+        5: [
+            { id: 0, labelAr: 'تشغيل ملف LabTools_Setup.exe وتثبيت البرنامج', labelFr: 'Exécuter LabTools_Setup.exe et installer' },
+            { id: 1, labelAr: 'التحقق من ظهور البرنامج في التطبيقات المثبتة', labelFr: 'Vérifier dans Applications installées' },
+            { id: 2, labelAr: 'إلغاء تثبيت البرنامج والتحقق من اختفائه', labelFr: 'Désinstaller l\'application' },
+            { id: 3, labelAr: 'إضافة ميزة اختيارية (Paint/Notepad/Games) والتحقق من ظهورها في ابدأ', labelFr: 'Ajouter une fonctionnalité facultative' },
+            { id: 4, labelAr: 'إزالة الميزة الاختيارية والتحقق من اختفائها من ابدأ', labelFr: 'Supprimer la fonctionnalité facultative' }
+        ],
+        6: [
+            { id: 0, labelAr: '(A) إنشاء حسابين قياسيين (Standard) ثم حذفهما', labelFr: 'A: Créer et supprimer 2 comptes standard' },
+            { id: 1, labelAr: '(B) إنشاء حسابي مسؤول وحذف القديم MENIAI وإبقاء آخر مسؤول', labelFr: 'B: Créer 2 admins, garder le dernier' },
+            { id: 2, labelAr: '(C) تفعيل حساب الضيف واختبار قيود الصلاحيات وحظر UAC', labelFr: 'C: Activer Invité et tester blocage UAC' },
+            { id: 3, labelAr: '(D) إنشاء حساب قياسي جديد محمي بكلمة مرور', labelFr: 'D: Créer un compte avec mot de passe' },
+            { id: 4, labelAr: '(E) تسجيل الدخول للحساب القياسي بكلمة المرور ثم الخروج', labelFr: 'E: Connexion et déconnexion' },
+            { id: 5, labelAr: '(F) العودة للمسؤول وتعديل كلمة مرور الحساب القياسي', labelFr: 'F: Modification du mot de passe par l\'admin' },
+            { id: 6, labelAr: '(G) الدخول مجدداً للحساب القياسي بكلمة المرور الجديدة', labelFr: 'G: Vérification avec nouveau mot de passe' },
+            { id: 7, labelAr: '(H) تحديث الصورة الرمزية للحساب (Avatar)', labelFr: 'H: Changer l\'avatar du compte' }
+        ]
+    };
+
     function getDefaultConfig() {
         return {
             institution_name: 'ثانوية الشهيد أحمد رضا حوحو',
@@ -34,12 +70,12 @@
             exam_time_limit_min: 0,
             pass_threshold: 10.0,
             tasks_config: [
-                { id: 1, enabled: true, weight: 1.0, complexity: 'simple', critical: false },
-                { id: 2, enabled: true, weight: 2.0, complexity: 'simple', critical: false },
-                { id: 3, enabled: true, weight: 3.0, complexity: 'medium', critical: false },
-                { id: 4, enabled: true, weight: 4.0, complexity: 'medium', critical: false },
-                { id: 5, enabled: true, weight: 4.0, complexity: 'medium', critical: false },
-                { id: 6, enabled: true, weight: 6.0, complexity: 'complex', critical: false }
+                { id: 1, enabled: true, coefficient: 1, weight: 1, complexity: 'simple', critical: false, disabled_subtasks: [] },
+                { id: 2, enabled: true, coefficient: 2, weight: 2, complexity: 'simple', critical: false, disabled_subtasks: [] },
+                { id: 3, enabled: true, coefficient: 3, weight: 3, complexity: 'medium', critical: false, disabled_subtasks: [] },
+                { id: 4, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [] },
+                { id: 5, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [] },
+                { id: 6, enabled: true, coefficient: 6, weight: 6, complexity: 'complex', critical: false, disabled_subtasks: [] }
             ],
             ui_language_default: 'ar',
             theme_lock: false,
@@ -460,10 +496,15 @@
         var doneCount = 0;
         var skippedCount = 0;
         var stepSkippedMap = skippedSubSteps[tk.id] || {};
+        var disabledList = Array.isArray(tk.disabled_subtasks) ? tk.disabled_subtasks : [];
         var reasons = [];
         var subSteps = [];
         var allDone = true;
         for (var i = 0; i < checks.length; i++) {
+            if (disabledList.indexOf(i) !== -1) {
+                // Sub-task is disabled by teacher: exclude from evaluation
+                continue;
+            }
             var c = checks[i];
             var w = c.weight || 1;
             var isSkipped = !c.ok && !!stepSkippedMap[i];
@@ -479,6 +520,7 @@
                 if (c.reason) reasons.push(c.reason);
             }
             subSteps.push({
+                origIndex: i,
                 labelAr: c.labelAr || c.reason || ('الخطوة ' + (i + 1)),
                 labelFr: c.labelFr || c.labelAr || c.reason || ('Étape ' + (i + 1)),
                 labelEn: c.labelEn || c.labelAr || c.reason || ('Step ' + (i + 1)),
@@ -486,23 +528,35 @@
                 skipped: isSkipped
             });
         }
-        var ratio = totalWeight > 0 ? (earnedWeight / totalWeight) : 0;
+        var ratio = totalWeight > 0 ? (earnedWeight / totalWeight) : 1;
         tk.subSteps = subSteps;
         tk.doneStepsCount = doneCount;
         tk.skippedStepsCount = skippedCount;
         tk.totalStepsCount = subSteps.length;
         tk.allStepsResolved = (subSteps.length > 0 && (doneCount + skippedCount) === subSteps.length);
         tk.progressPercent = Math.round(ratio * 100);
-        tk.completed = allDone;
+        tk.completed = (subSteps.length > 0) ? allDone : true;
+
+        var taskCoef = (tk.enabled !== false) ? Math.floor(Math.max(1, Number(tk.coefficient) || Number(tk.maxPoints) || 1)) : 0;
+        tk.coefficient = taskCoef;
+        tk.maxPoints = taskCoef;
+
+        if (tk.enabled === false) {
+            tk.earnedPoints = 0;
+            tk.deductedPoints = 0;
+            tk.deductReasons = [];
+            return;
+        }
+
         if (tk.critical && !allDone) {
             tk.earnedPoints = 0;
             reasons.unshift('مهمة حرجة (الكل أو لا شيء): يشترط استيفاء جميع العناصر.');
         } else if (!partialEnabled && !allDone) {
             tk.earnedPoints = 0;
         } else {
-            tk.earnedPoints = Number((tk.maxPoints * ratio).toFixed(2));
+            tk.earnedPoints = Number((taskCoef * ratio).toFixed(2));
         }
-        tk.deductedPoints = Number(Math.max(0, tk.maxPoints - tk.earnedPoints).toFixed(2));
+        tk.deductedPoints = Number(Math.max(0, taskCoef - tk.earnedPoints).toFixed(2));
         tk.deductReasons = reasons;
     }
 
@@ -940,8 +994,14 @@
             if (tk) {
                 tk.enabled = (item.enabled !== false);
                 tk.critical = !!item.critical;
-                var w = Number(item.weight);
-                if (!isNaN(w) && w >= 0) tk.maxPoints = w;
+                tk.disabled_subtasks = Array.isArray(item.disabled_subtasks) ? item.disabled_subtasks.slice() : [];
+                var c = (item.coefficient !== undefined && item.coefficient !== null) ? Number(item.coefficient) : Number(item.weight);
+                if (isNaN(c) || c < 1) {
+                    c = (item.complexity === 'complex') ? 3 : 1;
+                }
+                c = Math.floor(c);
+                tk.coefficient = tk.enabled ? c : 0;
+                tk.maxPoints = tk.coefficient;
                 ordered.push(tk);
                 delete map[item.id];
             }
@@ -949,6 +1009,10 @@
         for (var k in map) {
             if (Object.prototype.hasOwnProperty.call(map, k)) {
                 map[k].enabled = true;
+                map[k].disabled_subtasks = [];
+                var defC = (map[k].complexity === 'complex') ? 3 : 1;
+                map[k].coefficient = defC;
+                map[k].maxPoints = defC;
                 ordered.push(map[k]);
             }
         }
@@ -1363,15 +1427,19 @@
         },
         getScores: function () {
             var activeTasks = syncConfiguredTasks();
-            var rawEarned = 0;
-            var totalMax = 0;
+            var totalWeight = 0;
+            var earnedWeight = 0;
             var deductionRows = [];
             for (var i = 0; i < activeTasks.length; i++) {
                 var atk = activeTasks[i];
                 if (atk.enabled !== false) {
-                    rawEarned += atk.earnedPoints;
-                    totalMax += atk.maxPoints;
-                    var missScaled = totalMax > 0 ? Number((atk.maxPoints - atk.earnedPoints).toFixed(2)) : 0;
+                    var coef = Math.floor(Math.max(1, Number(atk.coefficient) || Number(atk.maxPoints) || 1));
+                    atk.coefficient = coef;
+                    atk.maxPoints = coef;
+                    totalWeight += coef;
+                    var taskEarned = Math.min(coef, Math.max(0, Number(atk.earnedPoints) || 0));
+                    earnedWeight += taskEarned;
+                    var missScaled = Number((coef - taskEarned).toFixed(2));
                     if (missScaled > 0) {
                         var why = (atk.deductReasons && atk.deductReasons.length > 0) ? atk.deductReasons.join('؛ ') : 'نقص في إنجاز خطوات المهمة';
                         deductionRows.push({
@@ -1380,9 +1448,19 @@
                             points: Number(missScaled.toFixed(2))
                         });
                     }
+                } else {
+                    atk.coefficient = 0;
+                    atk.maxPoints = 0;
+                    atk.earnedPoints = 0;
+                    atk.deductedPoints = 0;
                 }
             }
-            var gross = totalMax > 0 ? Number(((rawEarned / totalMax) * 20).toFixed(2)) : 0;
+
+            // Rule of Three (القاعدة الثلاثية):
+            // Base_Score_Out_of_20 = (Earned_Weight / Total_Weight) * 20
+            var baseScore = totalWeight > 0 ? Number(((earnedWeight / totalWeight) * 20).toFixed(2)) : 0;
+            var gross = baseScore;
+
             var pen = 0;
             for (var j = 0; j < mistakes.length; j++) {
                 var mp = Math.max(0.25, Number(mistakes[j].penalty) || 0);
@@ -1394,12 +1472,20 @@
                 });
             }
             pen = Number(pen.toFixed(2));
-            // Section 6.4 & Section 7.2: Clamp net >= 0 AND prevent 20/20 whenever any mistake exists
-            var rawNet = Math.max(0, Number((gross - pen).toFixed(2)));
-            if (mistakes.length > 0 && rawNet >= 20) {
-                rawNet = 19.75;
+
+            // Final_Score = Base_Score_Out_of_20 - Total_Deductions
+            // Constraint: If Final_Score < 0, set Final_Score = 0 (No negative grades).
+            // Prevent 20/20 whenever any mistake exists.
+            var rawFinal = baseScore - pen;
+            if (rawFinal < 0) {
+                rawFinal = 0;
             }
-            var net = global.Win11Compat.clamp(rawNet, 0, 20);
+            if (mistakes.length > 0 && rawFinal >= 20) {
+                rawFinal = 19.75;
+            }
+            var finalScore = Number(global.Win11Compat.clamp(rawFinal, 0, 20).toFixed(2));
+            var net = finalScore;
+
             var totalDeductions = 0;
             for (var d = 0; d < deductionRows.length; d++) {
                 totalDeductions += deductionRows[d].points;
@@ -1412,7 +1498,12 @@
             if (net >= 16) app = 'تحكم أقصى (Maîtrise Maximale)';
             else if (net >= 12) app = 'تحكم مقبول (Maîtrise Acceptable)';
             else if (net >= 8) app = 'تحكم جزئي (Maîtrise Partielle)';
+
             return {
+                totalWeight: totalWeight,
+                earnedWeight: Number(earnedWeight.toFixed(2)),
+                baseScore: baseScore,
+                finalScore: finalScore,
                 gross: gross,
                 penalties: pen,
                 net: net,
@@ -1423,6 +1514,9 @@
                 appreciation: app,
                 rankingKey: [net.toFixed(2), student.elapsedSeconds, mistakes.length]
             };
+        },
+        getSubstepsCatalog: function () {
+            return TASK_SUBSTEPS_CATALOG;
         },
         onUpdate: function (fn) { listeners.push(fn); }
     };

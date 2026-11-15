@@ -527,11 +527,12 @@
                     '<div><strong>اللقب:</strong> ' + bidi(stu.lastName || stu.fullName) + ' &nbsp;|&nbsp; <strong>الاسم:</strong> ' + bidi(stu.firstName || '') + '</div>' +
                     '<div><strong>الفوج:</strong> ' + bidi(stu.classGroup) + ' &nbsp;|&nbsp; <strong>الحاسوب:</strong> <bdi dir="ltr">#' + global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01')) + '</bdi></div>' +
                     '<div><strong>نمط الجلسة:</strong> ' + bidi(modeLabel) + '</div>' +
+                    '<div><strong>مجموع المعاملات (Total Weight):</strong> <bdi dir="ltr">' + (scores.totalWeight !== undefined ? scores.totalWeight : 20) + '</bdi> &nbsp;|&nbsp; <strong>العلامة القاعدية:</strong> <bdi dir="ltr">' + (scores.baseScore !== undefined ? scores.baseScore.toFixed(2) : scores.gross.toFixed(2)) + ' / 20</bdi></div>' +
                     (cfg.show_time ? (
                         '<div><strong>المدة النشطة:</strong> <bdi dir="ltr">' + global.Win11Assessment.formatDuration(stu.elapsedSeconds) + '</bdi>' +
                         ' &nbsp;|&nbsp; <strong>التوقف/التبديل:</strong> <bdi dir="ltr">' + global.Win11Assessment.formatDuration(stu.suspendedSeconds || 0) + '</bdi></div>'
                     ) : '<div></div>') +
-                    '<div style="font-size:17px;font-weight:700;color:#0067C0">العلامة الصافية: <bdi dir="ltr">' + scores.net.toFixed(2) + ' / 20</bdi> ' +
+                    '<div style="font-size:17px;font-weight:700;color:#0067C0">العلامة النهائية (Final Score): <bdi dir="ltr">' + (scores.finalScore !== undefined ? scores.finalScore.toFixed(2) : scores.net.toFixed(2)) + ' / 20</bdi> ' +
                         (scores.passThreshold !== undefined ? '<span style="font-size:12px;color:' + (scores.passed ? '#107C41' : '#C42B1C') + '">(' + bidi(scores.passed ? 'مقبول >= ' : 'دون العتبة < ') + '<bdi dir="ltr">' + Number(scores.passThreshold).toFixed(1) + '</bdi>)</span>' : '') +
                     '</div>' +
                     (cfg.show_penalties ? '<div><strong>إجمالي الخصومات:</strong> <bdi dir="ltr">' + (scores.penalties > 0 ? '-' : '') + scores.penalties.toFixed(2) + '</bdi></div>' : '') +
@@ -539,7 +540,7 @@
                 (cfg.show_competency ? '<div style="padding:8px 12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:5px;margin-bottom:10px;font-size:13px"><strong>التقدير البيداغوجي:</strong> ' + bidi(scores.appreciation) + '</div>' : '') +
                 (cfg.show_ranking_criteria ? '<div style="font-size:12px;color:#475569;margin-bottom:8px"><strong>معيار الترتيب عند التساوي:</strong> ' + bidi(stu.mode === 'exam' ? 'العلامة الصافية الأعلى أولاً، ثم أقصر مدة زمنية نشطة لإنجاز المهام.' : 'جلسة استطلاع وتدريب — الترتيب التنافسي يفعّل في نمط الامتحان الرسمي.') + '</div>' : '') +
                 '<table class="a4-report-table">' +
-                    '<thead><tr><th>المهمة المطلوبة</th>' + (cfg.show_time ? '<th class="col-time">المدة المستغرقة</th>' : '') + '<th class="col-num">المعامل الأساسي</th><th class="col-num">الممنوحة</th><th class="col-num">المخصومة</th><th class="col-details">أسباب الخصم / النقص</th><th class="col-status">الحالة</th></tr></thead>' +
+                    '<thead><tr><th>المهمة المطلوبة</th>' + (cfg.show_time ? '<th class="col-time">المدة المستغرقة</th>' : '') + '<th class="col-num">المعامل (Weight)</th><th class="col-num">الممنوحة</th><th class="col-num">المخصومة</th><th class="col-details">أسباب الخصم / النقص</th><th class="col-status">الحالة</th></tr></thead>' +
                     '<tbody>' + rowsHtml + '</tbody>' +
                 '</table>' +
                 (cfg.show_time ? renderSectionTimingsHtml(timings, bidi) : '') +
@@ -841,6 +842,14 @@
             },
             buttons: [
                 {
+                    id: 'btn-print-summary-sheet',
+                    label: 'طباعة ملخص الدرس (الكراس)',
+                    primary: false,
+                    onClick: function () {
+                        openSummarySheet();
+                    }
+                },
+                {
                     id: 'btn-export-pdf',
                     label: t('pedagogy.exportPdfBtn'),
                     primary: true,
@@ -867,12 +876,24 @@
         });
     }
 
+    function openSummarySheet() {
+        if (typeof window !== 'undefined' && window.open) {
+            var w = window.open('summary.html', '_blank');
+            if (w) {
+                try {
+                    w.focus();
+                } catch (e) {}
+            }
+        }
+    }
+
     global.Win11Report = {
         openStudentRegistration: openStudentRegistration,
         confirmNewSimulation: confirmNewSimulation,
         confirmShutdown: confirmShutdown,
         triggerPdfExport: triggerPdfExport,
         openExportSaveDialog: openExportSaveDialog,
+        openSummarySheet: openSummarySheet,
         hasExportedPdf: function () { return hasExportedPdfFlag; },
         cleanFileToken: cleanFileToken,
         openCertificate: openCertificate,
