@@ -165,6 +165,9 @@ namespace Win11SimHost
         private static TcpListener _tcpListener;
         private static volatile bool _running = true;
         private static Process _browserProcess = null;
+        private static string _tempProfileDir = null;
+        private static DateTime _lastPingUtc = DateTime.UtcNow;
+        private static volatile bool _hasReceivedPing = false;
 
         [STAThread]
         static int Main(string[] args)
@@ -196,6 +199,22 @@ namespace Win11SimHost
                 {
                     embeddedBrowser = true;
                 }
+            }
+
+            // Single-instance protection: avoid duplicate conflicting server sockets & temp profiles
+            bool createdNew = true;
+            Mutex singleInstanceMutex = null;
+            if (!noBrowser)
+            {
+                try
+                {
+                    singleInstanceMutex = new Mutex(true, "Local\\Win11SimHost_SingleInstance_1AS", out createdNew);
+                    if (!createdNew)
+                    {
+                        return 0;
+                    }
+                }
+                catch { }
             }
 
             try
@@ -259,6 +278,11 @@ namespace Win11SimHost
             }
 
             StopServer();
+            if (singleInstanceMutex != null)
+            {
+                try { singleInstanceMutex.ReleaseMutex(); } catch { }
+                GC.KeepAlive(singleInstanceMutex);
+            }
             return 0;
         }
 
@@ -305,8 +329,8 @@ namespace Win11SimHost
         {
             try
             {
-                client.ReceiveTimeout = 5000;
-                client.SendTimeout = 5000;
+                client.ReceiveTimeout = 15000;
+                client.SendTimeout = 30000;
                 NetworkStream stream = client.GetStream();
 
                 // Read HTTP request header
@@ -342,6 +366,9 @@ namespace Win11SimHost
                 string path = fullPath;
                 int qIdx = path.IndexOf('?');
                 if (qIdx >= 0) path = path.Substring(0, qIdx);
+
+                _hasReceivedPing = true;
+                _lastPingUtc = DateTime.UtcNow;
 
                 int contentLength = 0;
                 string headerContentType = null;
@@ -434,6 +461,34 @@ namespace Win11SimHost
                         client.Close();
                         return;
                     }
+                }
+
+                // API: Ping Heartbeat
+                if (path == "/api/ping")
+                {
+                    _hasReceivedPing = true;
+                    _lastPingUtc = DateTime.UtcNow;
+                    byte[] pingOk = Encoding.UTF8.GetBytes("{\"ok\":true}");
+                    SendResponse(stream, 200, "OK", "application/json; charset=utf-8", pingOk, true);
+                    client.Close();
+                    return;
+                }
+
+                // API: Goodbye Beacon on Window Close
+                if (path == "/api/goodbye")
+                {
+                    byte[] byeOk = Encoding.UTF8.GetBytes("{\"ok\":true}");
+                    SendResponse(stream, 200, "OK", "application/json; charset=utf-8", byeOk, true);
+                    client.Close();
+
+                    ThreadPool.QueueUserWorkItem(delegate
+                    {
+                        Thread.Sleep(800);
+                        _running = false;
+                        StopServer();
+                        try { Application.Exit(); } catch { }
+                    });
+                    return;
                 }
 
                 // API: Shutdown
@@ -656,7 +711,14 @@ namespace Win11SimHost
             stream.Write(headerBytes, 0, headerBytes.Length);
             if (data != null && data.Length > 0)
             {
-                stream.Write(data, 0, data.Length);
+                int offset = 0;
+                int chunkSize = 65536;
+                while (offset < data.Length)
+                {
+                    int toWrite = Math.Min(chunkSize, data.Length - offset);
+                    stream.Write(data, offset, toWrite);
+                    offset += toWrite;
+                }
             }
             stream.Flush();
         }
@@ -724,27 +786,66 @@ namespace Win11SimHost
             string chromium = FindChromiumBrowser();
             if (chromium != null)
             {
-                string profileDir = Path.Combine(Path.GetTempPath(), "win11sim_prof_" + Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(profileDir);
+                _tempProfileDir = Path.Combine(Path.GetTempPath(), "win11sim_prof_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(_tempProfileDir);
                 try
                 {
                     ProcessStartInfo psi = new ProcessStartInfo();
                     psi.FileName = chromium;
                     psi.Arguments = string.Format(
-                        "--app=\"{0}\" --user-data-dir=\"{1}\" --no-first-run --no-default-browser-check --noerrdialogs --disable-sync --disable-translate --disable-features=Translate,msAccountSync,ChromeWhatsNewUI --start-maximized",
-                        url, profileDir);
+                        "--app=\"{0}\" --user-data-dir=\"{1}\" --no-first-run --no-default-browser-check --noerrdialogs --disable-sync --disable-translate --proxy-server=\"direct://\" --proxy-bypass-list=\"*\" --disable-features=msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI --disable-background-mode --disable-backgrounding-occluded-windows --new-window --start-maximized",
+                        url, _tempProfileDir);
                     psi.UseShellExecute = false;
-                    using (Process p = Process.Start(psi))
+
+                    Process p = Process.Start(psi);
+                    _browserProcess = p;
+
+                    DateTime launchTime = DateTime.UtcNow;
+                    _lastPingUtc = DateTime.UtcNow;
+                    _hasReceivedPing = false;
+
+                    // Watchdog loop: Keeps loopback server alive even if browser launches via a short-lived bootstrap process
+                    while (_running)
                     {
-                        _browserProcess = p;
-                        if (p != null) p.WaitForExit();
-                        _browserProcess = null;
+                        if (!_running) break;
+
+                        // Check if primary process was directly tracked and exited normally after active use
+                        if (p != null && p.HasExited)
+                        {
+                            TimeSpan totalRun = DateTime.UtcNow - launchTime;
+                            if (totalRun.TotalSeconds > 3 && _hasReceivedPing)
+                            {
+                                TimeSpan sincePing = DateTime.UtcNow - _lastPingUtc;
+                                if (sincePing.TotalSeconds > 4)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Heartbeat watchdog
+                        if (_hasReceivedPing)
+                        {
+                            TimeSpan idle = DateTime.UtcNow - _lastPingUtc;
+                            if (idle.TotalSeconds > 10)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            // Generous 60-second grace period for browser window to launch and fetch page
+                            TimeSpan waiting = DateTime.UtcNow - launchTime;
+                            if (waiting.TotalSeconds > 60)
+                            {
+                                break;
+                            }
+                        }
+
+                        Thread.Sleep(500);
                     }
                 }
-                finally
-                {
-                    try { Directory.Delete(profileDir, true); } catch { }
-                }
+                catch { }
                 return;
             }
 
@@ -900,6 +1001,16 @@ namespace Win11SimHost
                 }
             }
             catch { }
+
+            if (!string.IsNullOrEmpty(_tempProfileDir) && Directory.Exists(_tempProfileDir))
+            {
+                try
+                {
+                    Directory.Delete(_tempProfileDir, true);
+                }
+                catch { }
+                _tempProfileDir = null;
+            }
         }
     }
 }

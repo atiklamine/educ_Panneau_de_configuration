@@ -95,7 +95,34 @@
         });
     }
 
+    function startServerHeartbeat() {
+        if (!global.location || !global.location.protocol || global.location.protocol.indexOf('http') !== 0) {
+            return;
+        }
+        function sendPing() {
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/ping', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send('{}');
+            } catch (e) { }
+        }
+        sendPing();
+        setInterval(sendPing, 2500);
+
+        try {
+            global.addEventListener('beforeunload', function () {
+                try {
+                    if (global.navigator && global.navigator.sendBeacon) {
+                        global.navigator.sendBeacon('/api/goodbye');
+                    }
+                } catch (e) { }
+            });
+        } catch (e2) { }
+    }
+
     function boot() {
+        startServerHeartbeat();
         if (global.Win11Compat && typeof global.Win11Compat.purgeLegacyPersistence === 'function') {
             global.Win11Compat.purgeLegacyPersistence();
             var selfCheck = global.Win11Compat.verifyCleanStartup();
