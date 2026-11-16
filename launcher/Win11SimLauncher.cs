@@ -90,12 +90,12 @@ namespace Win11SimHost
                 }
 
                 string safeName = SanitizeFileName(filename);
-                if (string.IsNullOrEmpty(safeName)) safeName = "1AS_Report.html";
+                if (string.IsNullOrEmpty(safeName)) safeName = "1AS_Report.pdf";
                 string ext = Path.GetExtension(safeName);
-                if (string.IsNullOrEmpty(ext) || ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                if (string.IsNullOrEmpty(ext))
                 {
-                    ext = ".html";
-                    safeName = Path.GetFileNameWithoutExtension(safeName) + ".html";
+                    ext = ".pdf";
+                    safeName = safeName + ".pdf";
                 }
                 string baseName = Path.GetFileNameWithoutExtension(safeName);
 
@@ -108,6 +108,59 @@ namespace Win11SimHost
                 }
 
                 byte[] bytes = Convert.FromBase64String(contentBase64);
+
+                if (ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (bytes != null && bytes.Length >= 4 &&
+                        bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46)
+                    {
+                        File.WriteAllBytes(targetPath, bytes);
+                        return targetPath;
+                    }
+
+                    string htmlStr = Encoding.UTF8.GetString(bytes);
+                    string chromium = Program.FindChromiumBrowser();
+                    if (!string.IsNullOrEmpty(chromium) && File.Exists(chromium))
+                    {
+                        string tmpHtml = Path.Combine(Path.GetTempPath(), "print_doc_" + Guid.NewGuid().ToString("N") + ".html");
+                        string tmpProf = Path.Combine(Path.GetTempPath(), "print_prof_" + Guid.NewGuid().ToString("N"));
+                        try
+                        {
+                            File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
+                            string fileUrl = "file:///" + tmpHtml.Replace('\\', '/');
+                            string[] headlessVariants = new string[] { "--headless", "--headless=new" };
+                            for (int v = 0; v < headlessVariants.Length; v++)
+                            {
+                                try
+                                {
+                                    ProcessStartInfo pPsi = new ProcessStartInfo();
+                                    pPsi.FileName = chromium;
+                                    pPsi.Arguments = string.Format(
+                                        "{0} --disable-gpu --no-sandbox --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
+                                        headlessVariants[v], tmpProf, targetPath, fileUrl);
+                                    pPsi.UseShellExecute = false;
+                                    pPsi.CreateNoWindow = true;
+                                    using (Process p = Process.Start(pPsi))
+                                    {
+                                        if (p != null) p.WaitForExit(10000);
+                                    }
+                                    if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 1000)
+                                    {
+                                        return targetPath;
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                        catch { }
+                        finally
+                        {
+                            try { File.Delete(tmpHtml); } catch { }
+                            try { if (Directory.Exists(tmpProf)) Directory.Delete(tmpProf, true); } catch { }
+                        }
+                    }
+                }
+
                 File.WriteAllBytes(targetPath, bytes);
                 return targetPath;
             }
@@ -613,62 +666,82 @@ namespace Win11SimHost
                         if (ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
                         {
                             bool pdfDone = false;
-                            if (string.IsNullOrEmpty(htmlStr) && fileBytes != null)
+                            if (fileBytes != null && fileBytes.Length >= 4 &&
+                                fileBytes[0] == 0x25 && fileBytes[1] == 0x50 && fileBytes[2] == 0x44 && fileBytes[3] == 0x46)
                             {
-                                try { htmlStr = Encoding.UTF8.GetString(fileBytes); } catch { }
+                                File.WriteAllBytes(targetPath, fileBytes);
+                                pdfDone = true;
                             }
-
-                            string chromium = FindChromiumBrowser();
-                            if (!string.IsNullOrEmpty(chromium) && File.Exists(chromium) && !string.IsNullOrEmpty(htmlStr))
+                            else
                             {
-                                string tmpHtml = Path.Combine(Path.GetTempPath(), "print_doc_" + Guid.NewGuid().ToString("N") + ".html");
-                                try
+                                if (string.IsNullOrEmpty(htmlStr) && fileBytes != null)
                                 {
-                                    File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
-                                    string fileUrl = "file:///" + tmpHtml.Replace('\\', '/');
-                                    ProcessStartInfo pPsi = new ProcessStartInfo();
-                                    pPsi.FileName = chromium;
-                                    pPsi.Arguments = string.Format(
-                                        "--headless=new --disable-gpu --no-sandbox --run-all-compositor-stages-before-draw --print-to-pdf=\"{0}\" \"{1}\"",
-                                        targetPath, fileUrl);
-                                    pPsi.UseShellExecute = false;
-                                    pPsi.CreateNoWindow = true;
-                                    using (Process p = Process.Start(pPsi))
+                                    try { htmlStr = Encoding.UTF8.GetString(fileBytes); } catch { }
+                                }
+
+                                string chromium = FindChromiumBrowser();
+                                if (!string.IsNullOrEmpty(chromium) && File.Exists(chromium) && !string.IsNullOrEmpty(htmlStr))
+                                {
+                                    string tmpHtml = Path.Combine(Path.GetTempPath(), "print_doc_" + Guid.NewGuid().ToString("N") + ".html");
+                                    string tmpProf = Path.Combine(Path.GetTempPath(), "print_prof_" + Guid.NewGuid().ToString("N"));
+                                    try
                                     {
-                                        if (p != null)
+                                        File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
+                                        string fileUrl = "file:///" + tmpHtml.Replace('\\', '/');
+                                        string[] headlessVariants = new string[] { "--headless", "--headless=new" };
+                                        for (int v = 0; v < headlessVariants.Length && !pdfDone; v++)
                                         {
-                                            p.WaitForExit(8000);
-                                            if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 1000)
+                                            try
                                             {
-                                                try
+                                                ProcessStartInfo pPsi = new ProcessStartInfo();
+                                                pPsi.FileName = chromium;
+                                                pPsi.Arguments = string.Format(
+                                                    "{0} --disable-gpu --no-sandbox --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
+                                                    headlessVariants[v], tmpProf, targetPath, fileUrl);
+                                                pPsi.UseShellExecute = false;
+                                                pPsi.CreateNoWindow = true;
+                                                using (Process p = Process.Start(pPsi))
                                                 {
-                                                    byte[] header = new byte[4];
-                                                    using (FileStream fs = File.OpenRead(targetPath))
+                                                    if (p != null)
                                                     {
-                                                        if (fs.Read(header, 0, 4) == 4 &&
-                                                            header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46) // %PDF
+                                                        p.WaitForExit(10000);
+                                                        if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 1000)
                                                         {
-                                                            pdfDone = true;
+                                                            try
+                                                            {
+                                                                byte[] header = new byte[4];
+                                                                using (FileStream fs = File.OpenRead(targetPath))
+                                                                {
+                                                                    if (fs.Read(header, 0, 4) == 4 &&
+                                                                        header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46) // %PDF
+                                                                    {
+                                                                        pdfDone = true;
+                                                                    }
+                                                                }
+                                                            }
+                                                            catch { }
                                                         }
                                                     }
                                                 }
-                                                catch { }
                                             }
+                                            catch { }
                                         }
                                     }
-                                }
-                                catch { }
-                                finally
-                                {
-                                    try { File.Delete(tmpHtml); } catch { }
+                                    catch { }
+                                    finally
+                                    {
+                                        try { File.Delete(tmpHtml); } catch { }
+                                        try { if (Directory.Exists(tmpProf)) Directory.Delete(tmpProf, true); } catch { }
+                                    }
                                 }
                             }
 
                             if (!pdfDone)
                             {
-                                try { if (File.Exists(targetPath)) File.Delete(targetPath); } catch { }
-                                targetPath = Path.Combine(desktopDir, baseName + ".html");
-                                File.WriteAllBytes(targetPath, fileBytes ?? (htmlStr != null ? Encoding.UTF8.GetBytes(htmlStr) : new byte[0]));
+                                string errJson = "{\"ok\":false,\"error\":\"Failed to generate valid binary PDF on Desktop.\"}";
+                                SendResponse(stream, 500, "Internal Server Error", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(errJson), true);
+                                client.Close();
+                                return;
                             }
                         }
                         else
@@ -839,10 +912,11 @@ namespace Win11SimHost
             stream.Flush();
         }
 
-        private static string FindChromiumBrowser()
+        internal static string FindChromiumBrowser()
         {
             string pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? "";
             string pf64 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) ?? "";
+            string pfW64 = Environment.GetEnvironmentVariable("ProgramW6432") ?? "";
             string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) ?? "";
 
             string[] candidates = new string[]
@@ -850,9 +924,12 @@ namespace Win11SimHost
                 // Microsoft Edge
                 string.IsNullOrEmpty(pf86) ? "" : Path.Combine(pf86, @"Microsoft\Edge\Application\msedge.exe"),
                 string.IsNullOrEmpty(pf64) ? "" : Path.Combine(pf64, @"Microsoft\Edge\Application\msedge.exe"),
+                string.IsNullOrEmpty(pfW64) ? "" : Path.Combine(pfW64, @"Microsoft\Edge\Application\msedge.exe"),
+                string.IsNullOrEmpty(localApp) ? "" : Path.Combine(localApp, @"Microsoft\Edge\Application\msedge.exe"),
                 // Google Chrome
                 string.IsNullOrEmpty(pf64) ? "" : Path.Combine(pf64, @"Google\Chrome\Application\chrome.exe"),
                 string.IsNullOrEmpty(pf86) ? "" : Path.Combine(pf86, @"Google\Chrome\Application\chrome.exe"),
+                string.IsNullOrEmpty(pfW64) ? "" : Path.Combine(pfW64, @"Google\Chrome\Application\chrome.exe"),
                 string.IsNullOrEmpty(localApp) ? "" : Path.Combine(localApp, @"Google\Chrome\Application\chrome.exe"),
                 // Portable Browsers in simulator folder
                 Path.Combine(_exeDir, @"chrome-win\chrome.exe"),
@@ -861,6 +938,7 @@ namespace Win11SimHost
                 // Brave
                 string.IsNullOrEmpty(pf64) ? "" : Path.Combine(pf64, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
                 string.IsNullOrEmpty(pf86) ? "" : Path.Combine(pf86, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
+                string.IsNullOrEmpty(pfW64) ? "" : Path.Combine(pfW64, @"BraveSoftware\Brave-Browser\Application\brave.exe"),
                 // Opera
                 string.IsNullOrEmpty(localApp) ? "" : Path.Combine(localApp, @"Programs\Opera\launcher.exe")
             };

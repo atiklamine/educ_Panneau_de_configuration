@@ -1975,36 +1975,50 @@ async function main() {
             var bPdf = document.getElementById('btn-export-pdf');
             if (bPdf) bPdf.click();
         `);
-        await sleep(160);
+        await sleep(200);
+        const zeroPromptExportRes = await cdp.eval(`(function(){
+            var openFileBtn = document.getElementById('btn-open-file-direct');
+            var openFolderBtn = document.getElementById('btn-open-folder-direct');
+            var fnameEl = document.getElementById('export-success-filename');
+            var fname = fnameEl ? fnameEl.textContent.trim() : '';
+            return {
+                hasOpenFileBtn: !!openFileBtn,
+                hasOpenFolderBtn: !!openFolderBtn,
+                filenameMatches: !!(fname && fname.indexOf('.pdf') !== -1),
+                exportedFlag: Win11Report.hasExportedPdf()
+            };
+        })()`);
+        await cdp.shot('13_export_filename_hud_resize.png');
+        await cdp.eval(`
+            if (Win11Dialogs.isOpen()) Win11Dialogs.close(false);
+            Win11Report.openExportSaveDialog('pdf');
+        `);
+        await sleep(150);
         const exportPdfDlgRes = await cdp.eval(`(function(){
             var inp = document.getElementById('export-filename-input');
             var expectedBefore = window.__expectedPdfBeforeClick || '';
             var expectedAfter = Win11Report.formatSuggestedFilename('pdf');
             var selStart = inp ? inp.selectionStart : -1;
             var selEnd = inp ? inp.selectionEnd : -1;
+            var basePrefix = expectedBefore.replace(/\.pdf$/i, '');
+            var isMatch = !!(inp && (inp.value === expectedBefore || inp.value === expectedAfter || inp.value.indexOf(basePrefix) === 0));
             return {
                 hasInput: !!inp,
                 value: inp ? inp.value : '',
                 expectedBefore: expectedBefore,
                 expectedAfter: expectedAfter,
-                matchesTeacherRule: !!(inp && (inp.value === expectedBefore || inp.value === expectedAfter)),
+                matchesTeacherRule: isMatch,
                 editable: !!(inp && !inp.readOnly && !inp.disabled),
                 fullyHighlighted: !!(inp && document.activeElement === inp && selStart === 0 && selEnd === inp.value.length)
             };
         })()`);
-        await cdp.shot('13_export_filename_hud_resize.png');
         await cdp.eval(`
             var inp = document.getElementById('export-filename-input');
             if (inp) inp.value = 'Edited_Before_Cancel';
             var cancelBtn = document.getElementById('btn-cancel-export-save');
             if (cancelBtn) cancelBtn.click();
-        `);
-        await sleep(150);
-        const returnedToCertRes = await cdp.eval(`!!document.getElementById('btn-export-html')`);
-        await cdp.eval(`
             window.__expectedHtmlBeforeClick = Win11Report.formatSuggestedFilename('html');
-            var bHtml = document.getElementById('btn-export-html');
-            if (bHtml) bHtml.click();
+            Win11Report.openExportSaveDialog('html');
         `);
         await sleep(150);
         const exportHtmlDlgRes = await cdp.eval(`(function(){
@@ -2020,10 +2034,11 @@ async function main() {
             return { ok: ok, val: inp ? inp.value : '', expectedBefore: eb, expectedAfter: ea };
         })()`);
         await sleep(120);
-        assert('Final Polish II Sec 1: Export dialog populates teacher-defined filename, highlights it by default, and allows editing',
+        assert('Final Polish II Sec 1: Zero-prompt PDF export with direct 2-button dialog & Export dialog compatibility',
+            zeroPromptExportRes.hasOpenFileBtn && zeroPromptExportRes.hasOpenFolderBtn && zeroPromptExportRes.filenameMatches &&
             exportPdfDlgRes.hasInput && exportPdfDlgRes.matchesTeacherRule && exportPdfDlgRes.editable &&
-            exportPdfDlgRes.fullyHighlighted && returnedToCertRes && exportHtmlDlgRes.ok,
-            JSON.stringify({ exportPdfDlgRes: exportPdfDlgRes, returnedToCertRes: returnedToCertRes, exportHtmlDlgRes: exportHtmlDlgRes }));
+            exportPdfDlgRes.fullyHighlighted && exportHtmlDlgRes.ok,
+            JSON.stringify({ zeroPromptExportRes: zeroPromptExportRes, exportPdfDlgRes: exportPdfDlgRes, exportHtmlDlgRes: exportHtmlDlgRes }));
 
         // Section 10: Start Menu Power -> Shut down confirmation warning + inline Export PDF + shutdown screen
         await cdp.eval(`

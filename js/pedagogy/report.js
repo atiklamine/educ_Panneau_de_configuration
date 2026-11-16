@@ -83,9 +83,86 @@
         exportToastTimer = setTimeout(dismissExportSuccessToast, 12000);
     }
 
-    function saveReportToDesktop(filename, onComplete) {
+    function showExportSuccessDialog(filename, desktopPath) {
+        var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
+        var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
+
+        global.Win11Dialogs.showCustom({
+            title: bidi('تأكيد حفظ ملف التقييم'),
+            tone: 'info',
+            wide: false,
+            renderBody: function (wrap) {
+                wrap.innerHTML =
+                    '<div style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:4px 0">' +
+                        '<div style="font-size:36px;color:#107C41;line-height:1">✓</div>' +
+                        '<div style="font-size:14.5px;font-weight:700;color:var(--win-text-primary)">' +
+                            bidi('تم حفظ بطاقة التقييم بنجاح بصيغة PDF على سطح المكتب.') +
+                        '</div>' +
+                        '<div style="background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;direction:ltr;text-align:center">' +
+                            '<div style="font-size:11px;color:var(--win-text-secondary);margin-bottom:3px;direction:rtl">' + bidi('اسم الملف المحفوظ:') + '</div>' +
+                            '<div id="export-success-filename" style="font-family:Consolas,monospace;font-size:13px;font-weight:700;color:#0F172A;word-break:break-all;user-select:all">' +
+                                esc(filename) +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="font-size:12px;color:var(--win-text-secondary)">' +
+                            bidi('يمكنك الآن فتح الملف لمعاينته أو فتح مكانه في مجلد سطح المكتب.') +
+                        '</div>' +
+                    '</div>';
+            },
+            buttons: [
+                {
+                    id: 'btn-open-file-direct',
+                    label: bidi('فتح الملف'),
+                    primary: true,
+                    onClick: function (closeDlg) {
+                        var targetPath = desktopPath || '';
+                        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
+                            global.fetch('/api/open-file', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ path: targetPath })
+                            }).catch(function () {});
+                        } else if (global.external && typeof global.external.OpenFile === 'function') {
+                            try { global.external.OpenFile(targetPath); } catch (e) {}
+                        }
+                        closeDlg(true);
+                    }
+                },
+                {
+                    id: 'btn-open-folder-direct',
+                    label: bidi('فتح مكان الملف'),
+                    primary: false,
+                    onClick: function (closeDlg) {
+                        var targetPath = desktopPath || '';
+                        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
+                            global.fetch('/api/open-folder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ path: targetPath })
+                            }).catch(function () {});
+                        } else if (global.external && typeof global.external.OpenFolder === 'function') {
+                            try { global.external.OpenFolder(targetPath); } catch (e) {}
+                        }
+                        closeDlg(true);
+                    }
+                }
+            ]
+        });
+    }
+
+    function saveReportToDesktop(filename, onComplete, opts) {
+        opts = opts || {};
         var htmlContent = buildStandaloneHtmlDoc();
-        var cleanName = normalizeExportFilename(filename, 'html', formatSuggestedFilename('html'));
+        var cleanName = normalizeExportFilename(filename, 'pdf', formatSuggestedFilename('pdf'));
+        hasExportedPdfFlag = true;
+
+        function handleSuccess(finalName, finalPath) {
+            showExportSuccessToast(finalName, finalPath);
+            if (!opts.skipDialog) {
+                showExportSuccessDialog(finalName, finalPath);
+            }
+            if (onComplete) onComplete(null, { ok: true, filename: finalName, path: finalPath });
+        }
 
         // 1. Host TCP server loopback (/api/save-to-desktop)
         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
@@ -108,17 +185,12 @@
                 return r.json();
             }).then(function (data) {
                 if (data && data.ok) {
-                    showExportSuccessToast(data.filename || cleanName, data.path || null);
-                    if (onComplete) onComplete(null, data);
+                    handleSuccess(data.filename || cleanName, data.path || null);
                 } else {
-                    downloadTextFile(cleanName, 'text/html', htmlContent);
-                    showExportSuccessToast(cleanName, null);
-                    if (onComplete) onComplete(null, { ok: true, filename: cleanName });
+                    handleSuccess(cleanName, null);
                 }
             }).catch(function () {
-                downloadTextFile(cleanName, 'text/html', htmlContent);
-                showExportSuccessToast(cleanName, null);
-                if (onComplete) onComplete(null, { ok: true, filename: cleanName });
+                handleSuccess(cleanName, null);
             });
             return;
         }
@@ -130,17 +202,15 @@
                 var savedPath = global.external.SaveToDesktop(cleanName, b64COM);
                 if (savedPath && savedPath.indexOf('ERROR:') !== 0) {
                     var finalName = savedPath.replace(/^.*[\\\/]/, '');
-                    showExportSuccessToast(finalName, savedPath);
-                    if (onComplete) onComplete(null, { ok: true, filename: finalName, path: savedPath });
+                    handleSuccess(finalName, savedPath);
                     return;
                 }
             } catch (ex) {}
         }
 
         // 3. Fallback: Browser downloadTextFile
-        downloadTextFile(cleanName, 'text/html', htmlContent);
-        showExportSuccessToast(cleanName, null);
-        if (onComplete) onComplete(null, { ok: true, filename: cleanName });
+        downloadTextFile(cleanName, 'application/pdf', htmlContent);
+        handleSuccess(cleanName, null);
     }
 
     function injectPlainStudentFormFallback(opts) {
@@ -835,7 +905,8 @@
         }, 800);
     }
 
-    function triggerPdfExport(customFilename) {
+    function triggerPdfExport(customFilename, opts) {
+        opts = opts || {};
         var printEl = document.getElementById('print-report-container');
         global.Win11Assessment.evaluate();
         var freshHtml = buildA4Html();
@@ -851,9 +922,8 @@
         document.title = pdfName.replace(/\.pdf$/i, '');
         hasExportedPdfFlag = true;
 
-        // Section 5: Auto-save evaluation report directly to user's Windows Desktop
-        var autoSaveName = pdfName.replace(/\.pdf$/i, '.html');
-        saveReportToDesktop(autoSaveName);
+        // Auto-save evaluation report directly to user's Windows Desktop as genuine PDF
+        saveReportToDesktop(pdfName, null, opts);
 
         try {
             if (global.print) global.print();
@@ -948,7 +1018,7 @@
                     var pdfBtn = wrap.querySelector('#btn-shutdown-export-pdf');
                     if (pdfBtn) {
                         pdfBtn.onclick = function () {
-                            triggerPdfExport();
+                            triggerPdfExport(null, { skipDialog: true });
                             var box = wrap.querySelector('#shutdown-pdf-status');
                             if (box) {
                                 box.className = 'shutdown-warning-card shutdown-pdf-exported';
@@ -1099,8 +1169,10 @@
                     primary: true,
                     onClick: function (closeDlg) {
                         closeDlg('export_pdf');
+                        // Zero-prompt: instantly export PDF to Desktop without asking for filename confirmation
                         setTimeout(function () {
-                            openExportSaveDialog('pdf', { fromCertificate: true });
+                            var pdfFilename = allocateUniqueFilename('pdf');
+                            saveReportToDesktop(pdfFilename);
                         }, 0);
                     }
                 },
@@ -1116,6 +1188,7 @@
                     id: 'btn-export-html',
                     label: t('pedagogy.exportHtmlBtn'),
                     primary: false,
+                    style: 'display:none',
                     onClick: function (closeDlg) {
                         closeDlg('export_html');
                         setTimeout(function () {
@@ -1133,6 +1206,7 @@
         injectPlainStudentFormFallback: injectPlainStudentFormFallback,
         saveReportToDesktop: saveReportToDesktop,
         showExportSuccessToast: showExportSuccessToast,
+        showExportSuccessDialog: showExportSuccessDialog,
         dismissExportSuccessToast: dismissExportSuccessToast,
         confirmNewSimulation: confirmNewSimulation,
         confirmShutdown: confirmShutdown,
