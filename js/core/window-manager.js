@@ -9,7 +9,7 @@
     var fallbackWmState = {
         windows: {},
         windowOrder: [],
-        topZ: 210,
+        topZ: 310,
         activeDesktop: 0,
         desktops: [{ id: 0 }, { id: 1 }],
         showDesktopSavedIds: null,
@@ -114,7 +114,7 @@
         s.topZ += 1;
         if (s.topZ > 900) {
             // Re-normalize stack cleanly to avoid approaching flyout z-index layers
-            var base = 210;
+            var base = 310;
             for (var j = 0; j < s.windowOrder.length; j++) {
                 var wObj = s.windows[s.windowOrder[j]];
                 if (wObj) wObj.el.style.zIndex = base++;
@@ -128,6 +128,12 @@
         }
         win.el.classList.add('is-active');
         win.el.style.zIndex = s.topZ;
+
+        var hud = document.getElementById('pedagogy-hud');
+        if (hud) {
+            hud.classList.remove('is-active');
+            hud.style.zIndex = '';
+        }
 
         var idx = s.windowOrder.indexOf(id);
         if (idx !== -1) s.windowOrder.splice(idx, 1);

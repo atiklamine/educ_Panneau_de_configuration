@@ -15,10 +15,14 @@
     border-radius: 10px;
     border: 1px solid var(--win-border-window);
     box-shadow: var(--win-shadow-window);
-    z-index: 2500;
+    z-index: 240;
     display: none;
     flex-direction: column;
     overflow: hidden;
+}
+#pedagogy-hud.is-active,
+#pedagogy-hud:focus-within {
+    z-index: 450;
 }
 html[dir="rtl"] #pedagogy-hud {
     left: auto;

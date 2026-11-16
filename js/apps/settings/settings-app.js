@@ -296,6 +296,14 @@
                 navigate: function (sec, sub, anc) { openTo(sec, sub, anc); },
                 ui: uiHelpers
             });
+        } catch (err) {
+            if (global.console && global.console.error) {
+                global.console.error('[Settings.renderMainContent]', err);
+            }
+            mainEl.innerHTML = '<div class="win-card" style="padding:16px;color:var(--win-danger)">' +
+                '<div style="font-weight:700;margin-bottom:8px">' + bidi(t('search.noResults')) + '</div>' +
+                '<div style="font-size:12px;color:var(--win-text-secondary)">' + global.Win11Compat.escapeHtml(err && err.message ? err.message : String(err)) + '</div>' +
+            '</div>';
         } finally {
             isRenderingMain = false;
         }

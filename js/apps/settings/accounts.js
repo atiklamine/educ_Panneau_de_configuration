@@ -113,7 +113,7 @@
                         '</div>' +
                         '<div>' +
                             '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('settings.accounts.passwordLabel')) + '</label>' +
-                            '<input type="password" id="acc-new-pass" class="win-input" dir="ltr">' +
+                            '<input type="password" id="acc-new-pass" class="win-input" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                         '</div>' +
                         '<div>' +
                             '<label style="display:flex;align-items:center;gap:8px;cursor:pointer">' +
@@ -192,7 +192,7 @@
                             ) : '') +
                             '<div>' +
                                 '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('settings.accounts.changePassBtn')) + '</label>' +
-                                '<input type="password" id="edit-acc-pass" class="win-input" value="' + global.Win11Compat.escapeHtml(acc.password || '') + '" dir="ltr">' +
+                                '<input type="password" id="edit-acc-pass" class="win-input" value="' + global.Win11Compat.escapeHtml(acc.password || '') + '" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                             '</div>' +
                             '<label style="display:flex;align-items:center;gap:8px;cursor:pointer">' +
                                 '<input type="checkbox" id="edit-acc-avatar"' + (acc.customAvatar ? ' checked' : '') + '>' +

@@ -104,7 +104,7 @@
         if (needsPassword) {
             html +=
                 '<div style="display:flex;gap:6px;width:100%">' +
-                    '<input type="password" id="lock-pass-input" class="win-input" style="background:rgba(255,255,255,0.92);color:#1B1B1B" placeholder="' + global.Win11Compat.escapeHtml(t('lockScreen.passwordPlaceholder')) + '">' +
+                    '<input type="password" id="lock-pass-input" class="win-input" style="background:rgba(255,255,255,0.92);color:#1B1B1B" placeholder="' + global.Win11Compat.escapeHtml(t('lockScreen.passwordPlaceholder')) + '" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                     '<button type="button" class="win-btn win-btn-accent" id="lock-signin-btn">' + bidi(t('lockScreen.signIn')) + '</button>' +
                 '</div>' +
                 '<div id="lock-error-msg" style="font-size:12.5px;color:#FCA5A5;min-height:18px"></div>';

@@ -92,11 +92,11 @@
                         '</div>' +
                         '<div>' +
                             '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('pedagogy.infPassNew')) + '</label>' +
-                            '<input type="password" id="tc-setup-pass1" class="win-input" dir="ltr">' +
+                            '<input type="password" id="tc-setup-pass1" class="win-input" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                         '</div>' +
                         '<div>' +
                             '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('pedagogy.infPassConfirm')) + '</label>' +
-                            '<input type="password" id="tc-setup-pass2" class="win-input" dir="ltr">' +
+                            '<input type="password" id="tc-setup-pass2" class="win-input" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                         '</div>' +
                         '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
                             '<label class="win-btn win-btn-secondary" style="cursor:pointer">' +
@@ -189,7 +189,7 @@
                 var remMs = Math.max(0, lockoutUntilMs - Date.now());
                 wrap.innerHTML =
                     '<label style="display:block;margin-bottom:6px;font-weight:600">' + bidi(t('pedagogy.teacherPassPrompt')) + '</label>' +
-                    '<input type="password" id="teacher-auth-pass" class="win-input" dir="ltr">' +
+                    '<input type="password" id="teacher-auth-pass" class="win-input" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                     '<div id="teacher-auth-err" style="color:var(--win-danger);font-size:12px;margin-top:6px;min-height:16px">' +
                         (remMs > 0 ? bidi(t('pedagogy.infCooldownMsg')) + ' <bdi dir="ltr">' + Math.ceil(remMs / 1000) + 's</bdi>' : '') +
                     '</div>';
@@ -412,8 +412,8 @@
                                 '<div style="font-weight:700;margin-bottom:6px;color:var(--win-accent-text)">' + bidi(t('pedagogy.infMissingSetupTitle')) + '</div>' +
                                 '<div style="font-size:12px;margin-bottom:8px">' + bidi(t('pedagogy.infMissingSetupMsg')) + '</div>' +
                                 '<div class="tc-field-grid">' +
-                                    '<label><strong>' + bidi(t('pedagogy.infPassNew')) + '</strong><input type="password" id="tc-setup-pass1" class="win-input" value="' + esc(setupPass1) + '" dir="ltr"></label>' +
-                                    '<label><strong>' + bidi(t('pedagogy.infPassConfirm')) + '</strong><input type="password" id="tc-setup-pass2" class="win-input" value="' + esc(setupPass2) + '" dir="ltr"></label>' +
+                                    '<label><strong>' + bidi(t('pedagogy.infPassNew')) + '</strong><input type="password" id="tc-setup-pass1" class="win-input" value="' + esc(setupPass1) + '" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off"></label>' +
+                                    '<label><strong>' + bidi(t('pedagogy.infPassConfirm')) + '</strong><input type="password" id="tc-setup-pass2" class="win-input" value="' + esc(setupPass2) + '" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off"></label>' +
                                 '</div>' +
                                 '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">' +
                                     '<label class="win-btn win-btn-secondary" style="cursor:pointer;min-height:28px">' +
@@ -635,8 +635,8 @@
                                     '</select>' +
                                 '</label>' +
                                 '<div class="tc-field-grid" style="margin-top:8px">' +
-                                    '<label><strong>' + bidi('تغيير كلمة المرور (اختياري):') + '</strong><input type="password" class="win-input" id="tc-pass" value="' + esc(pendingNewPass) + '" dir="ltr"></label>' +
-                                    '<label><strong>' + bidi('تأكيد كلمة المرور الجديدة:') + '</strong><input type="password" class="win-input" id="tc-pass-confirm" value="' + esc(pendingNewPass) + '" dir="ltr"></label>' +
+                                    '<label><strong>' + bidi('تغيير كلمة المرور (اختياري):') + '</strong><input type="password" class="win-input" id="tc-pass" value="' + esc(pendingNewPass) + '" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off"></label>' +
+                                    '<label><strong>' + bidi('تأكيد كلمة المرور الجديدة:') + '</strong><input type="password" class="win-input" id="tc-pass-confirm" value="' + esc(pendingNewPass) + '" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off"></label>' +
                                 '</div>' +
                                 (passMismatchMsg ? '<div style="color:var(--win-danger);font-size:12px;margin-top:4px">' + bidi(passMismatchMsg) + '</div>' : '') +
                             '</div>' +

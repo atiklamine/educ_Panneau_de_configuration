@@ -121,7 +121,48 @@
         } catch (e2) { }
     }
 
+    function suppressBrowserAutofillAndCredentialPrompts() {
+        function sanitizeInputs(root) {
+            if (!root || !root.querySelectorAll) return;
+            var inps = root.querySelectorAll('input, select, textarea');
+            for (var i = 0; i < inps.length; i++) {
+                var inp = inps[i];
+                if (inp.type === 'password') {
+                    if (!inp.hasAttribute('autocomplete')) inp.setAttribute('autocomplete', 'new-password');
+                    inp.setAttribute('data-lpignore', 'true');
+                    inp.setAttribute('data-form-type', 'other');
+                } else if (inp.type === 'text') {
+                    if (!inp.hasAttribute('autocomplete')) inp.setAttribute('autocomplete', 'off');
+                    inp.setAttribute('data-lpignore', 'true');
+                }
+                inp.setAttribute('spellcheck', 'false');
+            }
+            var forms = root.querySelectorAll('form');
+            for (var f = 0; f < forms.length; f++) {
+                forms[f].setAttribute('autocomplete', 'off');
+                forms[f].onsubmit = function () { return false; };
+            }
+        }
+
+        sanitizeInputs(document);
+
+        if (global.MutationObserver) {
+            var obs = new MutationObserver(function (mutations) {
+                for (var m = 0; m < mutations.length; m++) {
+                    var added = mutations[m].addedNodes;
+                    for (var n = 0; n < added.length; n++) {
+                        if (added[n].nodeType === 1) {
+                            sanitizeInputs(added[n]);
+                        }
+                    }
+                }
+            });
+            obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+    }
+
     function boot() {
+        suppressBrowserAutofillAndCredentialPrompts();
         startServerHeartbeat();
         if (global.Win11Compat && typeof global.Win11Compat.purgeLegacyPersistence === 'function') {
             global.Win11Compat.purgeLegacyPersistence();

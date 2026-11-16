@@ -200,7 +200,7 @@
                             (requiresPass ? (
                                 '<div>' +
                                     '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('lockScreen.passwordPlaceholder') || 'كلمة مرور المدير:') + '</label>' +
-                                    '<input type="password" id="uac-admin-pass" class="win-input" dir="ltr">' +
+                                    '<input type="password" id="uac-admin-pass" class="win-input" dir="ltr" autocomplete="new-password" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                                 '</div>'
                             ) : (
                                 '<div style="font-size:12.5px;color:var(--win-text-secondary)">' + bidi(t('uac.noPassAdminNote') || 'لا يملك هذا المدير كلمة مرور؛ انقر "نعم" لتفويض الإجراء أو "لا" للرفض.') + '</div>'

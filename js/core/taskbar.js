@@ -88,6 +88,23 @@
         return list;
     }
 
+    var lastIconClickTime = 0;
+    var lastIconClickId = null;
+
+    function updateDesktopIconSelection(targetId) {
+        selectedDesktopIcon = targetId;
+        var container = document.getElementById('desktop-icons');
+        if (!container) return;
+        var all = container.querySelectorAll('.desktop-icon');
+        for (var a = 0; a < all.length; a++) {
+            if (targetId && all[a].getAttribute('data-desk-id') === targetId) {
+                all[a].classList.add('is-selected');
+            } else {
+                all[a].classList.remove('is-selected');
+            }
+        }
+    }
+
     function renderDesktopIcons() {
         var container = document.getElementById('desktop-icons');
         if (!container) return;
@@ -99,7 +116,7 @@
         for (var i = 0; i < icons.length; i++) {
             var ic = icons[i];
             html +=
-                '<button type="button" class="desktop-icon' + (selectedDesktopIcon === ic.id ? ' is-selected' : '') + '" data-desk-id="' + ic.id + '">' +
+                '<button type="button" class="desktop-icon' + (selectedDesktopIcon === ic.id ? ' is-selected' : '') + '" data-desk-id="' + ic.id + '" tabindex="0">' +
                     global.Win11Icons.get(ic.icon, 42) +
                     '<span class="desktop-icon-label">' + global.Win11I18N.bidiHtml(ic.label) + '</span>' +
                 '</button>';
@@ -114,23 +131,55 @@
                 for (var k = 0; k < icons.length; k++) {
                     if (icons[k].id === id) { def = icons[k]; break; }
                 }
+
+                function triggerOpen() {
+                    if (def && typeof def.onOpen === 'function') {
+                        try {
+                            def.onOpen();
+                        } catch (err) {
+                            if (global.console && global.console.error) {
+                                global.console.error('[DesktopIcon.onOpen]', err);
+                            }
+                        }
+                    }
+                }
+
                 btn.onclick = function (e) {
                     e.stopPropagation();
-                    selectedDesktopIcon = id;
-                    renderDesktopIcons();
+                    var now = Date.now();
+                    var isRapidSecondClick = (lastIconClickId === id && (now - lastIconClickTime) < 550);
+                    lastIconClickTime = now;
+                    lastIconClickId = id;
+
+                    updateDesktopIconSelection(id);
+
+                    if (isRapidSecondClick) {
+                        lastIconClickTime = 0;
+                        lastIconClickId = null;
+                        triggerOpen();
+                    }
                 };
+
                 btn.ondblclick = function (e) {
                     e.stopPropagation();
-                    if (def && def.onOpen) def.onOpen();
+                    triggerOpen();
                 };
+
+                btn.onkeydown = function (e) {
+                    if (e.key === 'Enter' || e.keyCode === 13) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        triggerOpen();
+                    }
+                };
+
                 btn.oncontextmenu = function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    selectedDesktopIcon = id;
-                    renderDesktopIcons();
+                    updateDesktopIconSelection(id);
                     var t = global.Win11I18N.t.bind(global.Win11I18N);
                     var menuItems = [
-                        { icon: def.icon, label: t('app.open'), onClick: def.onOpen }
+                        { icon: def.icon, label: t('app.open'), onClick: triggerOpen }
                     ];
                     if (def.onProperties) {
                         menuItems.push({ separator: true });
@@ -484,8 +533,7 @@
         if (desktop) {
             desktop.addEventListener('click', function (e) {
                 if (e.target === desktop || e.target.id === 'desktop-icons') {
-                    selectedDesktopIcon = null;
-                    renderDesktopIcons();
+                    updateDesktopIconSelection(null);
                     closeAllFlyouts();
                 }
             });

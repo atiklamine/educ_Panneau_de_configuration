@@ -208,9 +208,10 @@
             } catch (ex) {}
         }
 
-        // 3. Fallback: Browser downloadTextFile
-        downloadTextFile(cleanName, 'application/pdf', htmlContent);
-        handleSuccess(cleanName, null);
+        // 3. Fallback: Browser downloadTextFile (download clean HTML document rather than broken raw HTML disguised as PDF)
+        var htmlFallbackName = cleanName.replace(/\.pdf$/i, '.html');
+        downloadTextFile(htmlFallbackName, 'text/html; charset=utf-8', htmlContent);
+        handleSuccess(htmlFallbackName, null);
     }
 
     function injectPlainStudentFormFallback(opts) {
@@ -577,6 +578,11 @@
                     });
                     closeDlg(true);
                     if (global.Win11HUD) global.Win11HUD.open();
+                    setTimeout(function () {
+                        if (global.Win11Registry && typeof global.Win11Registry.open === 'function') {
+                            global.Win11Registry.open('personalization.background');
+                        }
+                    }, 350);
                 }
             }
         ];
@@ -613,11 +619,11 @@
                         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
                             '<div>' +
                                 '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('pedagogy.lastNameLabel')) + '</label>' +
-                                '<input type="text" id="stu-reg-lastname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.lastNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initLn) + '">' +
+                                '<input type="text" id="stu-reg-lastname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.lastNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initLn) + '" autocomplete="off" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                             '</div>' +
                             '<div>' +
                                 '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('pedagogy.firstNameLabel')) + '</label>' +
-                                '<input type="text" id="stu-reg-firstname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.firstNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initFn) + '">' +
+                                '<input type="text" id="stu-reg-firstname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.firstNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initFn) + '" autocomplete="off" data-lpignore="true" spellcheck="false" autocorrect="off">' +
                             '</div>' +
                         '</div>' +
                         '<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">' +
@@ -924,12 +930,7 @@
 
         // Auto-save evaluation report directly to user's Windows Desktop as genuine PDF
         saveReportToDesktop(pdfName, null, opts);
-
-        try {
-            if (global.print) global.print();
-        } finally {
-            setTimeout(function () { document.title = prevTitle; }, 1200);
-        }
+        setTimeout(function () { document.title = prevTitle; }, 1200);
         return pdfName;
     }
 

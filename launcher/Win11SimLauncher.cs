@@ -136,7 +136,7 @@ namespace Win11SimHost
                                     ProcessStartInfo pPsi = new ProcessStartInfo();
                                     pPsi.FileName = chromium;
                                     pPsi.Arguments = string.Format(
-                                        "{0} --disable-gpu --no-sandbox --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
+                                        "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
                                         headlessVariants[v], tmpProf, targetPath, fileUrl);
                                     pPsi.UseShellExecute = false;
                                     pPsi.CreateNoWindow = true;
@@ -159,6 +159,11 @@ namespace Win11SimHost
                             try { if (Directory.Exists(tmpProf)) Directory.Delete(tmpProf, true); } catch { }
                         }
                     }
+                }
+
+                if (ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "ERROR:Failed to generate valid binary PDF";
                 }
 
                 File.WriteAllBytes(targetPath, bytes);
@@ -696,7 +701,7 @@ namespace Win11SimHost
                                                 ProcessStartInfo pPsi = new ProcessStartInfo();
                                                 pPsi.FileName = chromium;
                                                 pPsi.Arguments = string.Format(
-                                                    "{0} --disable-gpu --no-sandbox --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
+                                                    "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
                                                     headlessVariants[v], tmpProf, targetPath, fileUrl);
                                                 pPsi.UseShellExecute = false;
                                                 pPsi.CreateNoWindow = true;
@@ -990,10 +995,13 @@ namespace Win11SimHost
                         Directory.CreateDirectory(defaultDir);
                         string prefsFile = Path.Combine(defaultDir, "Preferences");
                         string prefsJson = "{" +
+                            "\"credentials_enable_service\":false," +
+                            "\"profile\":{\"password_manager_enabled\":false,\"password_manager_leak_detection\":false}," +
+                            "\"autofill\":{\"credit_card_enabled\":false,\"profile_enabled\":false,\"address_enabled\":false}," +
+                            "\"edge\":{\"autofill\":{\"password_manager_enabled\":false}}," +
                             "\"safebrowsing\":{\"enabled\":false,\"enhanced\":false}," +
                             "\"smartscreen\":{\"enabled\":false}," +
                             "\"download\":{\"prompt_for_download\":false,\"default_directory\":\"" + _exeDir.Replace("\\", "\\\\") + "\"}," +
-                            "\"profile\":{\"password_manager_enabled\":false}," +
                             "\"translate\":{\"enabled\":false}" +
                         "}";
                         File.WriteAllText(prefsFile, prefsJson, Encoding.UTF8);
@@ -1008,6 +1016,12 @@ namespace Win11SimHost
                         "--no-first-run " +
                         "--no-default-browser-check " +
                         "--noerrdialogs " +
+                        "--disable-save-password-bubble " +
+                        "--disable-single-click-autofill " +
+                        "--disable-autofill-keyboard-accessory-view " +
+                        "--disable-password-generation " +
+                        "--disable-password-manager-reauthentication " +
+                        "--password-store=basic " +
                         "--disable-sync " +
                         "--disable-translate " +
                         "--disable-notifications " +
@@ -1019,7 +1033,7 @@ namespace Win11SimHost
                         "--disable-component-update " +
                         "--proxy-server=\"direct://\" " +
                         "--proxy-bypass-list=\"*\" " +
-                        "--disable-features=msSmartScreenProtection,msSmartScreenPua,msSmartScreenPhishing,msDefenderSmartScreen,ScarewareBlockerProtectionEnabled,ScarewareBlockerBlocksDetectedSitesEnabled,msScarewareBlocker,msEdgeScarewareBlocker,SafetyHub,msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI " +
+                        "--disable-features=msSmartScreenProtection,msSmartScreenPua,msSmartScreenPhishing,msDefenderSmartScreen,ScarewareBlockerProtectionEnabled,ScarewareBlockerBlocksDetectedSitesEnabled,msScarewareBlocker,msEdgeScarewareBlocker,SafetyHub,msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled,msPasswordManager,msPasswordHealth,msWalletPasswordManager,msShowPasswordManagerOffer " +
                         "--disable-background-mode " +
                         "--disable-backgrounding-occluded-windows " +
                         "--new-window " +
@@ -1034,41 +1048,36 @@ namespace Win11SimHost
                     _lastPingUtc = DateTime.UtcNow;
                     _hasReceivedPing = false;
 
-                    // Watchdog loop: Keeps loopback server alive even if browser launches via a short-lived bootstrap process
+                    // Watchdog loop: Keeps loopback server alive without prematurely killing it during class sessions
                     while (_running)
                     {
                         if (!_running) break;
 
-                        // Check if primary process was directly tracked and exited normally after active use
-                        if (p != null && p.HasExited)
+                        bool browserAlive = false;
+                        try
                         {
-                            TimeSpan totalRun = DateTime.UtcNow - launchTime;
-                            if (totalRun.TotalSeconds > 3 && _hasReceivedPing)
+                            if (p != null && !p.HasExited) browserAlive = true;
+                        }
+                        catch { }
+
+                        if (!browserAlive)
+                        {
+                            // Primary process exited. Check if browser child process continues sending pings
+                            if (_hasReceivedPing)
                             {
-                                TimeSpan sincePing = DateTime.UtcNow - _lastPingUtc;
-                                if (sincePing.TotalSeconds > 4)
+                                TimeSpan idle = DateTime.UtcNow - _lastPingUtc;
+                                if (idle.TotalSeconds > 12)
                                 {
                                     break;
                                 }
                             }
-                        }
-
-                        // Heartbeat watchdog
-                        if (_hasReceivedPing)
-                        {
-                            TimeSpan idle = DateTime.UtcNow - _lastPingUtc;
-                            if (idle.TotalSeconds > 10)
+                            else
                             {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            // Generous 60-second grace period for browser window to launch and fetch page
-                            TimeSpan waiting = DateTime.UtcNow - launchTime;
-                            if (waiting.TotalSeconds > 60)
-                            {
-                                break;
+                                TimeSpan waiting = DateTime.UtcNow - launchTime;
+                                if (waiting.TotalSeconds > 90)
+                                {
+                                    break;
+                                }
                             }
                         }
 
