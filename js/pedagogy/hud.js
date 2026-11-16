@@ -294,7 +294,6 @@
                     '</div>'
                 ) : '') +
                 '<div class="hud-actions">' +
-                    '<button type="button" class="win-btn win-btn-secondary" id="hud-open-settings-btn" title="فتح نافذة الإعدادات">' + global.Win11Icons.get('settings', 14) + '<span>' + bidi('الإعدادات') + '</span></button>' +
                     (isExamMode ? '' : '<button type="button" class="win-btn win-btn-secondary" id="hud-hint-btn">' + global.Win11Icons.get('bulb', 14) + '<span>' + bidi(t('pedagogy.hintBtn')) + '</span></button>') +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-check-btn">' + global.Win11Icons.get('check', 14) + '<span>' + bidi(t('pedagogy.checkBtn')) + '</span></button>' +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-skip-btn"' + (isViewingActive ? '' : ' disabled') + '><span>⏭ ' + bidi(t('pedagogy.skipBtn')) + '</span></button>' +
@@ -369,25 +368,6 @@
             hideHintBtn.onclick = function () {
                 activeHintTaskId = null;
                 renderContent();
-            };
-        }
-        var openSetBtn = el.querySelector('#hud-open-settings-btn');
-        if (openSetBtn) {
-            openSetBtn.onclick = function (e) {
-                e.stopPropagation();
-                var targetId = 'home';
-                var curT = (tasks && tasks[currentTaskIdx]) || task;
-                if (curT && curT.id) {
-                    if (curT.id === 'task_wallpaper_accent') targetId = 'personalization.background';
-                    else if (curT.id === 'task_input_timezone') targetId = 'time.language';
-                    else if (curT.id === 'task_display_language') targetId = 'time.language';
-                    else if (curT.id === 'task_mouse_props') targetId = 'devices.mouse';
-                    else if (curT.id === 'task_apps_features') targetId = 'apps.installed';
-                    else if (curT.id === 'task_accounts_uac') targetId = 'accounts.users';
-                }
-                if (global.Win11Registry && typeof global.Win11Registry.open === 'function') {
-                    global.Win11Registry.open(targetId);
-                }
             };
         }
 

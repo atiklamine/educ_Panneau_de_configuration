@@ -501,16 +501,38 @@
                             var subtasksHtml = '';
                             if (cat && cat.length > 0) {
                                 var disabledSubs = Array.isArray(tcItem.disabled_subtasks) ? tcItem.disabled_subtasks : [];
+                                var subOrder = [];
+                                if (Array.isArray(tcItem.subtasks_order) && tcItem.subtasks_order.length > 0) {
+                                    for (var soi = 0; soi < tcItem.subtasks_order.length; soi++) {
+                                        var sidVal = Number(tcItem.subtasks_order[soi]);
+                                        if (!isNaN(sidVal) && sidVal >= 0 && sidVal < cat.length && subOrder.indexOf(sidVal) === -1) {
+                                            subOrder.push(sidVal);
+                                        }
+                                    }
+                                }
+                                for (var csi = 0; csi < cat.length; csi++) {
+                                    if (subOrder.indexOf(csi) === -1) subOrder.push(csi);
+                                }
+                                tcItem.subtasks_order = subOrder;
+
                                 subtasksHtml += '<div style="margin:4px 32px 8px 12px;padding:6px 10px;background:rgba(0,0,0,0.025);border-radius:4px;border-right:3px solid #0078D4">';
-                                subtasksHtml += '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:4px">' + bidi('الخطوات الفرعية (إلغاء التحديد يُعفي التلميذ منها ولا يحسب في التقييم):') + '</div>';
-                                for (var si = 0; si < cat.length; si++) {
-                                    var sub = cat[si];
+                                subtasksHtml += '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:4px">' + bidi('الخطوات الفرعية (إلغاء التحديد يُعفي التلميذ منها، والأسهم للتحكم في ترتيبها):') + '</div>';
+                                for (var si = 0; si < subOrder.length; si++) {
+                                    var subId = subOrder[si];
+                                    var sub = cat[subId] || { id: subId, labelAr: 'خطوة ' + (subId + 1) };
                                     var isSubEn = disabledSubs.indexOf(sub.id) === -1;
                                     subtasksHtml +=
-                                        '<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin:2px 0;cursor:pointer' + (tcItem.enabled === false ? ';opacity:0.5' : '') + '">' +
-                                            '<input type="checkbox" data-subtask-en="' + tkIdx + ':' + sub.id + '"' + (isSubEn ? ' checked' : '') + (tcItem.enabled === false ? ' disabled' : '') + '>' +
-                                            '<span>' + bidi(sub.labelAr) + '</span>' +
-                                        '</label>';
+                                        '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin:3px 0' + (tcItem.enabled === false ? ';opacity:0.5' : '') + '">' +
+                                            '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1">' +
+                                                '<input type="checkbox" data-subtask-en="' + tkIdx + ':' + sub.id + '"' + (isSubEn ? ' checked' : '') + (tcItem.enabled === false ? ' disabled' : '') + '>' +
+                                                '<span style="color:#0067C0;font-weight:600"><bdi dir="ltr">' + (si + 1) + '.</bdi></span> ' +
+                                                '<span>' + bidi(sub.labelAr) + '</span>' +
+                                            '</label>' +
+                                            '<div style="display:inline-flex;gap:2px">' +
+                                                '<button type="button" class="win-btn win-btn-secondary" data-subtask-up="' + tkIdx + ':' + si + '" style="min-height:20px;padding:1px 6px;font-size:10.5px"' + (si === 0 || tcItem.enabled === false ? ' disabled' : '') + ' title="تحريك لأعلى">▲</button>' +
+                                                '<button type="button" class="win-btn win-btn-secondary" data-subtask-dn="' + tkIdx + ':' + si + '" style="min-height:20px;padding:1px 6px;font-size:10.5px"' + (si === subOrder.length - 1 || tcItem.enabled === false ? ' disabled' : '') + ' title="تحريك لأسفل">▼</button>' +
+                                            '</div>' +
+                                        '</div>';
                                 }
                                 subtasksHtml += '</div>';
                             }
@@ -832,6 +854,38 @@
                                 var tmp = cfg.tasks_config[idx + 1];
                                 cfg.tasks_config[idx + 1] = cfg.tasks_config[idx];
                                 cfg.tasks_config[idx] = tmp;
+                                isDirty = true;
+                                draw();
+                            }
+                        };
+                    }
+                    var subUps = wrap.querySelectorAll('[data-subtask-up]');
+                    for (var suIdx = 0; suIdx < subUps.length; suIdx++) {
+                        subUps[suIdx].onclick = function () {
+                            var parts = this.getAttribute('data-subtask-up').split(':');
+                            var tIdx = Number(parts[0]);
+                            var sPos = Number(parts[1]);
+                            var tItem = cfg.tasks_config[tIdx];
+                            if (tItem && Array.isArray(tItem.subtasks_order) && sPos > 0) {
+                                var tmp = tItem.subtasks_order[sPos - 1];
+                                tItem.subtasks_order[sPos - 1] = tItem.subtasks_order[sPos];
+                                tItem.subtasks_order[sPos] = tmp;
+                                isDirty = true;
+                                draw();
+                            }
+                        };
+                    }
+                    var subDns = wrap.querySelectorAll('[data-subtask-dn]');
+                    for (var sdnIdx = 0; sdnIdx < subDns.length; sdnIdx++) {
+                        subDns[sdnIdx].onclick = function () {
+                            var parts = this.getAttribute('data-subtask-dn').split(':');
+                            var tIdx = Number(parts[0]);
+                            var sPos = Number(parts[1]);
+                            var tItem = cfg.tasks_config[tIdx];
+                            if (tItem && Array.isArray(tItem.subtasks_order) && sPos < tItem.subtasks_order.length - 1) {
+                                var tmp = tItem.subtasks_order[sPos + 1];
+                                tItem.subtasks_order[sPos + 1] = tItem.subtasks_order[sPos];
+                                tItem.subtasks_order[sPos] = tmp;
                                 isDirty = true;
                                 draw();
                             }

@@ -33,8 +33,8 @@
             { id: 1, labelAr: 'ضبط المنطقة الزمنية على الجزائر (GMT+1)', labelFr: 'Régler le fuseau horaire sur GMT+1' }
         ],
         4: [
-            { id: 0, labelAr: 'فتح مستعرض الصور عبر زر "استعراض صور" (Browse)', labelFr: 'Ouvrir Parcourir dans Arrière-plan' },
-            { id: 1, labelAr: 'اختيار صورة من مجلد الصور (Pictures)', labelFr: 'Choisir une image dans Pictures' },
+            { id: 0, labelAr: 'تغيير الخلفية باختيار إحدى الصور المعروضة في نافذة الإعدادات', labelFr: 'Choisir une image parmi celles affichées dans la fenêtre' },
+            { id: 1, labelAr: 'تغيير الخلفية باختيار صورة من مجلد الصور (Pictures) عبر زر "استعراض صور"', labelFr: 'Choisir une image dans le dossier Pictures via Parcourir' },
             { id: 2, labelAr: 'تغيير لون التمييز للنظام (Accent Color)', labelFr: 'Modifier la couleur d\'accentuation' }
         ],
         5: [
@@ -70,12 +70,12 @@
             exam_time_limit_min: 0,
             pass_threshold: 10.0,
             tasks_config: [
-                { id: 1, enabled: true, coefficient: 1, weight: 1, complexity: 'simple', critical: false, disabled_subtasks: [] },
-                { id: 2, enabled: true, coefficient: 2, weight: 2, complexity: 'simple', critical: false, disabled_subtasks: [] },
-                { id: 3, enabled: true, coefficient: 3, weight: 3, complexity: 'medium', critical: false, disabled_subtasks: [] },
-                { id: 4, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [] },
-                { id: 5, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [] },
-                { id: 6, enabled: true, coefficient: 6, weight: 6, complexity: 'complex', critical: false, disabled_subtasks: [] }
+                { id: 1, enabled: true, coefficient: 1, weight: 1, complexity: 'simple', critical: false, disabled_subtasks: [], subtasks_order: [0] },
+                { id: 2, enabled: true, coefficient: 2, weight: 2, complexity: 'simple', critical: false, disabled_subtasks: [], subtasks_order: [0, 1] },
+                { id: 3, enabled: true, coefficient: 3, weight: 3, complexity: 'medium', critical: false, disabled_subtasks: [], subtasks_order: [0, 1] },
+                { id: 4, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [], subtasks_order: [0, 1, 2] },
+                { id: 5, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [], subtasks_order: [0, 1, 2, 3, 4] },
+                { id: 6, enabled: true, coefficient: 6, weight: 6, complexity: 'complex', critical: false, disabled_subtasks: [], subtasks_order: [0, 1, 2, 3, 4, 5, 6, 7] }
             ],
             ui_language_default: 'ar',
             theme_lock: false,
@@ -210,15 +210,15 @@
             maxPoints: 4.0,
             complexity: 'medium',
             critical: false,
-            titleAr: 'تخصيص الخلفية (تصفح الصور) ولون التمييز',
-            titleFr: 'Fond d\'écran (Images) et accentuation',
-            titleEn: 'Background from Pictures & Accent',
-            instrAr: 'من التخصيص ← الخلفية انقر "استعراض صور"، انتقل إلى مجلد الصور (Pictures) واختر صورة لسطح المكتب، ثم غيّر لون التمييز.',
-            instrFr: 'Dans Personnalisation > Arrière-plan, cliquez sur Parcourir, ouvrez le dossier Images et choisissez une photo, puis modifiez la couleur d\'accentuation.',
-            instrEn: 'Open Personalization > Background, click Browse photos, pick a picture from Pictures, and change accent color.',
-            hintAr: 'انقر بالزر الأيمن على سطح المكتب ← تخصيص ← الخلفية ← زر "استعراض صور" ← مجلد الصور (Pictures).',
-            hintFr: 'Clic droit > Personnaliser > Arrière-plan > Parcourir > dossier Images (Pictures).',
-            hintEn: 'Right-click Desktop > Personalize > Background > Browse photos > Pictures folder.',
+            titleAr: 'تخصيص الخلفية (الصور المعروضة ومجلد الصور) ولون التمييز',
+            titleFr: 'Fond d\'écran (images de la fenêtre et dossier Images) et accentuation',
+            titleEn: 'Background (Preset & Pictures) & Accent Color',
+            instrAr: '1) غيّر الخلفية باختيار إحدى الصور المعروضة مباشرة في نافذة الإعدادات. 2) غيّر الخلفية باختيار صورة من مجلد الصور (Pictures) عبر زر "استعراض صور". 3) غيّر لون التمييز للنظام.',
+            instrFr: '1) Choisissez une image d\'arrière-plan affichée dans la fenêtre. 2) Choisissez une image dans le dossier Pictures via Parcourir. 3) Modifiez la couleur d\'accentuation.',
+            instrEn: '1) Choose a background from the images displayed in the window. 2) Choose an image from the Pictures folder via Browse photos. 3) Change accent color.',
+            hintAr: 'افتح الإعدادات ← التخصيص ← الخلفية: اختر صورة معروضة، ثم انقر زر "استعراض صور" لاختيار صورة من مجلد الصور (Pictures)، ثم بدّل لون التمييز.',
+            hintFr: 'Paramètres > Personnalisation > Arrière-plan : choisissez une image affichée, puis cliquez sur Parcourir pour choisir une image dans Images, puis modifiez la couleur.',
+            hintEn: 'Settings > Personalization > Background: choose a preset image, then click Browse photos to pick from Pictures, then change accent color.',
             earnedPoints: 0,
             deductedPoints: 0,
             deductReasons: [],
@@ -500,14 +500,30 @@
         var reasons = [];
         var subSteps = [];
         var allDone = true;
-        for (var i = 0; i < checks.length; i++) {
+
+        var order = [];
+        if (Array.isArray(tk.subtasks_order) && tk.subtasks_order.length > 0) {
+            for (var oi = 0; oi < tk.subtasks_order.length; oi++) {
+                var oVal = Number(tk.subtasks_order[oi]);
+                if (!isNaN(oVal) && oVal >= 0 && oVal < checks.length && order.indexOf(oVal) === -1) {
+                    order.push(oVal);
+                }
+            }
+        }
+        for (var fi = 0; fi < checks.length; fi++) {
+            if (order.indexOf(fi) === -1) order.push(fi);
+        }
+
+        for (var oIndex = 0; oIndex < order.length; oIndex++) {
+            var i = order[oIndex];
             if (disabledList.indexOf(i) !== -1) {
                 // Sub-task is disabled by teacher: exclude from evaluation
                 continue;
             }
             var c = checks[i];
+            if (!c) continue;
             var w = c.weight || 1;
-            var isSkipped = !c.ok && !!stepSkippedMap[i];
+            var isSkipped = !c.ok && (!!stepSkippedMap[i] || !!stepSkippedMap[oIndex]);
             totalWeight += w;
             if (c.ok) {
                 earnedWeight += w;
@@ -521,9 +537,10 @@
             }
             subSteps.push({
                 origIndex: i,
-                labelAr: c.labelAr || c.reason || ('الخطوة ' + (i + 1)),
-                labelFr: c.labelFr || c.labelAr || c.reason || ('Étape ' + (i + 1)),
-                labelEn: c.labelEn || c.labelAr || c.reason || ('Step ' + (i + 1)),
+                orderIndex: oIndex,
+                labelAr: c.labelAr || c.reason || ('الخطوة ' + (subSteps.length + 1)),
+                labelFr: c.labelFr || c.labelAr || c.reason || ('Étape ' + (subSteps.length + 1)),
+                labelEn: c.labelEn || c.labelAr || c.reason || ('Step ' + (subSteps.length + 1)),
                 ok: !!c.ok,
                 skipped: isSkipped
             });
@@ -630,32 +647,30 @@
             ]);
             syncTaskTimer(tk, hasAr || isGmt1);
         } else if (tk.id === 4) {
-            // Task 4: Personalization Browse Pictures + Accent Color (Medium — 3 equal sub-stages, 33% / 67% / 100%)
+            // Task 4: Personalization (Preset Image + Browse Pictures + Accent Color)
             var allowPers = (!earlyTaintedMap[4] || activeTouchedMap[4]);
             var browseMeta = st.wallpaperBrowseMeta || {};
-            var usedBrowse = allowPers && !!browseMeta.usedBrowse;
             var wpNotDefault = allowPers && (st.wallpaperId !== 'bg_00');
-            var wpFromPictures = wpNotDefault && (browseMeta.selectedFolder === 'pictures');
-            var accChanged = allowPers && (st.accentColor.toUpperCase() !== '#0067C0');
-            if (wpNotDefault && !wpFromPictures && !hasMistake(4, 'اختيار خلفية من المعرض بدل مجلد الصور')) {
-                recordMistake(4, 'اختيار خلفية من المعرض بدل مجلد الصور', 'تم تحديد خلفية مدمجة بدلاً من استخدام زر "استعراض صور" ومجلد الصور (Pictures).', Math.max(0.25, config.penalty_error || 0.25), 'folder');
-            }
+            var wpFromPictures = allowPers && (!!st.hasChosenPicturesWallpaper || (wpNotDefault && !!st.customWallpaper && (browseMeta.selectedFolder === 'pictures' || (st.customWallpaper && st.customWallpaper.folder === 'pictures'))));
+            var wpFromPreset = allowPers && (!!st.hasChosenPresetWallpaper || (wpNotDefault && !st.customWallpaper));
+            var accChanged = allowPers && (st.accentColor && st.accentColor.toUpperCase() !== '#0067C0');
+
             scoreTaskWithReasons(tk, [
                 {
-                    ok: usedBrowse,
+                    ok: wpFromPreset,
                     weight: 1,
-                    labelAr: 'فتح مستعرض اختيار الصورة عبر زر "استعراض صور" (Browse)',
-                    labelFr: 'Ouvrir Parcourir dans Arrière-plan',
-                    labelEn: 'Open Browse photos in Background settings',
-                    reason: 'لم يتم استخدام زر استعراض صور (Browse)'
+                    labelAr: 'تغيير الخلفية باختيار إحدى الصور المعروضة في نافذة الإعدادات',
+                    labelFr: 'Choisir une image parmi celles affichées dans la fenêtre',
+                    labelEn: 'Choose an image from presets in Settings window',
+                    reason: 'لم يتم تغيير الخلفية باختيار إحدى الصور المعروضة في نافذة الإعدادات'
                 },
                 {
                     ok: wpFromPictures,
                     weight: 1,
-                    labelAr: 'اختيار صورة من مجلد الصور (C:\\Users\\...\\Pictures)',
-                    labelFr: 'Choisir une image dans le dossier Pictures',
-                    labelEn: 'Pick an image inside Pictures folder',
-                    reason: 'لم تُختر صورة من مجلد الصور (C:\\Users\\...\\Pictures)'
+                    labelAr: 'تغيير الخلفية باختيار صورة من مجلد الصور (Pictures) عبر زر "استعراض صور"',
+                    labelFr: 'Choisir une image dans le dossier Pictures via le bouton Parcourir',
+                    labelEn: 'Choose an image from Pictures folder via Browse photos',
+                    reason: 'لم تُختر صورة من مجلد الصور (Pictures) عبر زر استعراض صور'
                 },
                 {
                     ok: accChanged,
@@ -666,7 +681,7 @@
                     reason: 'لم يتم تغيير لون التمييز (Accent)'
                 }
             ]);
-            syncTaskTimer(tk, usedBrowse || wpNotDefault || accChanged);
+            syncTaskTimer(tk, wpFromPreset || wpFromPictures || accChanged);
         } else if (tk.id === 5) {
             // Task 5: Setup.exe Install/Verify/Uninstall + Optional Features Enable/Disable (Medium — 5 equal sub-stages, 20% each)
             var allowApps = (!earlyTaintedMap[5] || activeTouchedMap[5]);
@@ -974,8 +989,11 @@
         if (!Array.isArray(tk.subSteps) || isNaN(idx) || idx < 0 || idx >= tk.subSteps.length) {
             return false;
         }
-        if (tk.subSteps[idx].ok || tk.subSteps[idx].skipped) return false;
+        var targetStep = tk.subSteps[idx];
+        if (targetStep.ok || targetStep.skipped) return false;
+        var origIdx = (targetStep.origIndex !== undefined) ? targetStep.origIndex : idx;
         if (!skippedSubSteps[tk.id]) skippedSubSteps[tk.id] = {};
+        skippedSubSteps[tk.id][origIdx] = true;
         skippedSubSteps[tk.id][idx] = true;
         if (tk.startedAt === null) tk.startedAt = student.elapsedSeconds;
         evaluate();
@@ -995,6 +1013,7 @@
                 tk.enabled = (item.enabled !== false);
                 tk.critical = !!item.critical;
                 tk.disabled_subtasks = Array.isArray(item.disabled_subtasks) ? item.disabled_subtasks.slice() : [];
+                tk.subtasks_order = Array.isArray(item.subtasks_order) ? item.subtasks_order.slice() : null;
                 var c = (item.coefficient !== undefined && item.coefficient !== null) ? Number(item.coefficient) : Number(item.weight);
                 if (isNaN(c) || c < 1) {
                     c = (item.complexity === 'complex') ? 3 : 1;
@@ -1010,6 +1029,7 @@
             if (Object.prototype.hasOwnProperty.call(map, k)) {
                 map[k].enabled = true;
                 map[k].disabled_subtasks = [];
+                map[k].subtasks_order = null;
                 var defC = (map[k].complexity === 'complex') ? 3 : 1;
                 map[k].coefficient = defC;
                 map[k].maxPoints = defC;

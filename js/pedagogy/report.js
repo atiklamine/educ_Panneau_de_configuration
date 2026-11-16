@@ -578,11 +578,6 @@
                     });
                     closeDlg(true);
                     if (global.Win11HUD) global.Win11HUD.open();
-                    setTimeout(function () {
-                        if (global.Win11Registry && typeof global.Win11Registry.open === 'function') {
-                            global.Win11Registry.open('personalization.background');
-                        }
-                    }, 350);
                 }
             }
         ];

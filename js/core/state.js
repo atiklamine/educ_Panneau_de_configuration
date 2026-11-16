@@ -11,6 +11,7 @@
         'displayLanguage', 'uiLanguage', 'hasChangedDisplayLanguage', 'numerals', 'themeMode', 'accentColor', 'transparency',
         'highContrast', 'reducedMotion', 'textScale', 'brightness', 'nightLight',
         'resolution', 'orientation', 'snapWindowsEnabled', 'wallpaperId', 'customWallpaper', 'wallpaperBrowseMeta',
+        'hasChosenPresetWallpaper', 'hasChosenPicturesWallpaper',
         'desktopIconSize', 'desktopSort', 'taskbarAlign', 'taskbarShowSearch',
         'taskbarShowTaskView', 'startShowRecommended', 'screenSaver', 'screenSaverWait',
         'soundEnabled', 'volume', 'muted', 'mouseButtonsInverted', 'mouseDoubleClickSpeed',
@@ -94,6 +95,8 @@
             wallpaperId: 'bg_00',
             customWallpaper: null,
             wallpaperBrowseMeta: { usedBrowse: false, selectedFolder: null, selectedPath: '' },
+            hasChosenPresetWallpaper: false,
+            hasChosenPicturesWallpaper: false,
             userWallpapers: { 'MENIAI': 'bg_00' },
             desktopIconSize: 'medium',
             desktopSort: 'default',
@@ -911,8 +914,14 @@
                     folder: customMeta.folder || 'pictures',
                     path: customMeta.path || ''
                 };
+                if (customMeta.folder === 'pictures' || (customMeta.browseMeta && customMeta.browseMeta.selectedFolder === 'pictures')) {
+                    data.hasChosenPicturesWallpaper = true;
+                }
             } else {
                 data.customWallpaper = null;
+                if (wpId !== 'bg_00') {
+                    data.hasChosenPresetWallpaper = true;
+                }
             }
             if (customMeta && customMeta.browseMeta) {
                 data.wallpaperBrowseMeta = customMeta.browseMeta;
