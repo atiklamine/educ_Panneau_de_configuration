@@ -107,13 +107,8 @@ const lazyPreMarkScript =
         .join('') +
     '}})();';
 
-const summaryRaw = readUtf8('summary.html');
-const outSummaryGzPath = path.join(BUILD_DIR, 'summary.html.gz');
-const summaryGzBytes = zlib.gzipSync(Buffer.from(summaryRaw, 'utf8'), { level: 9 });
-fs.writeFileSync(outSummaryGzPath, summaryGzBytes);
-
 const scriptTags = [
-    '<script>\nwindow.__WIN11_INLINE_BG__ = ' + JSON.stringify(inlineBgMap) + ';\nwindow.__WIN11_INLINE_IMAGES__ = ' + JSON.stringify(inlineImagesMap) + ';\nwindow.__WIN11_SUMMARY_HTML__ = ' + JSON.stringify(summaryRaw) + ';\n</script>'
+    '<script>\nwindow.__WIN11_INLINE_BG__ = ' + JSON.stringify(inlineBgMap) + ';\nwindow.__WIN11_INLINE_IMAGES__ = ' + JSON.stringify(inlineImagesMap) + ';\n</script>'
 ];
 
 for (const jsFile of CORE_AND_APP_SCRIPTS) {
@@ -177,7 +172,6 @@ if (fs.existsSync(manifestPath)) {
     cscArgs.push('/win32manifest:' + manifestPath);
 }
 cscArgs.push('/resource:' + outGzPath + ',Win11_Simulator_1AS.html.gz');
-cscArgs.push('/resource:' + outSummaryGzPath + ',summary.html.gz');
 cscArgs.push('/out:' + outExePath);
 cscArgs.push(csSource);
 

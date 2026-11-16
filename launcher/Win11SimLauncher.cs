@@ -92,7 +92,11 @@ namespace Win11SimHost
                 string safeName = SanitizeFileName(filename);
                 if (string.IsNullOrEmpty(safeName)) safeName = "1AS_Report.html";
                 string ext = Path.GetExtension(safeName);
-                if (string.IsNullOrEmpty(ext)) ext = ".html";
+                if (string.IsNullOrEmpty(ext) || ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                {
+                    ext = ".html";
+                    safeName = Path.GetFileNameWithoutExtension(safeName) + ".html";
+                }
                 string baseName = Path.GetFileNameWithoutExtension(safeName);
 
                 string targetPath = Path.Combine(desktopDir, safeName);
@@ -185,7 +189,6 @@ namespace Win11SimHost
         private static volatile bool _running = true;
         private static Process _browserProcess = null;
         private static string _tempProfileDir = null;
-        private static byte[] _summaryBytes = null;
         private static DateTime _lastPingUtc = DateTime.UtcNow;
         private static volatile bool _hasReceivedPing = false;
 
@@ -240,7 +243,6 @@ namespace Win11SimHost
             try
             {
                 _htmlBytes = LoadEmbeddedHtmlBytes();
-                _summaryBytes = LoadEmbeddedSummaryBytes();
             }
             catch (Exception ex)
             {
@@ -325,40 +327,6 @@ namespace Win11SimHost
                     return ms.ToArray();
                 }
             }
-        }
-
-        private static byte[] LoadEmbeddedSummaryBytes()
-        {
-            try
-            {
-                Assembly asm = Assembly.GetExecutingAssembly();
-                using (Stream raw = asm.GetManifestResourceStream("summary.html.gz"))
-                {
-                    if (raw != null)
-                    {
-                        using (GZipStream gz = new GZipStream(raw, CompressionMode.Decompress))
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            byte[] buf = new byte[65536];
-                            int read;
-                            while ((read = gz.Read(buf, 0, buf.Length)) > 0)
-                            {
-                                ms.Write(buf, 0, read);
-                            }
-                            return ms.ToArray();
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            try
-            {
-                string p = Path.Combine(_exeDir, "summary.html");
-                if (File.Exists(p)) return File.ReadAllBytes(p);
-            }
-            catch { }
-            return null;
         }
 
         private static void ListenLoop()
@@ -670,9 +638,21 @@ namespace Win11SimHost
                                         if (p != null)
                                         {
                                             p.WaitForExit(8000);
-                                            if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 200)
+                                            if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 1000)
                                             {
-                                                pdfDone = true;
+                                                try
+                                                {
+                                                    byte[] header = new byte[4];
+                                                    using (FileStream fs = File.OpenRead(targetPath))
+                                                    {
+                                                        if (fs.Read(header, 0, 4) == 4 &&
+                                                            header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46) // %PDF
+                                                        {
+                                                            pdfDone = true;
+                                                        }
+                                                    }
+                                                }
+                                                catch { }
                                             }
                                         }
                                     }
@@ -686,6 +666,7 @@ namespace Win11SimHost
 
                             if (!pdfDone)
                             {
+                                try { if (File.Exists(targetPath)) File.Delete(targetPath); } catch { }
                                 targetPath = Path.Combine(desktopDir, baseName + ".html");
                                 File.WriteAllBytes(targetPath, fileBytes ?? (htmlStr != null ? Encoding.UTF8.GetBytes(htmlStr) : new byte[0]));
                             }
@@ -793,23 +774,6 @@ namespace Win11SimHost
                         client.Close();
                         return;
                     }
-                }
-
-                // Summary lesson sheet asset
-                if (path == "/summary.html" || path == "/summary")
-                {
-                    byte[] sBytes = _summaryBytes ?? LoadEmbeddedSummaryBytes();
-                    if (sBytes != null && sBytes.Length > 0)
-                    {
-                        SendResponse(stream, 200, "OK", "text/html; charset=utf-8", sBytes, true);
-                    }
-                    else
-                    {
-                        byte[] noSummary = Encoding.UTF8.GetBytes("Summary not available");
-                        SendResponse(stream, 404, "Not Found", "text/plain", noSummary, true);
-                    }
-                    client.Close();
-                    return;
                 }
 
                 // Root & HTML asset

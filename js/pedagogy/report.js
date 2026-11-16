@@ -35,7 +35,7 @@
         toast.innerHTML =
             '<span class="export-toast-icon">✓</span>' +
             '<div class="export-toast-body">' +
-                '<span>' + bidi('تم حفظ وثيقة الدرس والتقويم على سطح المكتب باسم:') + ' </span>' +
+                '<span>' + bidi('تم حفظ التقرير على سطح المكتب باسم:') + ' </span>' +
                 '<bdi dir="ltr" class="export-toast-filename">' + esc(filename) + '</bdi>' +
             '</div>' +
             (hasFolderAction ? '<button type="button" class="win-btn win-btn-accent export-toast-open-btn" id="export-toast-open-file"' + pathAttr + '>' + bidi('فتح الملف') + '</button>' : '') +
@@ -83,80 +83,9 @@
         exportToastTimer = setTimeout(dismissExportSuccessToast, 12000);
     }
 
-    function showExportSuccessDialog(filename, desktopPath) {
-        var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
-        var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
-        var targetPath = desktopPath || '';
-
-        global.Win11Dialogs.showCustom({
-            title: 'تم تصدير وحفظ الوثيقة على سطح المكتب بنجاح',
-            tone: 'info',
-            renderBody: function (wrap) {
-                wrap.innerHTML =
-                    '<div style="display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.6">' +
-                        '<div style="display:flex;align-items:center;gap:10px">' +
-                            '<div style="width:36px;height:36px;border-radius:50%;background:#107C41;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;flex-shrink:0">✓</div>' +
-                            '<div>' +
-                                '<div style="font-weight:700;font-size:14px;color:#107C41">' + bidi('تم حفظ وثيقة الدرس والتقويم كملف PDF على سطح المكتب!') + '</div>' +
-                                '<div style="font-size:12px;color:var(--win-text-secondary)">' + bidi('تم التصدير مباشرة وبنجاح دون الحاجة لكتابة اسم الملف.') + '</div>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div style="background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:6px;padding:10px 12px">' +
-                            '<div style="margin-bottom:4px"><strong>' + bidi('اسم الملف:') + '</strong> <bdi dir="ltr" style="font-family:Consolas,monospace;font-weight:600">' + esc(filename) + '</bdi></div>' +
-                            (targetPath ? ('<div style="font-size:11.5px;color:var(--win-text-secondary)"><strong>' + bidi('المسار الكامل:') + '</strong> <bdi dir="ltr">' + esc(targetPath) + '</bdi></div>') : '') +
-                        '</div>' +
-                        '<div style="font-size:12.5px;color:var(--win-text-secondary)">' + bidi('يمكنك فتح الملف مباشرة لمعاينته وطباعته، أو فتح مجلد سطح المكتب:') + '</div>' +
-                    '</div>';
-            },
-            buttons: [
-                {
-                    id: 'btn-open-file-direct',
-                    label: 'فتح الملف مباشرة',
-                    primary: true,
-                    onClick: function (closeDlg) {
-                        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
-                            global.fetch('/api/open-file', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ path: targetPath })
-                            }).catch(function () {});
-                        } else if (global.external && typeof global.external.OpenFile === 'function') {
-                            try { global.external.OpenFile(targetPath); } catch (e) {}
-                        }
-                        closeDlg(true);
-                    }
-                },
-                {
-                    id: 'btn-open-folder-direct',
-                    label: 'فتح المجلد',
-                    primary: false,
-                    onClick: function (closeDlg) {
-                        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
-                            global.fetch('/api/open-folder', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ path: targetPath })
-                            }).catch(function () {});
-                        } else if (global.external && typeof global.external.OpenFolder === 'function') {
-                            try { global.external.OpenFolder(targetPath); } catch (e) {}
-                        }
-                        closeDlg(true);
-                    }
-                },
-                {
-                    label: global.Win11I18N.t('app.close'),
-                    primary: false,
-                    value: false
-                }
-            ]
-        });
-    }
-
     function saveReportToDesktop(filename, onComplete) {
         var htmlContent = buildStandaloneHtmlDoc();
-        var isPdfReq = filename && /\.pdf$/i.test(filename);
-        var targetExt = isPdfReq ? 'pdf' : 'html';
-        var cleanName = normalizeExportFilename(filename, targetExt, formatSuggestedFilename(targetExt));
+        var cleanName = normalizeExportFilename(filename, 'html', formatSuggestedFilename('html'));
 
         // 1. Host TCP server loopback (/api/save-to-desktop)
         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
@@ -182,12 +111,12 @@
                     showExportSuccessToast(data.filename || cleanName, data.path || null);
                     if (onComplete) onComplete(null, data);
                 } else {
-                    downloadTextFile(cleanName, isPdfReq ? 'application/pdf' : 'text/html', htmlContent);
+                    downloadTextFile(cleanName, 'text/html', htmlContent);
                     showExportSuccessToast(cleanName, null);
                     if (onComplete) onComplete(null, { ok: true, filename: cleanName });
                 }
             }).catch(function () {
-                downloadTextFile(cleanName, isPdfReq ? 'application/pdf' : 'text/html', htmlContent);
+                downloadTextFile(cleanName, 'text/html', htmlContent);
                 showExportSuccessToast(cleanName, null);
                 if (onComplete) onComplete(null, { ok: true, filename: cleanName });
             });
@@ -794,309 +723,102 @@
     }
 
     function buildA4Html() {
-        var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
-        var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
-        var cfg = (global.Win11Assessment && typeof global.Win11Assessment.getConfig === 'function')
-            ? global.Win11Assessment.getConfig()
-            : {};
-        var stu = (global.Win11Assessment && typeof global.Win11Assessment.getStudent === 'function')
-            ? global.Win11Assessment.getStudent()
-            : {};
-        var scores = (global.Win11Assessment && typeof global.Win11Assessment.getScores === 'function')
-            ? global.Win11Assessment.getScores()
+        var bidi = global.Win11I18N.bidiHtml;
+        var cfg = global.Win11Assessment.getConfig();
+        var stu = global.Win11Assessment.getStudent();
+        var scores = global.Win11Assessment.getScores();
+        var tasks = global.Win11Assessment.getTasks();
+        var timings = (typeof global.Win11Assessment.getSectionTimings === 'function')
+            ? global.Win11Assessment.getSectionTimings()
             : {};
 
-        var institutionName = (cfg && cfg.institution_name) ? cfg.institution_name : 'مدرسة أشبال الأمة الشهيد قورين محمد الأغواط ن.ع4.';
-        var academicYear = (cfg && cfg.academic_year) ? cfg.academic_year : '2026 / 2027';
-
-        // Student evaluation values
-        var studentName = '';
-        if (stu.lastName && stu.firstName) {
-            studentName = esc(stu.lastName + ' ' + stu.firstName);
-        } else if (stu.fullName && stu.fullName.trim()) {
-            studentName = esc(stu.fullName.trim());
-        } else {
-            studentName = '............................................';
+        var rowsHtml = '';
+        for (var i = 0; i < tasks.length; i++) {
+            var tk = tasks[i];
+            if (tk.enabled === false) continue;
+            var stTxt = tk.skipped ? 'غير منجزة' : (tk.completed ? 'ناجحة' : (tk.earnedPoints > 0 ? 'جزئية' : 'غير منجزة'));
+            var stColor = tk.skipped ? '#C42B1C' : (tk.completed ? '#107C41' : (tk.earnedPoints > 0 ? '#D97706' : '#C42B1C'));
+            var tDur = global.Win11Assessment.formatDuration(tk.durationSeconds || 0);
+            var deductedVal = (tk.deductedPoints !== undefined) ? Number(tk.deductedPoints) : Math.max(0, tk.maxPoints - tk.earnedPoints);
+            var reasonTxt = (tk.deductReasons && tk.deductReasons.length > 0) ? tk.deductReasons.join('؛ ') : 'استيفاء كامل';
+            rowsHtml +=
+                '<tr>' +
+                    '<td>' + bidi(tk.titleAr) + (tk.critical ? ' <span style="color:#C42B1C;font-size:11px">(' + bidi('حرج') + ')</span>' : '') + '</td>' +
+                    (cfg.show_time ? ('<td class="col-time"><bdi dir="ltr">' + tDur + '</bdi></td>') : '') +
+                    '<td class="col-num"><bdi dir="ltr">' + tk.maxPoints.toFixed(2) + '</bdi></td>' +
+                    '<td class="col-num"><bdi dir="ltr">' + tk.earnedPoints.toFixed(2) + '</bdi></td>' +
+                    '<td class="col-num"><bdi dir="ltr">' + deductedVal.toFixed(2) + '</bdi></td>' +
+                    '<td class="col-details" style="font-size:11.5px">' + bidi(reasonTxt) + '</td>' +
+                    '<td class="col-status" style="color:' + stColor + ';font-weight:700">' + bidi(stTxt) + '</td>' +
+                '</tr>';
         }
 
-        var classGroup = (stu.classGroup && stu.classGroup.trim()) ? esc(stu.classGroup) : '..................................';
-        var pcNumber = stu.pcNumber ? ('#' + esc(String(stu.pcNumber))) : '#..........';
-
-        var finalScoreStr = '';
-        if (scores.finalScore !== undefined) {
-            finalScoreStr = scores.finalScore.toFixed(2);
-        } else if (scores.net !== undefined) {
-            finalScoreStr = scores.net.toFixed(2);
-        } else {
-            finalScoreStr = '................';
-        }
-
-        var totalSec = stu.elapsedSeconds || 0;
-        var m = Math.floor(totalSec / 60);
-        var s = totalSec % 60;
-        var mStr = (m < 10 ? '0' : '') + m;
-        var sStr = (s < 10 ? '0' : '') + s;
-        var timeFormatted = mStr + ' m : ' + sStr + ' sec';
+        var modeLabel = (stu.mode === 'exam') ? 'امتحان رسمي (تقييمي)' : 'استطلاع وتدريب (غير مصنّف)';
+        var logoHtml = (cfg.report_logo_b64 && String(cfg.report_logo_b64).indexOf('data:image/') === 0)
+            ? '<img src="' + cfg.report_logo_b64 + '" alt="logo" style="max-height:54px;max-width:88px;object-fit:contain;margin-bottom:4px">'
+            : '';
 
         return (
-            '<div class="a4-report-sheet doc-official-summary" dir="rtl" lang="ar">' +
-                '<!-- ==================== PAGE 1 ==================== -->' +
-                '<div class="page-container">' +
-                    '<header class="doc-header">' +
-                        '<div class="header-badge-box">' +
-                            '<div>' + bidi('وثيقة الدرس للوحدة (4)') + '</div>' +
-                            '<div style="font-size:7.5pt;font-weight:normal">' + bidi('السنة الدراسية:') + ' <span class="val-academic-year">' + esc(academicYear) + '</span></div>' +
-                        '</div>' +
-                        '<div class="header-top">' +
-                            '<span style="margin-right:auto;margin-left:auto">' + bidi('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية') + '</span>' +
-                        '</div>' +
-                        '<div class="header-institution">' +
-                            '<span class="val-institution-name">' + esc(institutionName) + '</span>' +
-                        '</div>' +
-                        '<div class="header-main">' +
-                            '<div class="doc-title">' + bidi('المجال المفاهيمي الأول: بيئة التعامل مع الحاسوب') + '</div>' +
-                            '<div class="doc-subtitle">' + bidi('الوحدة التعليمية الرابعة: لوحة التحكم (Panneau de configuration)') + '</div>' +
-                        '</div>' +
-                        '<div class="header-meta">' +
-                            '<div><strong>' + bidi('المستوى:') + '</strong> ' + bidi('الأولى ثانوي جذع مشترك ع / ت') + '</div>' +
-                            '<div><strong>' + bidi('المدة الزمنية:') + '</strong> ' + bidi('01 ساعة (حصة تطبيقية)') + '</div>' +
-                            '<div><strong>' + bidi('السنة الدراسية:') + '</strong> <span class="val-academic-year">' + esc(academicYear) + '</span></div>' +
-                        '</div>' +
-                    '</header>' +
-
-                    '<h2 class="sec-title">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' +
-                        bidi('1. مفهوم لوحة التحكم (Notion du Panneau de configuration)') +
-                    '</h2>' +
-                    '<div class="definition-box">' +
-                        '<strong>' + bidi('لوحة التحكم:') + '</strong> ' +
-                        bidi('هي برنامج تطبيقي مدمج مع نظام التشغيل (Windows)، تسمح للمستخدم بالتحكم في أغلب الميزات والخصائص والإعدادات الأساسية للنظام (عتاداً وبرمجيات) وتخصيصها بالطريقة التي تناسب احتياجاته ومستوى صلاحياته.') +
-                    '</div>' +
-
-                    '<h2 class="sec-title">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>' +
-                        bidi('2. طرق الوصول إلى لوحة التحكم') +
-                    '</h2>' +
-                    '<div class="two-cols">' +
-                        '<div class="bordered-card">' +
-                            '<strong>' + bidi('أ) الطريقة التقليدية (Panneau de configuration):') + '</strong>' +
-                            '<ul>' +
-                                '<li>' + bidi('النقر على زر') + ' <strong>' + bidi('ابدأ (Démarrer)') + '</strong>.</li>' +
-                                '<li>' + bidi('اختيار') + ' <strong>' + bidi('لوحة التحكم (Panneau de configuration)') + '</strong> ' + bidi('من قائمة البرامج أو الأدوات المساعدة.') + '</li>' +
-                            '</ul>' +
-                        '</div>' +
-                        '<div class="bordered-card">' +
-                            '<strong>' + bidi('ب) الطريقة الحديثة (Paramètres / Settings):') + '</strong>' +
-                            '<ul>' +
-                                '<li>' + bidi('النقر على زر') + ' <strong>' + bidi('ابدأ (Démarrer)') + '</strong> &larr; <strong>' + bidi('الإعدادات (Paramètres)') + '</strong>.</li>' +
-                                '<li>' + bidi('أو الضغط على اختصار لوحة المفاتيح:') + ' <bdi dir="ltr">[ Win + I ]</bdi>.</li>' +
-                            '</ul>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div style="font-size:8.5pt;background:#f9f9f9;border:1px solid #ddd;padding:4px 8px;border-radius:3px;margin-bottom:6px">' +
-                        '★ <strong>' + bidi('ملاحظة:') + '</strong> ' + bidi('في نظام التشغيل Windows7 يمكن عرض إعدادات لوحة التحكم وفق نوعين: نمط العرض كفئات ومجموعات وظيفية (Par catégories)، أو نمط العرض الكلاسيكي بالأيقونات الكبيرة أو الصغيرة (Grandes / Petites icônes).') +
-                    '</div>' +
-
-                    '<h2 class="sec-title">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>' +
-                        bidi('3. من بين أهم وظائف لوحة التحكم') +
-                    '</h2>' +
-                    '<div class="functions-grid">' +
-                        '<div class="bordered-card">' +
-                            '<h3 class="sub-title">' + bidi('(1) العرض وخصائصه (Affichage & Personnalisation):') + '</h3>' +
-                            '<p>' + bidi('تسمح بتغيير المظهر وإضفاء الطابع الشخصي على بيئة العمل:') + '</p>' +
-                            '<ul>' +
-                                '<li>' + bidi('تغيير خلفية سطح المكتب (Arrière-plan du bureau) من المعرض أو من مجلد الصور الخاص بالمستخدم.') + '</li>' +
-                                '<li>' + bidi('تحديد ألوان النوافذ ولون التمييز (Couleur d\'accentuation).') + '</li>' +
-                                '<li><strong>' + bidi('شاشة التوقف (Écran de veille):') + '</strong> ' + bidi('خلفية أو حركة تظهر تلقائياً بعد فترة زمنية محددة من عدم استعمال الحاسوب لتوفير الطاقة وحماية الخصوصية.') + '</li>' +
-                            '</ul>' +
-                        '</div>' +
-                        '<div class="bordered-card">' +
-                            '<h3 class="sub-title">' + bidi('(2) الفأرة (Souris):') + '</h3>' +
-                            '<p>' + bidi('التحكم في العتاد وسلوك المؤشر:') + '</p>' +
-                            '<ul>' +
-                                '<li>' + bidi('التحكم في سرعة النقر المزدوج (Vitesse du double-clic: بطيئة / سريعة).') + '</li>' +
-                                '<li>' + bidi('تغيير مظهر ونظام مؤشر الفأرة (Curseur / Modèles).') + '</li>' +
-                                '<li>' + bidi('تبديل الزر الأساسي للفأرة لاستعمال اليد اليسرى.') + '</li>' +
-                            '</ul>' +
-                        '</div>' +
-                        '<div class="bordered-card">' +
-                            '<h3 class="sub-title">' + bidi('(3) الخيارات الإقليمية واللغة (Région et langue):') + '</h3>' +
-                            '<p>' + bidi('تكييف الحاسوب مع المحيط الجغرافي واللغوي:') + '</p>' +
-                            '<ul>' +
-                                '<li>' + bidi('تحديد المنطقة الزمنية (مثل: الجزائر GMT + 1).') + '</li>' +
-                                '<li>' + bidi('تعديل تنسيق الوقت، التاريخ، والعملة.') + '</li>' +
-                                '<li>' + bidi('إضافة أو إزالة لغات الإدخال في لوحة المفاتيح وتغيير لغة العرض للنظام.') + '</li>' +
-                            '</ul>' +
-                        '</div>' +
-                        '<div class="bordered-card">' +
-                            '<h3 class="sub-title">' + bidi('(4) إضافة وإزالة البرامج (Applications et fonctionnalités):') + '</h3>' +
-                            '<p>' + bidi('التدبير السليم للبرمجيات والمساحة التخزينية:') + '</p>' +
-                            '<ul>' +
-                                '<li>' + bidi('تثبيت برامج جديدة عبر معالجات الإعداد (Setup.exe).') + '</li>' +
-                                '<li>' + bidi('إلغاء تثبيت البرامج الزائدة لحماية النظام وتسريعه.') + '</li>' +
-                                '<li>' + bidi('تفعيل أو تعطيل الميزات الاختيارية للنظام (Fonctionnalités facultatives).') + '</li>' +
-                            '</ul>' +
-                        '</div>' +
-                    '</div>' +
-
-                    '<div class="page-footer-note">' +
-                        '<span>' + bidi('منهاج مادة الإعلام الآلي — السنة الأولى ثانوي (المجال 1: بيئة التعامل مع الحاسوب)') + '</span>' +
-                        '<span>' + bidi('الصفحة 1 من 2') + '</span>' +
-                    '</div>' +
+            '<div class="a4-report-sheet" dir="rtl" lang="ar">' +
+                '<div style="text-align:center;border-bottom:2px solid #0067C0;padding-bottom:10px;margin-bottom:14px">' +
+                    logoHtml +
+                    '<div style="font-size:15px;font-weight:700">' + bidi('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية') + '</div>' +
+                    '<div style="font-size:14px;font-weight:600;color:#0067C0;margin-top:2px">' + bidi(cfg.institution_name + ' | ' + cfg.teacher_name) + '</div>' +
+                    '<div style="font-size:13px;color:#475569">' + bidi(cfg.target_level) + ' (<bdi dir="ltr">' + global.Win11Compat.escapeHtml(cfg.academic_year) + '</bdi>)</div>' +
                 '</div>' +
-
-                '<!-- ==================== PAGE 2 ==================== -->' +
-                '<div class="page-container page-break">' +
-                    '<h2 class="sec-title">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>' +
-                        bidi('4. حسابات المستخدمين (Comptes d\'utilisateurs)') +
-                    '</h2>' +
-                    '<div class="definition-box">' +
-                        '<strong>' + bidi('مفهوم حساب المستخدم:') + '</strong> ' +
-                        bidi('هو مساحة شخصية ومستقلة في نظام التشغيل مخصصة لمستخدم محدد، توفر له بيئة عمل خاصة تضم برامجه، ملفاته، مجلداته، وخلفية واجهته، وتفصل بين خصوصيات مختلف مستخدمي نفس الحاسوب.') +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13px">' +
+                    '<div><strong>اللقب:</strong> ' + bidi(stu.lastName || stu.fullName) + ' &nbsp;|&nbsp; <strong>الاسم:</strong> ' + bidi(stu.firstName || '') + '</div>' +
+                    '<div><strong>الفوج:</strong> ' + bidi(stu.classGroup) + ' &nbsp;|&nbsp; <strong>الحاسوب:</strong> <bdi dir="ltr">#' + global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01')) + '</bdi></div>' +
+                    '<div><strong>نمط الجلسة:</strong> ' + bidi(modeLabel) + '</div>' +
+                    '<div><strong>مجموع المعاملات (Total Weight):</strong> <bdi dir="ltr">' + (scores.totalWeight !== undefined ? scores.totalWeight : 20) + '</bdi> &nbsp;|&nbsp; <strong>العلامة القاعدية:</strong> <bdi dir="ltr">' + (scores.baseScore !== undefined ? scores.baseScore.toFixed(2) : scores.gross.toFixed(2)) + ' / 20</bdi></div>' +
+                    (cfg.show_time ? (
+                        '<div><strong>المدة النشطة:</strong> <bdi dir="ltr">' + global.Win11Assessment.formatDuration(stu.elapsedSeconds) + '</bdi>' +
+                        ' &nbsp;|&nbsp; <strong>التوقف/التبديل:</strong> <bdi dir="ltr">' + global.Win11Assessment.formatDuration(stu.suspendedSeconds || 0) + '</bdi></div>'
+                    ) : '<div></div>') +
+                    '<div style="font-size:17px;font-weight:700;color:#0067C0">العلامة النهائية (Final Score): <bdi dir="ltr">' + (scores.finalScore !== undefined ? scores.finalScore.toFixed(2) : scores.net.toFixed(2)) + ' / 20</bdi> ' +
+                        (scores.passThreshold !== undefined ? '<span style="font-size:12px;color:' + (scores.passed ? '#107C41' : '#C42B1C') + '">(' + bidi(scores.passed ? 'مقبول >= ' : 'دون العتبة < ') + '<bdi dir="ltr">' + Number(scores.passThreshold).toFixed(1) + '</bdi>)</span>' : '') +
                     '</div>' +
-
-                    '<h3 class="sub-title">' + bidi('أ) مقارنة علمية دقيقة بين أنواع الحسابات وصلاحياتها (جدول مصحح ومعتمد):') + '</h3>' +
-                    '<table class="curriculum-table">' +
-                        '<thead><tr>' +
-                            '<th style="width:22%">' + bidi('نوع الحساب (Type de compte)') + '</th>' +
-                            '<th style="width:38%">' + bidi('الصلاحيات والامتيازات (Droits d\'accès)') + '</th>' +
-                            '<th style="width:20%">' + bidi('الحماية بكلمة مرور (Mot de passe)') + '</th>' +
-                            '<th style="width:20%">' + bidi('إنشاء وإدارة الحساب') + '</th>' +
-                        '</tr></thead>' +
-                        '<tbody>' +
-                            '<tr>' +
-                                '<td class="highlight-col"><strong>' + bidi('حساب مسؤول الكمبيوتر') + '</strong><br><span style="font-size:8pt;color:#333">(Administrateur)</span></td>' +
-                                '<td><strong>' + bidi('له كافة الصلاحيات والتحكم الكامل:') + '</strong> ' + bidi('تغيير كافة إعدادات النظام، تثبيت وحذف البرامج، إدارة وبناء وتعديل وحذف باقي الحسابات، والوصول إلى كافة الملفات المشتركة.') + '</td>' +
-                                '<td><strong>' + bidi('نعم') + '</strong><br>' + bidi('(يُستحسن ويُنصح بشدة حمايته بكلمة مرور قوية).') + '</td>' +
-                                '<td>' + bidi('نستطيع إنشاء أكثر من حساب مسؤول في النظام الواحد و لا يمكن حذف آخر حساب من هذا النوع.') + '</td>' +
-                            '</tr>' +
-                            '<tr>' +
-                                '<td class="highlight-col"><strong>' + bidi('الحساب القياسي / المحدود') + '</strong><br><span style="font-size:8pt;color:#333">(Standard / Utilisateur)</span></td>' +
-                                '<td><strong>' + bidi('صلاحياته شخصية ومحدودة:') + '</strong> ' + bidi('يمكن التحكم في صلاحيات هذا النوع من الحسابات ، حيث يمكن تحديد وقت استخدامه للحاسوب أو تحديد الصلاحيات الممكنة له.') + '</td>' +
-                                '<td><strong>' + bidi('نعم') + '</strong><br>' + bidi('(يمكن حمايته بكلمة مرور خاصة به وتغييرها).') + '</td>' +
-                                '<td>' + bidi('يُنشأ ويُدار ويُعدل بواسطة حساب المسؤول فقط. يمكن إنشاء عدة حسابات من هذا النوع و يمكن حذفها جميعا.') + '</td>' +
-                            '</tr>' +
-                            '<tr>' +
-                                '<td class="highlight-col"><strong>' + bidi('حساب الضيف') + '</strong><br><span style="font-size:8pt;color:#333">(Invité / Guest)</span></td>' +
-                                '<td><strong>' + bidi('صلاحيات مقيدة جداً:') + '</strong> ' + bidi('يُخصص للاستعمال العابر والمؤقت للحاسوب، ليس له أي صلاحيات إدارية وتُمنع عنه كافة العمليات التي تمس بأمان النظام (حظر UAC).') + '</td>' +
-                                '<td><strong>' + bidi('لا يمكن حمايته بكلمة مرور.') + '</strong></td>' +
-                                '<td>' + bidi('حساب وحيد ومدمج بالنظام؛ لا نستطيع إنشاء حساب جديد من هذا النوع بل نفعّله أو نعطّله فقط.') + '</td>' +
-                            '</tr>' +
-                        '</tbody>' +
-                    '</table>' +
-
-                    '<h3 class="sub-title">' + bidi('ب) العمليات الأساسية المنجزة على الحسابات:') + '</h3>' +
-                    '<div class="operations-grid">' +
-                        '<div class="bordered-card">' +
-                            '<strong>(1) ' + bidi('إنشاء حساب جديد:') + '</strong>' +
-                            '<p style="font-size:8.5pt;margin-top:2px"><bdi dir="ltr">(Créer un nouveau compte)</bdi><br>' + bidi('تحديد اسم الحساب، نوعه (مسؤول أو قياسي)، وكلمة المرور الابتدائية.') + '</p>' +
-                        '</div>' +
-                        '<div class="bordered-card">' +
-                            '<strong>(2) ' + bidi('التعديل في الحساب:') + '</strong>' +
-                            '<p style="font-size:8.5pt;margin-top:2px"><bdi dir="ltr">(Modifier un compte)</bdi><br>' + bidi('تغيير الاسم، إنشاء / تغيير كلمة المرور، تعديل نوع الحساب، وتغيير الصورة الرمزية (Avatar).') + '</p>' +
-                        '</div>' +
-                        '<div class="bordered-card">' +
-                            '<strong>(3) ' + bidi('إزالة الحساب:') + '</strong>' +
-                            '<p style="font-size:8.5pt;margin-top:2px"><bdi dir="ltr">(Supprimer un compte)</bdi><br>' + bidi('حذف الحساب القياسي نهائياً مع خيار الاحتفاظ بملفاته أو حذفها تماماً.') + '</p>' +
-                        '</div>' +
-                    '</div>' +
-
-                    '<h2 class="sec-title">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>' +
-                        bidi('5. شبكة التقييم والتقويم المرحلي للحصة التطبيقية (المخبر)') +
-                    '</h2>' +
-
-                    '<div class="eval-grid-container">' +
-                        '<div class="eval-col">' +
-                            '<div class="eval-col-title">' + bidi('معلومات التلميذ:') + '</div>' +
-                            '<div class="eval-field-row"><strong>• ' + bidi('اللقب والاسم:') + '</strong> <span class="val-student-name">' + studentName + '</span></div>' +
-                            '<div class="eval-field-row"><strong>• ' + bidi('الفصيلة:') + '</strong> <span class="val-student-group">' + classGroup + '</span></div>' +
-                            '<div class="eval-field-row"><strong>• ' + bidi('الحاسوب رقم:') + '</strong> <span class="val-student-pc"><bdi dir="ltr">' + pcNumber + '</bdi></span></div>' +
-                        '</div>' +
-                        '<div class="eval-col">' +
-                            '<div class="eval-col-title">' + bidi('تقييم المحاكاة:') + '</div>' +
-                            '<div class="eval-field-row"><strong>' + bidi('العلامة:') + '</strong> <span class="val-sim-score" style="font-weight:700"><bdi dir="ltr">' + finalScoreStr + '</bdi></span> <bdi dir="ltr">/ 20</bdi></div>' +
-                            '<div class="eval-field-row"><strong>' + bidi('التوقيت:') + '</strong> <span class="val-sim-time"><bdi dir="ltr">' + timeFormatted + '</bdi></span></div>' +
-                        '</div>' +
-                        '<div class="eval-col">' +
-                            '<div class="eval-col-title">' + bidi('ملاحظة وتوقيع الأستاذ:') + '</div>' +
-                            '<div style="font-size:8.5pt;color:#333;margin-top:2px">.......................................................</div>' +
-                            '<div class="eval-stamp-box">' + bidi('ختم الأستاذ / المؤسسة') + '</div>' +
-                        '</div>' +
-                    '</div>' +
-
-                    '<div class="page-footer-note">' +
-                        '<span>' + bidi('تطبيق محاكي لوحة التحكم ونظام التشغيل — وثيقة التقييم والملخص المعتمدة للتلميذ') + '</span>' +
-                        '<span>' + bidi('الصفحة 2 من 2') + '</span>' +
-                    '</div>' +
+                    (cfg.show_penalties ? '<div><strong>إجمالي الخصومات:</strong> <bdi dir="ltr">' + (scores.penalties > 0 ? '-' : '') + scores.penalties.toFixed(2) + '</bdi></div>' : '') +
                 '</div>' +
-                '<!-- Teacher Audit Appendix (screen only, hidden on print) -->' +
-                '<div class="a4-appendix-container no-print" style="max-width:210mm;margin:16px auto 0;padding:10px 14px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px">' +
-                    renderAccountLogHtml(bidi) +
-                    renderDeductionsTableHtml(scores, cfg, bidi) +
+                (cfg.show_competency ? '<div style="padding:8px 12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:5px;margin-bottom:10px;font-size:13px"><strong>التقدير البيداغوجي:</strong> ' + bidi(scores.appreciation) + '</div>' : '') +
+                (cfg.show_ranking_criteria ? '<div style="font-size:12px;color:#475569;margin-bottom:8px"><strong>معيار الترتيب عند التساوي:</strong> ' + bidi(stu.mode === 'exam' ? 'العلامة الصافية الأعلى أولاً، ثم أقصر مدة زمنية نشطة لإنجاز المهام.' : 'جلسة استطلاع وتدريب — الترتيب التنافسي يفعّل في نمط الامتحان الرسمي.') + '</div>' : '') +
+                '<table class="a4-report-table">' +
+                    '<thead><tr><th>المهمة المطلوبة</th>' + (cfg.show_time ? '<th class="col-time">المدة المستغرقة</th>' : '') + '<th class="col-num">المعامل (Weight)</th><th class="col-num">الممنوحة</th><th class="col-num">المخصومة</th><th class="col-details">أسباب الخصم / النقص</th><th class="col-status">الحالة</th></tr></thead>' +
+                    '<tbody>' + rowsHtml + '</tbody>' +
+                '</table>' +
+                (cfg.show_time ? renderSectionTimingsHtml(timings, bidi) : '') +
+                renderAccountLogHtml(bidi) +
+                renderDeductionsTableHtml(scores, cfg, bidi) +
+                '<div style="margin-top:16px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px dashed #94A3B8;padding-top:10px;font-size:12.5px">' +
+                    '<div><strong>' + bidi('ملاحظة الأستاذ:') + '</strong> ................................................................</div>' +
+                    '<div style="text-align:center;border:1px dashed #64748B;padding:6px 14px;border-radius:4px;color:#475569;font-size:11.5px">' + bidi('ختم وتوقيع الأستاذ / المؤسسة') + '</div>' +
                 '</div>' +
+                '<div style="margin-top:12px;font-size:11.5px;color:#64748B"><strong>اسم الملف المقترح (ASCII):</strong> ' + formatFilenamePreviewHtml(formatSuggestedFilename('pdf')) + '</div>' +
             '</div>'
         );
     }
 
     function buildStandaloneHtmlDoc() {
-        var stu = (global.Win11Assessment && typeof global.Win11Assessment.getStudent === 'function')
-            ? global.Win11Assessment.getStudent()
-            : {};
-        var title = 'وثيقة الدرس والتقويم - ' + (stu.fullName || '1AS');
-        var bodyHtml = buildA4Html();
+        var stu = global.Win11Assessment.getStudent();
+        var title = 'بطاقة التقييم - ' + stu.fullName;
+        var a4Inner = buildA4Html();
         return '<!DOCTYPE html>\n' +
             '<html lang="ar" dir="rtl">\n<head>\n<meta charset="utf-8">\n' +
-            '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
             '<title>' + global.Win11Compat.escapeHtml(title) + '</title>\n' +
             '<style>\n' +
-            '*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n' +
-            'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Tahoma", sans-serif; font-size: 10pt; line-height: 1.4; color: #000; background: #fff; direction: rtl; }\n' +
-            '.page-container { width: 210mm; height: 276mm; max-height: 276mm; margin: 0 auto; background: #fff; padding: 10mm 14mm; position: relative; box-sizing: border-box; overflow: hidden; }\n' +
-            '.doc-header { border: 1.5px solid #000; padding: 6px 10px; margin-bottom: 8px; position: relative; }\n' +
-            '.header-top { display: flex; justify-content: space-between; align-items: center; font-size: 9pt; font-weight: 700; margin-bottom: 3px; }\n' +
-            '.header-institution { text-align: center; font-size: 9.5pt; font-weight: 700; color: #111; margin-bottom: 2px; }\n' +
-            '.header-main { text-align: center; margin: 2px 0; }\n' +
-            '.doc-title { font-size: 12.5pt; font-weight: 800; margin-bottom: 1px; color: #000; }\n' +
-            '.doc-subtitle { font-size: 11.5pt; font-weight: 800; color: #000; }\n' +
-            '.header-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #555; font-size: 8.5pt; font-weight: 600; }\n' +
-            '.header-badge-box { position: absolute; top: 6px; left: 10px; border: 1px solid #000; padding: 2px 6px; font-size: 8pt; font-weight: bold; background: #fafafa; text-align: center; line-height: 1.25; border-radius: 3px; }\n' +
-            'h2.sec-title { font-size: 11pt; font-weight: 800; border-bottom: 1.5px solid #000; padding-bottom: 2px; margin: 8px 0 5px 0; display: flex; align-items: center; gap: 6px; }\n' +
-            'h2.sec-title svg { width: 16px; height: 16px; flex-shrink: 0; }\n' +
-            'h3.sub-title { font-size: 10pt; font-weight: 700; margin: 4px 0 2px 0; color: #111; }\n' +
-            'p, li { font-size: 9.5pt; text-align: justify; line-height: 1.35; }\n' +
-            'ul { list-style-type: square; padding-right: 18px; margin: 3px 0 4px 0; }\n' +
-            'li { margin-bottom: 2px; }\n' +
-            '.definition-box { border: 1px solid #000; border-right: 3.5px solid #000; padding: 5px 8px; margin-bottom: 6px; background: #fafafa; font-size: 9.5pt; line-height: 1.35; }\n' +
-            '.two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px; }\n' +
-            '.bordered-card { border: 1px solid #333; padding: 5px 8px; border-radius: 3px; background: #fff; }\n' +
-            '.functions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }\n' +
-            'table.curriculum-table { width: 100%; border-collapse: collapse; margin: 6px 0 8px 0; font-size: 8.5pt; line-height: 1.3; }\n' +
-            'table.curriculum-table th, table.curriculum-table td { border: 1px solid #000; padding: 4px 6px; text-align: right; vertical-align: top; }\n' +
-            'table.curriculum-table th { background: #f0f0f0; font-weight: 800; color: #000; }\n' +
-            '.highlight-col { font-weight: 700; background: #fafafa; }\n' +
-            '.operations-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }\n' +
-            '.eval-grid-container { border: 1.5px solid #000; padding: 6px 10px; display: grid; grid-template-columns: 1.25fr 1fr 1.15fr; gap: 8px; font-size: 9pt; background: #fff; }\n' +
-            '.eval-col { display: flex; flex-direction: column; gap: 4px; }\n' +
-            '.eval-col-title { font-weight: 800; font-size: 9.5pt; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 2px; }\n' +
-            '.eval-field-row { display: flex; align-items: center; gap: 4px; font-size: 9pt; }\n' +
-            '.eval-stamp-box { border: 1px dashed #555; height: 48px; margin-top: 4px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 8.5pt; font-weight: 600; background: #fafafa; }\n' +
-            '.page-footer-note { position: absolute; bottom: 4mm; left: 14mm; right: 14mm; display: flex; justify-content: space-between; font-size: 8pt; color: #333; border-top: 1px solid #888; padding-top: 2px; }\n' +
-            '.a4-report-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px; }\n' +
-            '.a4-report-table th, .a4-report-table td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: start; }\n' +
-            '.a4-report-table th { background: #f1f5f9; font-weight: 600; white-space:nowrap; }\n' +
-            '.a4-report-table .col-time, .a4-report-table .col-event, .a4-report-table .col-account, .a4-report-table .col-role { white-space:nowrap; }\n' +
-            '@page { size: A4 portrait; margin: 8mm 10mm; }\n' +
-            '@media print {\n' +
-            '  html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }\n' +
-            '  .no-print, .a4-appendix-container { display: none !important; }\n' +
-            '  .page-container { width: 100% !important; height: 276mm !important; max-height: 276mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; page-break-inside: avoid !important; break-inside: avoid !important; overflow: hidden !important; box-sizing: border-box !important; }\n' +
-            '  .page-break { page-break-before: always !important; break-before: page !important; }\n' +
-            '  .page-footer-note { bottom: 2mm !important; left: 0 !important; right: 0 !important; }\n' +
-            '}\n' +
-            '</style>\n</head>\n<body>\n' + bodyHtml + '\n</body>\n</html>';
+            'body{margin:24px;background:#F3F4F6;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#111827;direction:rtl;}\n' +
+            '.a4-report-sheet{max-width:840px;margin:0 auto;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:8px;padding:24px 28px;line-height:1.65;box-shadow:0 4px 16px rgba(0,0,0,0.08);}\n' +
+            '.a4-report-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px;table-layout:auto;}\n' +
+            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1;padding:7px 10px;text-align:start;vertical-align:top;}\n' +
+            '.a4-report-table th{background:#F1F5F9;font-weight:600;white-space:nowrap;}\n' +
+            '.a4-report-table .col-time,.a4-report-table .col-num,.a4-report-table .col-status,.a4-report-table .col-event,.a4-report-table .col-account,.a4-report-table .col-role{white-space:nowrap;width:1%;font-variant-numeric:tabular-nums;}\n' +
+            '.a4-report-table .col-details{white-space:normal;word-break:break-word;}\n' +
+            '.a4-account-log-table .col-time{width:84px;}\n' +
+            '.a4-account-log-table .col-event{min-width:130px;}\n' +
+            '.a4-account-log-table .col-account{min-width:96px;}\n' +
+            '.a4-account-log-table .col-role{min-width:120px;}\n' +
+            '@media print{@page{size:A4;margin:12mm;}body{background:#fff;margin:0;}.a4-report-sheet{box-shadow:none;border:none;padding:0;max-width:none;}}\n' +
+            '</style>\n</head>\n<body>\n' + a4Inner + '\n</body>\n</html>';
     }
 
     function downloadTextFile(filename, mimeType, content) {
@@ -1115,9 +837,7 @@
 
     function triggerPdfExport(customFilename) {
         var printEl = document.getElementById('print-report-container');
-        if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
-            global.Win11Assessment.evaluate();
-        }
+        global.Win11Assessment.evaluate();
         var freshHtml = buildA4Html();
         if (printEl) printEl.innerHTML = freshHtml;
         var prevTitle = document.title;
@@ -1131,10 +851,9 @@
         document.title = pdfName.replace(/\.pdf$/i, '');
         hasExportedPdfFlag = true;
 
-        // Auto-save evaluation report & summary directly to user's Windows Desktop
-        saveReportToDesktop(pdfName, function (err, res) {
-            showExportSuccessToast(pdfName, res && res.path ? res.path : null);
-        });
+        // Section 5: Auto-save evaluation report directly to user's Windows Desktop
+        var autoSaveName = pdfName.replace(/\.pdf$/i, '.html');
+        saveReportToDesktop(autoSaveName);
 
         try {
             if (global.print) global.print();
@@ -1359,9 +1078,7 @@
 
     function openCertificate() {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
-        if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
-            global.Win11Assessment.evaluate();
-        }
+        global.Win11Assessment.evaluate();
         var html = buildA4Html();
 
         global.Win11Dialogs.showCustom({
@@ -1378,15 +1095,13 @@
             buttons: [
                 {
                     id: 'btn-export-pdf',
-                    label: 'تصدير pdf طباعة',
+                    label: t('pedagogy.exportPdfBtn'),
                     primary: true,
                     onClick: function (closeDlg) {
                         closeDlg('export_pdf');
-                        var pdfName = allocateUniqueFilename('pdf');
-                        hasExportedPdfFlag = true;
-                        saveReportToDesktop(pdfName, function (err, res) {
-                            showExportSuccessDialog(pdfName, res && res.path ? res.path : null);
-                        });
+                        setTimeout(function () {
+                            openExportSaveDialog('pdf', { fromCertificate: true });
+                        }, 0);
                     }
                 },
                 {
@@ -1403,31 +1118,14 @@
                     primary: false,
                     onClick: function (closeDlg) {
                         closeDlg('export_html');
-                        var htmlName = allocateUniqueFilename('html');
-                        saveReportToDesktop(htmlName, function (err, res) {
-                            showExportSuccessDialog(htmlName, res && res.path ? res.path : null);
-                        });
-                    }
-                },
-                {
-                    id: 'btn-print-summary-sheet',
-                    label: 'طباعة ملخص الدرس (الكراس)',
-                    primary: false,
-                    onClick: function () {
-                        triggerPdfExport();
+                        setTimeout(function () {
+                            openExportSaveDialog('html', { fromCertificate: true });
+                        }, 0);
                     }
                 },
                 { label: t('app.close'), primary: false, value: false }
             ]
         });
-    }
-
-    function openSummaryModal() {
-        openCertificate();
-    }
-
-    function openSummarySheet() {
-        openCertificate();
     }
 
     global.Win11Report = {
@@ -1440,7 +1138,6 @@
         confirmShutdown: confirmShutdown,
         triggerPdfExport: triggerPdfExport,
         openExportSaveDialog: openExportSaveDialog,
-        openSummarySheet: openSummarySheet,
         hasExportedPdf: function () { return hasExportedPdfFlag; },
         setExportedPdf: function (v) { hasExportedPdfFlag = !!v; },
         cleanFileToken: cleanFileToken,

@@ -297,7 +297,6 @@
                     (isExamMode ? '' : '<button type="button" class="win-btn win-btn-secondary" id="hud-hint-btn">' + global.Win11Icons.get('bulb', 14) + '<span>' + bidi(t('pedagogy.hintBtn')) + '</span></button>') +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-check-btn">' + global.Win11Icons.get('check', 14) + '<span>' + bidi(t('pedagogy.checkBtn')) + '</span></button>' +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-skip-btn"' + (isViewingActive ? '' : ' disabled') + '><span>⏭ ' + bidi(t('pedagogy.skipBtn')) + '</span></button>' +
-                    '<button type="button" class="win-btn win-btn-secondary" id="hud-summary-btn" title="طباعة ورقة ملخص الدرس (الكراس)"><span>📄 ' + bidi('ورقة الملخص') + '</span></button>' +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-new-sim-btn">' + global.Win11Icons.get('refresh', 14) + '<span>' + bidi(t('pedagogy.newSimBtn')) + '</span></button>' +
                     '<button type="button" class="win-btn win-btn-accent" id="hud-report-btn" style="margin-inline-start:auto">' + global.Win11Icons.get('trophy', 14) + '<span>' + bidi(t('pedagogy.reportBtn')) + '</span></button>' +
                 '</div>' +
@@ -425,16 +424,6 @@
             newSimBtn.onclick = function () {
                 if (global.Win11Report && typeof global.Win11Report.confirmNewSimulation === 'function') {
                     global.Win11Report.confirmNewSimulation();
-                }
-            };
-        }
-        var summaryBtn = el.querySelector('#hud-summary-btn');
-        if (summaryBtn) {
-            summaryBtn.onclick = function () {
-                if (global.Win11Report && typeof global.Win11Report.openSummarySheet === 'function') {
-                    global.Win11Report.openSummarySheet();
-                } else if (typeof window !== 'undefined' && window.open) {
-                    window.open('summary.html', '_blank');
                 }
             };
         }
