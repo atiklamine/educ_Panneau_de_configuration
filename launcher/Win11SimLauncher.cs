@@ -137,6 +137,25 @@ namespace Win11SimHost
             }
         }
 
+        public bool OpenFile(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo(path);
+                    psi.UseShellExecute = true;
+                    Process.Start(psi);
+                    return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static string SanitizeFileName(string name)
         {
             if (string.IsNullOrEmpty(name)) return "";
@@ -638,11 +657,12 @@ namespace Win11SimHost
                                 try
                                 {
                                     File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
+                                    string fileUrl = "file:///" + tmpHtml.Replace('\\', '/');
                                     ProcessStartInfo pPsi = new ProcessStartInfo();
                                     pPsi.FileName = chromium;
                                     pPsi.Arguments = string.Format(
                                         "--headless=new --disable-gpu --no-sandbox --run-all-compositor-stages-before-draw --print-to-pdf=\"{0}\" \"{1}\"",
-                                        targetPath, tmpHtml);
+                                        targetPath, fileUrl);
                                     pPsi.UseShellExecute = false;
                                     pPsi.CreateNoWindow = true;
                                     using (Process p = Process.Start(pPsi))
@@ -730,6 +750,35 @@ namespace Win11SimHost
                         else
                         {
                             Process.Start("explorer.exe", "\"" + desktopDir + "\"");
+                        }
+
+                        byte[] okBytes = Encoding.UTF8.GetBytes("{\"ok\":true}");
+                        SendResponse(stream, 200, "OK", "application/json; charset=utf-8", okBytes, true);
+                        client.Close();
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        string errJson = string.Format("{{\"ok\":false,\"error\":\"{0}\"}}", ex.Message.Replace("\"", "'"));
+                        SendResponse(stream, 500, "Internal Server Error", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(errJson), true);
+                        client.Close();
+                        return;
+                    }
+                }
+
+                // API: Open File in Default App (e.g. Generated PDF Reader)
+                if (path == "/api/open-file" && method == "POST")
+                {
+                    try
+                    {
+                        string rawBody = Encoding.UTF8.GetString(body);
+                        string targetPath = ExtractJsonStringValue(rawBody, "path");
+                        if (!string.IsNullOrEmpty(targetPath) && File.Exists(targetPath))
+                        {
+                            ProcessStartInfo psi = new ProcessStartInfo();
+                            psi.FileName = targetPath;
+                            psi.UseShellExecute = true;
+                            Process.Start(psi);
                         }
 
                         byte[] okBytes = Encoding.UTF8.GetBytes("{\"ok\":true}");

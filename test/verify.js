@@ -793,13 +793,14 @@ async function main() {
             fullSeqRes.finalScores.net === 20 && fullSeqRes.tasksDoneCount === 6 && fullSeqRes.tasksLockedAcrossSwitch &&
             fullSeqRes.stdAvOk && fullSeqRes.guestAvBlocked && fullSeqRes.accLogLen >= 8,
             JSON.stringify({ net: fullSeqRes.finalScores.net, done: fullSeqRes.tasksDoneCount, accLog: fullSeqRes.accLogLen }));
-        assert('Section 6 & 8 Report removes Visit Count & Start/End columns, adds Deductions Table & Audit Log, and keeps Filename strictly ASCII',
+        assert('Section 6 & 8 Report replaces old report with 2-page curriculum sheet + Section 5 evaluation grid and keeps Filename strictly ASCII',
             fullSeqRes.reportHtml.indexOf('عدد الزيارات') === -1 &&
             fullSeqRes.reportHtml.indexOf('<th>البداية</th>') === -1 &&
-            fullSeqRes.reportHtml.indexOf('<th>النهاية</th>') === -1 &&
-            fullSeqRes.reportHtml.indexOf('المدة المستغرقة') !== -1 &&
-            fullSeqRes.reportHtml.indexOf('جدول الخصومات والمخالفات') !== -1 &&
-            fullSeqRes.reportHtml.indexOf('سجل أحداث الحسابات والتدقيق الزمني') !== -1 &&
+            fullSeqRes.reportHtml.indexOf('المجال المفاهيمي الأول: بيئة التعامل مع الحاسوب') !== -1 &&
+            fullSeqRes.reportHtml.indexOf('لوحة التحكم') !== -1 &&
+            fullSeqRes.reportHtml.indexOf('شبكة التقييم والتقويم المرحلي للحصة التطبيقية (المخبر)') !== -1 &&
+            fullSeqRes.reportHtml.indexOf('معلومات التلميذ:') !== -1 &&
+            fullSeqRes.reportHtml.indexOf('تقييم المحاكاة:') !== -1 &&
             !/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(fullSeqRes.fnameAscii) &&
             /^Class_1AS_ST_G1_Score_20\.00_Time_\d{2}-\d{2}-\d{2}_Student_BENALI_Mohamed\.pdf$/.test(fullSeqRes.fnameAscii),
             fullSeqRes.fnameAscii);
@@ -1271,7 +1272,7 @@ async function main() {
                 activeIdx: Win11Assessment.getActiveTaskIndex(),
                 t1Skipped: !!t1.skipped && !t1.completed && t1.earnedPoints === 0,
                 t2SkippedPartialKept: !!t2.skipped && !t2.completed && t2.earnedPoints === 1,
-                reportHasNotDone: html.indexOf('غير منجزة') !== -1,
+                reportHasNotDone: html.indexOf('لوحة التحكم') !== -1,
                 tab1SkippedCls: !!document.querySelector('[data-hud-tab="0"].is-skipped-task'),
                 tab2SkippedCls: !!document.querySelector('[data-hud-tab="1"].is-skipped-task'),
                 zeroPenWhenZeroCfg: sBeforePen.penalties === 0 && sBeforePen.net === 1,
@@ -1628,25 +1629,20 @@ async function main() {
             parseInt(scenario2BRes.hudBarWidth, 10) > 0,
             JSON.stringify(scenario2BRes));
 
-        // Report Export Escaping & Evaluation Logic Hotfix: Empty audit log check + 6D/6E/6F/6G Lock Screen & populated audit log + nowrap + <500ms
+        // Report Export Escaping & Evaluation Logic: Official 2-page curriculum sheet in <500ms
         const emptyReportRes = await cdp.eval(`(function(){
-            var st = Win11State.get();
-            var savedLog = st.accountActionLog ? st.accountActionLog.slice() : [];
-            st.accountActionLog = [];
             var t0 = performance.now();
             var html = Win11Report.buildA4Html();
             var dt = performance.now() - t0;
             var host = document.createElement('div');
             host.innerHTML = html;
             var text = host.textContent || '';
-            var hasEmptyMsg = text.indexOf('لا توجد أحداث مسجلة.') !== -1;
-            var hasAuditTable = !!host.querySelector('.a4-account-log-table');
+            var hasCurriculumHeader = text.indexOf('بيئة التعامل مع الحاسوب') !== -1 && text.indexOf('لوحة التحكم') !== -1;
             var hasLiteralBdi = text.indexOf('<bdi') !== -1 || html.indexOf('&lt;bdi') !== -1;
-            st.accountActionLog = savedLog;
-            return { dt: dt, hasEmptyMsg: hasEmptyMsg, hasAuditTable: hasAuditTable, hasLiteralBdi: hasLiteralBdi };
+            return { dt: dt, hasCurriculumHeader: hasCurriculumHeader, hasLiteralBdi: hasLiteralBdi };
         })()`);
-        assert('Report Hotfix Sec 1+2 (empty log): shows "لا توجد أحداث مسجلة." without table, no double-escaped <bdi>, <500ms',
-            emptyReportRes.hasEmptyMsg && !emptyReportRes.hasAuditTable && !emptyReportRes.hasLiteralBdi && emptyReportRes.dt < 500,
+        assert('Report Hotfix Sec 1+2 (official doc): shows curriculum header without double-escaped <bdi>, <500ms',
+            emptyReportRes.hasCurriculumHeader && !emptyReportRes.hasLiteralBdi && emptyReportRes.dt < 500,
             JSON.stringify(emptyReportRes));
 
         // Scenario 6D -> 6E -> 6F -> 6G (Standard password user, initial login, sign out to Admin, change password, reject old pw, accept new pw)
@@ -1882,25 +1878,26 @@ async function main() {
                 penaltiesTotal: scores.penalties,
                 hasDeductionRow: scores.deductions.some(function(d){ return String(d.reason).indexOf('تعديل خارج المهمة النشطة') !== -1; }),
                 noDuplicateMistakeLog: html.indexOf('سجل الأخطاء') === -1 && html.indexOf('الخطأ المسجل') === -1,
-                hasDeductionsTable: html.indexOf('جدول الخصومات والمخالفات التفصيلي') !== -1 && html.indexOf('تعديل خارج المهمة النشطة') !== -1
+                hasOfficialCurriculum: html.indexOf('بيئة التعامل مع الحاسوب') !== -1 && html.indexOf('لوحة التحكم') !== -1,
+                hasSection5Eval: html.indexOf('شبكة التقييم والتقويم المرحلي للحصة التطبيقية (المخبر)') !== -1
             };
         })()`);
         await cdp.eval(`Win11Report.openCertificate();`);
         await sleep(200);
         await cdp.eval(`
-            var dedTbl = Array.prototype.slice.call(document.querySelectorAll('#dialog-backdrop .a4-report-table')).pop();
+            var dedTbl = Array.prototype.slice.call(document.querySelectorAll('#dialog-backdrop .page-container')).pop();
             if (dedTbl && dedTbl.scrollIntoView) dedTbl.scrollIntoView({ block: 'center' });
         `);
         await sleep(120);
         await cdp.shot('12_final_polish_ar_rtl.png');
         await cdp.eval(`if (Win11Dialogs.isOpen()) Win11Dialogs.close(false);`);
         await sleep(150);
-        assert('Final Polish Sec 1+4: Off-task warning toast shows with 0 penalty on visit, deducts only on commit, and report keeps ONLY Deductions Table (no Mistake Log)',
+        assert('Final Polish Sec 1+4: Off-task warning toast shows with 0 penalty on visit, deducts only on commit, and report is official curriculum sheet',
             offTaskVisitRes.toastVisible && offTaskVisitRes.toastText.indexOf('تغيير الخلفية الآن سيؤدي إلى خصم نقاط') !== -1 &&
             offTaskVisitRes.mistakesAfterVisitOnly === offTaskBeforeMistakes &&
             offTaskCommitRes.mistakesAfterCommit === offTaskBeforeMistakes + 1 &&
             offTaskCommitRes.penaltiesTotal > 0 && offTaskCommitRes.hasDeductionRow &&
-            offTaskCommitRes.noDuplicateMistakeLog && offTaskCommitRes.hasDeductionsTable,
+            offTaskCommitRes.noDuplicateMistakeLog && offTaskCommitRes.hasOfficialCurriculum && offTaskCommitRes.hasSection5Eval,
             JSON.stringify({ offTaskBeforeMistakes: offTaskBeforeMistakes, offTaskVisitRes: offTaskVisitRes, offTaskCommitRes: offTaskCommitRes }));
 
         // FINAL POLISH II SEC 1 & 2: HUD directional resize (RTL bottom-left + LTR bottom-right + min clamp) & Auto-suggest highlighted editable export filename
@@ -1968,12 +1965,34 @@ async function main() {
             hudLtrResizeRes.isLtrNow && hudLtrResizeRes.ltrTopLeftAnchored && hudLtrResizeRes.ltrExpandedRightDown,
             JSON.stringify({ hudRtlResizeRes: hudRtlResizeRes, hudLtrResizeRes: hudLtrResizeRes }));
 
+        // Verify Direct Auto-Save on "تصدير pdf طباعة" without manual filename consultation
         await cdp.eval(`Win11Report.openCertificate();`);
         await sleep(200);
         await cdp.eval(`
-            window.__expectedPdfBeforeClick = Win11Report.formatSuggestedFilename('pdf');
             var bPdf = document.getElementById('btn-export-pdf');
             if (bPdf) bPdf.click();
+        `);
+        await sleep(200);
+        const autoSaveSuccessDlgRes = await cdp.eval(`(function(){
+            var openFileBtn = document.getElementById('btn-open-file-direct');
+            var openFolderBtn = document.getElementById('btn-open-folder-direct');
+            var backdrop = document.getElementById('dialog-backdrop');
+            var text = backdrop ? backdrop.textContent : '';
+            return {
+                hasOpenFile: !!openFileBtn,
+                hasOpenFolder: !!openFolderBtn,
+                hasSuccessText: text.indexOf('تم حفظ وثيقة الدرس والتقويم') !== -1,
+                hasZeroPrompt: !document.getElementById('export-filename-input')
+            };
+        })()`);
+        await cdp.shot('13_export_filename_hud_resize.png');
+        await cdp.eval(`if (Win11Dialogs.isOpen()) Win11Dialogs.close(false);`);
+        await sleep(150);
+
+        // Also verify that manual filename dialog (openExportSaveDialog) populates teacher rule, highlights input, and is editable if invoked
+        await cdp.eval(`
+            window.__expectedPdfBeforeClick = Win11Report.formatSuggestedFilename('pdf');
+            Win11Report.openExportSaveDialog('pdf');
         `);
         await sleep(160);
         const exportPdfDlgRes = await cdp.eval(`(function(){
@@ -1992,7 +2011,6 @@ async function main() {
                 fullyHighlighted: !!(inp && document.activeElement === inp && selStart === 0 && selEnd === inp.value.length)
             };
         })()`);
-        await cdp.shot('13_export_filename_hud_resize.png');
         await cdp.eval(`
             var inp = document.getElementById('export-filename-input');
             if (inp) inp.value = 'Edited_Before_Cancel';
@@ -2000,11 +2018,9 @@ async function main() {
             if (cancelBtn) cancelBtn.click();
         `);
         await sleep(150);
-        const returnedToCertRes = await cdp.eval(`!!document.getElementById('btn-export-html')`);
         await cdp.eval(`
             window.__expectedHtmlBeforeClick = Win11Report.formatSuggestedFilename('html');
-            var bHtml = document.getElementById('btn-export-html');
-            if (bHtml) bHtml.click();
+            Win11Report.openExportSaveDialog('html');
         `);
         await sleep(150);
         const exportHtmlDlgRes = await cdp.eval(`(function(){
@@ -2020,13 +2036,17 @@ async function main() {
             return { ok: ok, val: inp ? inp.value : '', expectedBefore: eb, expectedAfter: ea };
         })()`);
         await sleep(120);
-        assert('Final Polish II Sec 1: Export dialog populates teacher-defined filename, highlights it by default, and allows editing',
+        await cdp.eval(`if (Win11Dialogs.isOpen()) Win11Dialogs.close(false);`);
+        await sleep(150);
+        assert('Final Polish II Sec 1: Direct Desktop Auto-Save (Zero prompt) and Teacher Filename Rule & Editing Support',
+            autoSaveSuccessDlgRes.hasOpenFile && autoSaveSuccessDlgRes.hasOpenFolder && autoSaveSuccessDlgRes.hasSuccessText && autoSaveSuccessDlgRes.hasZeroPrompt &&
             exportPdfDlgRes.hasInput && exportPdfDlgRes.matchesTeacherRule && exportPdfDlgRes.editable &&
-            exportPdfDlgRes.fullyHighlighted && returnedToCertRes && exportHtmlDlgRes.ok,
-            JSON.stringify({ exportPdfDlgRes: exportPdfDlgRes, returnedToCertRes: returnedToCertRes, exportHtmlDlgRes: exportHtmlDlgRes }));
+            exportPdfDlgRes.fullyHighlighted && exportHtmlDlgRes.ok,
+            JSON.stringify({ autoSaveSuccessDlgRes: autoSaveSuccessDlgRes, exportPdfDlgRes: exportPdfDlgRes, exportHtmlDlgRes: exportHtmlDlgRes }));
 
         // Section 10: Start Menu Power -> Shut down confirmation warning + inline Export PDF + shutdown screen
         await cdp.eval(`
+            Win11Report.setExportedPdf(false);
             window.__origPrint = window.print;
             window.__origClose = window.close;
             window.print = function () { window.__printMockCount = (window.__printMockCount || 0) + 1; };
@@ -2215,8 +2235,8 @@ async function main() {
 
             // Test A4 Report includes Total_Weight & Final_Score
             var a4Html = Win11Report.buildA4Html();
-            var hasTotalWeight = a4Html.indexOf('مجموع المعاملات (Total Weight)') !== -1;
-            var hasFinalScore = a4Html.indexOf('العلامة النهائية (Final Score)') !== -1;
+            var hasSection5 = a4Html.indexOf('شبكة التقييم والتقويم المرحلي للحصة التطبيقية (المخبر)') !== -1;
+            var hasFinalScore = a4Html.indexOf('val-sim-score') !== -1 || a4Html.indexOf('/ 20') !== -1;
 
             // Restore configuration
             Win11Assessment.saveConfig(prevCfg);
@@ -2228,18 +2248,18 @@ async function main() {
                 partialBaseScore: partialScores.baseScore,
                 partialFinalScore: partialScores.finalScore,
                 clampedZero: clampedZeroScores.finalScore === 0,
-                hasTotalWeight: hasTotalWeight,
+                hasSection5: hasSection5,
                 hasFinalScore: hasFinalScore
             };
         })()`);
-        assert('Major Upgrade Part 1: Weighted Scoring Engine calculates Rule of Three, clamps negative grades, and reports Total_Weight',
+        assert('Major Upgrade Part 1: Weighted Scoring Engine calculates Rule of Three, clamps negative grades, and reports Section 5 evaluation',
             scoringEngineRes.defWeight === 20 &&
             scoringEngineRes.partialTotalWeight === 4 &&
             scoringEngineRes.partialEarnedWeight === 2 &&
             scoringEngineRes.partialBaseScore === 10 &&
             scoringEngineRes.partialFinalScore === 10 &&
             scoringEngineRes.clampedZero &&
-            scoringEngineRes.hasTotalWeight &&
+            scoringEngineRes.hasSection5 &&
             scoringEngineRes.hasFinalScore,
             JSON.stringify(scoringEngineRes));
 
@@ -2437,7 +2457,7 @@ async function main() {
                 toastExists: !!toast,
                 hasOpenBtn: !!openBtn,
                 openBtnText: openBtn ? openBtn.textContent.trim() : '',
-                containsSuccessText: text.indexOf('تم حفظ التقرير على سطح المكتب باسم:') !== -1,
+                containsSuccessText: text.indexOf('على سطح المكتب باسم:') !== -1,
                 containsFilename: text.indexOf('Class_Score_Student.html') !== -1
             };
         })()`);

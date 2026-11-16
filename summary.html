@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ملخص الدرس: لوحة التحكم (Panneau de configuration) — السنة الأولى ثانوي</title>
+    <title>وثيقة الدرس للوحدة (4): لوحة التحكم (Panneau de configuration) — السنة الأولى ثانوي</title>
     <style>
         /* Base Screen & Print Typography */
         *, *::before, *::after {
@@ -14,8 +14,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Tahoma", sans-serif;
-            font-size: 11pt;
-            line-height: 1.45;
+            font-size: 10pt;
+            line-height: 1.4;
             color: #000;
             background: #f5f5f5;
             direction: rtl;
@@ -23,8 +23,8 @@
 
         .no-print-toolbar {
             max-width: 210mm;
-            margin: 12px auto;
-            padding: 10px 16px;
+            margin: 10px auto;
+            padding: 8px 16px;
             background: #fff;
             border: 1px solid #ccc;
             border-radius: 6px;
@@ -39,8 +39,8 @@
             background: #0067C0;
             color: #fff;
             border: none;
-            padding: 8px 18px;
-            font-size: 11pt;
+            padding: 7px 16px;
+            font-size: 10.5pt;
             font-weight: 600;
             border-radius: 4px;
             cursor: pointer;
@@ -54,207 +54,288 @@
 
         .page-container {
             width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto 16px auto;
+            height: 276mm;
+            max-height: 276mm;
+            margin: 0 auto 14px auto;
             background: #fff;
-            padding: 14mm 16mm;
+            padding: 10mm 14mm;
             box-shadow: 0 3px 8px rgba(0,0,0,0.12);
             position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         /* Header Layout */
         .doc-header {
             border: 1.5px solid #000;
-            padding: 8px 12px;
-            margin-bottom: 12px;
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            position: relative;
         }
 
         .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px dashed #666;
-            padding-bottom: 6px;
-            margin-bottom: 6px;
+            font-size: 9pt;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .header-institution {
+            text-align: center;
             font-size: 9.5pt;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 2px;
         }
 
         .header-main {
             text-align: center;
+            margin: 2px 0;
         }
 
         .doc-title {
-            font-size: 16pt;
+            font-size: 12.5pt;
             font-weight: 800;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
+            color: #000;
         }
 
         .doc-subtitle {
-            font-size: 11pt;
-            font-weight: 600;
-            color: #222;
+            font-size: 11.5pt;
+            font-weight: 800;
+            color: #000;
         }
 
         .header-meta {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            margin-top: 6px;
-            padding-top: 6px;
-            border-top: 1px dashed #666;
-            font-size: 9.5pt;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px dashed #555;
+            font-size: 8.5pt;
+            font-weight: 600;
+        }
+
+        .header-badge-box {
+            position: absolute;
+            top: 6px;
+            left: 10px;
+            border: 1px solid #000;
+            padding: 2px 6px;
+            font-size: 8pt;
+            font-weight: bold;
+            background: #fafafa;
+            text-align: center;
+            line-height: 1.25;
+            border-radius: 3px;
         }
 
         /* Section Headings */
         h2.sec-title {
-            font-size: 12.5pt;
-            font-weight: 700;
+            font-size: 11pt;
+            font-weight: 800;
             border-bottom: 1.5px solid #000;
-            padding-bottom: 3px;
-            margin: 12px 0 6px 0;
+            padding-bottom: 2px;
+            margin: 8px 0 5px 0;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         h2.sec-title svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             flex-shrink: 0;
         }
 
         h3.sub-title {
-            font-size: 11pt;
+            font-size: 10pt;
             font-weight: 700;
-            margin: 6px 0 3px 0;
+            margin: 4px 0 2px 0;
             color: #111;
         }
 
         p, li {
-            font-size: 10.5pt;
+            font-size: 9.5pt;
             text-align: justify;
+            line-height: 1.35;
         }
 
         ul {
             list-style-type: square;
-            padding-right: 22px;
-            margin: 4px 0 8px 0;
+            padding-right: 18px;
+            margin: 3px 0 4px 0;
         }
 
         li {
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         /* Clean Laser-Friendly Grid & Boxes */
         .definition-box {
             border: 1px solid #000;
-            border-right: 4px solid #000;
-            padding: 8px 12px;
-            margin-bottom: 10px;
+            border-right: 3.5px solid #000;
+            padding: 5px 8px;
+            margin-bottom: 6px;
             background: #fafafa;
+            font-size: 9.5pt;
+            line-height: 1.35;
         }
 
         .two-cols {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 8px;
+            gap: 8px;
+            margin-bottom: 6px;
         }
 
         .bordered-card {
-            border: 1px solid #444;
-            padding: 6px 10px;
+            border: 1px solid #333;
+            padding: 5px 8px;
             border-radius: 3px;
+            background: #fff;
+        }
+
+        .functions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
 
         /* High-Contrast B&W Table */
         table.curriculum-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 8px 0 10px 0;
-            font-size: 10pt;
+            margin: 6px 0 8px 0;
+            font-size: 8.5pt;
+            line-height: 1.3;
         }
 
         table.curriculum-table th,
         table.curriculum-table td {
             border: 1px solid #000;
-            padding: 6px 8px;
+            padding: 4px 6px;
             text-align: right;
             vertical-align: top;
         }
 
         table.curriculum-table th {
-            background: #e6e6e6;
-            font-weight: 700;
+            background: #f0f0f0;
+            font-weight: 800;
             color: #000;
         }
 
         .highlight-col {
             font-weight: 700;
+            background: #fafafa;
         }
 
-        .tag-badge {
-            display: inline-block;
-            border: 1px solid #000;
-            padding: 1px 6px;
-            font-size: 8.5pt;
-            font-weight: bold;
-            border-radius: 2px;
-            margin-left: 4px;
-        }
-
-        /* Evaluation / Stamp Footer Block */
-        .eval-footer-box {
-            border: 1.5px solid #000;
-            margin-top: 14px;
-            padding: 8px 12px;
+        /* Accounts Operations 3-cols */
+        .operations-grid {
             display: grid;
-            grid-template-columns: 1.2fr 1fr 1.2fr;
-            gap: 10px;
-            font-size: 9.5pt;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
         }
 
-        .eval-footer-box div {
-            min-height: 52px;
+        /* Evaluation Block (Section 5) */
+        .eval-grid-container {
+            border: 1.5px solid #000;
+            padding: 6px 10px;
+            display: grid;
+            grid-template-columns: 1.25fr 1fr 1.15fr;
+            gap: 8px;
+            font-size: 9pt;
+            background: #fff;
+        }
+
+        .eval-col {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .eval-col-title {
+            font-weight: 800;
+            font-size: 9.5pt;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+            margin-bottom: 2px;
+        }
+
+        .eval-field-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9pt;
+        }
+
+        .eval-stamp-box {
+            border: 1px dashed #555;
+            height: 48px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #444;
+            font-size: 8.5pt;
+            font-weight: 600;
+            background: #fafafa;
         }
 
         .page-footer-note {
             position: absolute;
-            bottom: 6mm;
-            left: 16mm;
-            right: 16mm;
+            bottom: 4mm;
+            left: 14mm;
+            right: 14mm;
             display: flex;
             justify-content: space-between;
-            font-size: 8.5pt;
-            color: #444;
-            border-top: 1px solid #999;
-            padding-top: 3px;
+            font-size: 8pt;
+            color: #333;
+            border-top: 1px solid #888;
+            padding-top: 2px;
         }
 
-        /* Print Media Styles (Max 2 pages A4 portrait strictly) */
+        /* Print Media Styles (Strictly 2 pages A4 portrait) */
+        @page {
+            size: A4 portrait;
+            margin: 8mm 10mm;
+        }
+
         @media print {
-            body {
-                background: #fff;
-                color: #000;
+            html, body {
+                background: #fff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
             }
             .no-print-toolbar {
                 display: none !important;
             }
             .page-container {
                 width: 100% !important;
-                min-height: auto !important;
+                height: 276mm !important;
+                max-height: 276mm !important;
                 margin: 0 !important;
-                padding: 10mm 12mm !important;
+                padding: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
             }
             .page-break {
                 page-break-before: always !important;
                 break-before: page !important;
             }
-            @page {
-                size: A4 portrait;
-                margin: 10mm 12mm;
+            .page-footer-note {
+                bottom: 2mm !important;
+                left: 0 !important;
+                right: 0 !important;
             }
         }
     </style>
@@ -264,15 +345,15 @@
     <!-- No-Print Toolbar for Browser Preview -->
     <div class="no-print-toolbar">
         <div>
-            <strong>وثيقة ملخص الدرس البيداغوجي (المجال 1 - الوحدة 4: لوحة التحكم)</strong>
-            <span style="font-size:9.5pt;color:#555;display:block">جاهزة للطباعة على ورقتين A4 بالأبيض والأسود للطابعات المدرسية (Laser B&W)</span>
+            <strong>وثيقة الدرس والتقويم: لوحة التحكم (Panneau de configuration)</strong>
+            <span style="font-size:8.5pt;color:#555;display:block">المجال 1: بيئة التعامل مع الحاسوب — السنة الأولى ثانوي (صفحتان A4 مخصصتان للطباعة وليزر الأبيض والأسود)</span>
         </div>
         <button type="button" class="btn-print" onclick="window.print()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
                 <path d="M6 14h12v8H6z"/>
             </svg>
-            طباعة الملخص (Print A4)
+            طباعة الوثيقة (A4)
         </button>
     </div>
 
@@ -281,29 +362,30 @@
 
         <!-- Official Header -->
         <header class="doc-header">
+            <div class="header-badge-box">
+                <div>وثيقة الدرس للوحدة (4)</div>
+                <div style="font-size:7.5pt;font-weight:normal">السنة الدراسية: <span class="val-academic-year">2026 / 2027</span></div>
+            </div>
+
             <div class="header-top">
-                <span>الجمهورية الجزائرية الديمقراطية الشعبية</span>
-                <span>وزارة التربية الوطنية</span>
+                <span style="margin-right:auto;margin-left:auto">الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية</span>
+            </div>
+            <div class="header-institution">
+                <span class="val-institution-name">مدرسة أشبال الأمة الشهيد قورين محمد الأغواط ن.ع4.</span>
             </div>
             <div class="header-main">
-                <h1 class="doc-title">المجال المفاهيمي الأول: بيئة التعامل مع الحاسوب</h1>
+                <div class="doc-title">المجال المفاهيمي الأول: بيئة التعامل مع الحاسوب</div>
                 <div class="doc-subtitle">الوحدة التعليمية الرابعة: لوحة التحكم (Panneau de configuration)</div>
             </div>
             <div class="header-meta">
-                <div><strong>المستوى:</strong> الأولى ثانوي (جذع مشترك ع / آ)</div>
-                <div style="text-align:center"><strong>المدة الزمنية:</strong> 01 ساعة (حصة تطبيقية)</div>
-                <div style="text-align:left"><strong>السنة الدراسية:</strong> 2026 / 2027</div>
+                <div><strong>المستوى:</strong> الأولى ثانوي جذع مشترك ع / ت</div>
+                <div><strong>المدة الزمنية:</strong> 01 ساعة (حصة تطبيقية)</div>
+                <div><strong>السنة الدراسية:</strong> <span class="val-academic-year">2026 / 2027</span></div>
             </div>
         </header>
 
-        <!-- Competency -->
-        <div style="font-size:10pt;margin-bottom:8px">
-            <strong>الكفاءة المستهدفة:</strong> ينجز التلميذ بعض عمليات التحكم في الحاسوب مع التعود على لوحة التحكم والتركيز على إدارة حسابات المستخدمين وصلاحياتها.
-        </div>
-
         <!-- 1. Notion -->
         <h2 class="sec-title">
-            <!-- Inline Crisp SVG: Computer Settings -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2"/>
                 <line x1="8" y1="21" x2="16" y2="21"/>
@@ -317,7 +399,6 @@
 
         <!-- 2. Ways to access -->
         <h2 class="sec-title">
-            <!-- Inline Crisp SVG: Start Menu / Control -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
                 <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>
             </svg>
@@ -335,17 +416,16 @@
                 <strong>ب) الطريقة الحديثة (Paramètres / Settings):</strong>
                 <ul>
                     <li>النقر على زر <strong>ابدأ (Démarrer)</strong> ← <strong>الإعدادات (Paramètres)</strong>.</li>
-                    <li>أو الضغط على اختصار لوحة المفاتيح <bdi dir="ltr">[ Win + I ]</bdi>.</li>
+                    <li>أو الضغط على اختصار لوحة المفاتيح: <bdi dir="ltr">[ Win + I ]</bdi>.</li>
                 </ul>
             </div>
         </div>
-        <div style="font-size:9.5pt;font-style:italic;margin-bottom:8px">
-            * <strong>ملاحظة بيداغوجية:</strong> يمكن عرض إعدادات لوحة التحكم وفق نوعين: نمط العرض كفئات ومجموعات وظيفية (Par catégorie)، أو نمط العرض الكلاسيكي بالأيقونات الكبيرة أو الصغيرة (Grandes / Petites icônes).
+        <div style="font-size:8.5pt;background:#f9f9f9;border:1px solid #ddd;padding:4px 8px;border-radius:3px;margin-bottom:6px">
+            ★ <strong>ملاحظة:</strong> في نظام التشغيل Windows7 يمكن عرض إعدادات لوحة التحكم وفق نوعين: نمط العرض كفئات ومجموعات وظيفية (Par catégories)، أو نمط العرض الكلاسيكي بالأيقونات الكبيرة أو الصغيرة (Grandes / Petites icônes).
         </div>
 
         <!-- 3. Main Functions -->
         <h2 class="sec-title">
-            <!-- Inline Crisp SVG: Sliders / Tuning -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
                 <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
                 <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
@@ -356,9 +436,9 @@
             3. من بين أهم وظائف لوحة التحكم
         </h2>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="functions-grid">
             <div class="bordered-card">
-                <h3 class="sub-title">1) العرض وخصائصه (Affichage & Personnalisation):</h3>
+                <h3 class="sub-title">(1) العرض وخصائصه (Affichage & Personnalisation):</h3>
                 <p>تسمح بتغيير المظهر وإضفاء الطابع الشخصي على بيئة العمل:</p>
                 <ul>
                     <li>تغيير خلفية سطح المكتب (Arrière-plan du bureau) من المعرض أو من مجلد الصور الخاص بالمستخدم.</li>
@@ -368,7 +448,7 @@
             </div>
 
             <div class="bordered-card">
-                <h3 class="sub-title">2) الفأرة (Souris):</h3>
+                <h3 class="sub-title">(2) الفأرة (Souris):</h3>
                 <p>التحكم في العتاد وسلوك المؤشر:</p>
                 <ul>
                     <li>التحكم في سرعة النقر المزدوج (Vitesse du double-clic: بطيئة / سريعة).</li>
@@ -378,17 +458,17 @@
             </div>
 
             <div class="bordered-card">
-                <h3 class="sub-title">3) الخيارات الإقليمية واللغة (Région et langue):</h3>
+                <h3 class="sub-title">(3) الخيارات الإقليمية واللغة (Région et langue):</h3>
                 <p>تكييف الحاسوب مع المحيط الجغرافي واللغوي:</p>
                 <ul>
-                    <li>تحديد المنطقة الزمنية (مثل: الجزائر <bdi dir="ltr">GMT+1</bdi>).</li>
+                    <li>تحديد المنطقة الزمنية (مثل: الجزائر <bdi dir="ltr">GMT + 1</bdi>).</li>
                     <li>تعديل تنسيق الوقت، التاريخ، والعملة.</li>
                     <li>إضافة أو إزالة لغات الإدخال في لوحة المفاتيح وتغيير لغة العرض للنظام.</li>
                 </ul>
             </div>
 
             <div class="bordered-card">
-                <h3 class="sub-title">4) إضافة وإزالة البرامج (Applications et fonctionnalités):</h3>
+                <h3 class="sub-title">(4) إضافة وإزالة البرامج (Applications et fonctionnalités):</h3>
                 <p>التدبير السليم للبرمجيات والمساحة التخزينية:</p>
                 <ul>
                     <li>تثبيت برامج جديدة عبر معالجات الإعداد (<bdi dir="ltr">Setup.exe</bdi>).</li>
@@ -399,7 +479,7 @@
         </div>
 
         <div class="page-footer-note">
-            <span>منهاج مادة الإعلام الآلي — السنة الأولى ثانوي (وثيقة الملخص للتلميذ)</span>
+            <span>منهاج مادة الإعلام الآلي — السنة الأولى ثانوي (المجال 1: بيئة التعامل مع الحاسوب)</span>
             <span>الصفحة 1 من 2</span>
         </div>
     </div>
@@ -407,9 +487,8 @@
     <!-- ==================== PAGE 2 ==================== -->
     <div class="page-container page-break">
 
-        <!-- 4. User Accounts (Core of Algerian 1AS Curriculum) -->
+        <!-- 4. User Accounts -->
         <h2 class="sec-title">
-            <!-- Inline Crisp SVG: Users Group -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
@@ -427,16 +506,16 @@
             <thead>
                 <tr>
                     <th style="width:22%">نوع الحساب (Type de compte)</th>
-                    <th style="width:40%">الصلاحيات والامتيازات (Droits d'accès)</th>
+                    <th style="width:38%">الصلاحيات والامتيازات (Droits d'accès)</th>
                     <th style="width:20%">الحماية بكلمة مرور (Mot de passe)</th>
-                    <th style="width:18%">إنشاء وإدارة الحساب</th>
+                    <th style="width:20%">إنشاء وإدارة الحساب</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td class="highlight-col">
                         <strong>حساب مسؤول الكمبيوتر</strong><br>
-                        <span style="font-size:9pt;color:#333">(Administrateur)</span>
+                        <span style="font-size:8pt;color:#333">(Administrateur)</span>
                     </td>
                     <td>
                         <strong>له كافة الصلاحيات والتحكم الكامل:</strong>
@@ -447,41 +526,40 @@
                         (يُستحسن ويُنصح بشدة حمايته بكلمة مرور قوية).
                     </td>
                     <td>
-                        نستطيع إنشاء أكثر من حساب مسؤول في النظام الواحد.
+                        نستطيع إنشاء أكثر من حساب مسؤول في النظام الواحد و لا يمكن حذف آخر حساب من هذا النوع.
                     </td>
                 </tr>
                 <tr>
                     <td class="highlight-col">
                         <strong>الحساب القياسي / المحدود</strong><br>
-                        <span style="font-size:9pt;color:#333">(Standard / Utilisateur)</span>
+                        <span style="font-size:8pt;color:#333">(Standard / Utilisateur)</span>
                     </td>
                     <td>
                         <strong>صلاحياته شخصية ومحدودة:</strong>
-                        يستطيع تشغيل البرامج وتعديل ملفاته الخاصة وتخصيص مظهره، <em>ولا يمكنه</em> تثبيت برامج تؤثر على النظام أو تغيير إعدادات الحسابات الأخرى.
+                        يمكن التحكم في صلاحيات هذا النوع من الحسابات ، حيث يمكن تحديد وقت استخدامه للحاسوب أو تحديد الصلاحيات الممكنة له.
                     </td>
                     <td>
                         <strong>نعم</strong><br>
                         (يمكن حمايته بكلمة مرور خاصة به وتغييرها).
                     </td>
                     <td>
-                        يُنشأ ويُدار ويُعدل بواسطة حساب المسؤول فقط.
+                        يُنشأ ويُدار ويُعدل بواسطة حساب المسؤول فقط. يمكن إنشاء عدة حسابات من هذا النوع و يمكن حذفها جميعا.
                     </td>
                 </tr>
                 <tr>
                     <td class="highlight-col">
                         <strong>حساب الضيف</strong><br>
-                        <span style="font-size:9pt;color:#333">(Invité / Guest)</span>
+                        <span style="font-size:8pt;color:#333">(Invité / Guest)</span>
                     </td>
                     <td>
-                        <strong>صلاحيات مؤقتة ومقيدة جداً:</strong>
-                        يُخصص للاستعمال العابر والمؤقت للحاسوب؛ ليس له أي صلاحيات إدارية وتُمنع عنه كافة العمليات التي تمس بأمان النظام (حظر <bdi dir="ltr">UAC</bdi>).
+                        <strong>صلاحيات مقيدة جداً:</strong>
+                        يُخصص للاستعمال العابر والمؤقت للحاسوب، ليس له أي صلاحيات إدارية وتُمنع عنه كافة العمليات التي تمس بأمان النظام (حظر <bdi dir="ltr">UAC</bdi>).
                     </td>
                     <td>
-                        <strong>لا</strong><br>
-                        (لا يمكن حمايته بكلمة مرور إطلاقاً).
+                        <strong>لا يمكن حمايته بكلمة مرور.</strong>
                     </td>
                     <td>
-                        حساب وحيد ومدمج بالنظام؛ <strong>لا نستطيع</strong> إنشاء حساب جديد من هذا النوع بل نفعّله أو نعطّله فقط.
+                        حساب وحيد ومدمج بالنظام؛ لا نستطيع إنشاء حساب جديد من هذا النوع بل نفعّله أو نعطّله فقط.
                     </td>
                 </tr>
             </tbody>
@@ -489,24 +567,24 @@
 
         <!-- Operations on accounts -->
         <h3 class="sub-title">ب) العمليات الأساسية المنجزة على الحسابات:</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="operations-grid">
             <div class="bordered-card">
-                <strong>1) إنشاء حساب جديد:</strong>
-                <p style="font-size:9.5pt;margin-top:4px">
+                <strong>(1) إنشاء حساب جديد:</strong>
+                <p style="font-size:8.5pt;margin-top:2px">
                     <bdi dir="ltr">(Créer un nouveau compte)</bdi><br>
                     تحديد اسم الحساب، نوعه (مسؤول أو قياسي)، وكلمة المرور الابتدائية.
                 </p>
             </div>
             <div class="bordered-card">
-                <strong>2) التعديل في الحساب:</strong>
-                <p style="font-size:9.5pt;margin-top:4px">
+                <strong>(2) التعديل في الحساب:</strong>
+                <p style="font-size:8.5pt;margin-top:2px">
                     <bdi dir="ltr">(Modifier un compte)</bdi><br>
-                    تغيير الاسم، إنشاء/تغيير كلمة المرور، تعديل نوع الحساب، وتغيير الصورة الرمزية (<bdi dir="ltr">Avatar</bdi>).
+                    تغيير الاسم، إنشاء / تغيير كلمة المرور، تعديل نوع الحساب، وتغيير الصورة الرمزية (<bdi dir="ltr">Avatar</bdi>).
                 </p>
             </div>
             <div class="bordered-card">
-                <strong>3) إزالة الحساب:</strong>
-                <p style="font-size:9.5pt;margin-top:4px">
+                <strong>(3) إزالة الحساب:</strong>
+                <p style="font-size:8.5pt;margin-top:2px">
                     <bdi dir="ltr">(Supprimer un compte)</bdi><br>
                     حذف الحساب القياسي نهائياً مع خيار الاحتفاظ بملفاته أو حذفها تماماً.
                 </p>
@@ -515,7 +593,6 @@
 
         <!-- 5. Evaluation / Laboratory Activity Stub -->
         <h2 class="sec-title">
-            <!-- Inline Crisp SVG: Evaluation Clipboard -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2">
                 <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
                 <rect x="8" y="2" width="8" height="4" rx="1"/>
@@ -524,27 +601,49 @@
             5. شبكة التقييم والتقويم المرحلي للحصة التطبيقية (المخبر)
         </h2>
 
-        <div class="eval-footer-box">
-            <div>
-                <strong>معلومات التلميذ:</strong><br>
-                <span>اللقب والاسم: ............................................</span><br>
-                <span>القسم / الفوج: .................... الحاسوب: #..........</span>
+        <div class="eval-grid-container">
+            <!-- Col 1: Student Information -->
+            <div class="eval-col">
+                <div class="eval-col-title">معلومات التلميذ:</div>
+                <div class="eval-field-row">
+                    <strong>• اللقب والاسم:</strong>
+                    <span class="val-student-name">............................................</span>
+                </div>
+                <div class="eval-field-row">
+                    <strong>• الفصيلة:</strong>
+                    <span class="val-student-group">..................................</span>
+                </div>
+                <div class="eval-field-row">
+                    <strong>• الحاسوب رقم:</strong>
+                    <span class="val-student-pc">#..........</span>
+                </div>
             </div>
-            <div>
-                <strong>التقييم الرقمي للمحاكاة:</strong><br>
-                <span>العلامة الممنوحة: ................ / 20</span><br>
-                <span>مجموع المعاملات: ................</span>
+
+            <!-- Col 2: Simulation Assessment -->
+            <div class="eval-col">
+                <div class="eval-col-title">تقييم المحاكاة:</div>
+                <div class="eval-field-row">
+                    <strong>العلامة:</strong>
+                    <span class="val-sim-score" style="font-weight:700">................</span> <bdi dir="ltr">/ 20</bdi>
+                </div>
+                <div class="eval-field-row">
+                    <strong>التوقيت:</strong>
+                    <span class="val-sim-time"><bdi dir="ltr">...... m : ...... sec</bdi></span>
+                </div>
             </div>
-            <div style="text-align:center">
-                <strong>ملاحظة وتوقيع الأستاذ:</strong><br>
-                <div style="border:1px dashed #777;height:38px;margin-top:4px;display:flex;align-items:center;justify-content:center;color:#666;font-size:8.5pt">
+
+            <!-- Col 3: Teacher notes & Stamp -->
+            <div class="eval-col">
+                <div class="eval-col-title">ملاحظة وتوقيع الأستاذ:</div>
+                <div style="font-size:8.5pt;color:#333;margin-top:2px">.......................................................</div>
+                <div class="eval-stamp-box">
                     ختم الأستاذ / المؤسسة
                 </div>
             </div>
         </div>
 
         <div class="page-footer-note">
-            <span>تطبيق محاكي لوحة التحكم ونظام التشغيل — الأستاذ: حاج عيسى | ثانوية الشهيد أحمد رضا حوحو</span>
+            <span>تطبيق محاكي لوحة التحكم ونظام التشغيل — وثيقة التقييم والملخص المعتمدة للتلميذ</span>
             <span>الصفحة 2 من 2</span>
         </div>
 
