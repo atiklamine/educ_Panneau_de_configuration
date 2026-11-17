@@ -347,61 +347,149 @@ html[dir="ltr"] .hud-resize-corner {
     font-size: 12.5px;
 }
 
-/* A4 Printable Report Layout */
+/* A4 Printable & In-Dialog Assessment Report Layout */
 .a4-report-sheet {
     background: #FFFFFF;
-    color: #111827;
-    padding: 24px 28px;
-    border: 1px solid #D1D5DB;
-    border-radius: 6px;
+    color: #0F172A;
+    padding: 20px 24px;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
     direction: rtl;
-    text-align: start;
-    line-height: 1.6;
+    text-align: right;
+    line-height: 1.5;
+    font-family: "Segoe UI", Tahoma, Arial, "Noto Sans Arabic", sans-serif;
+    box-sizing: border-box;
+}
+.a4-header {
+    border-bottom: 2px solid #1E3A8A;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+.a4-header-republic {
+    text-align: center;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 6px;
+}
+.a4-header-grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    color: #334155;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+.a4-banner {
+    text-align: center;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+.a4-banner-title {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: #1E3A8A;
+}
+.a4-banner-sub {
+    font-size: 11.5px;
+    color: #475569;
+    margin-top: 2px;
+}
+.a4-summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 11.5px;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.a4-summary-table td {
+    padding: 6px 10px;
+    border: 1px solid #CBD5E1;
+    vertical-align: middle;
+    text-align: right;
+}
+.a4-cell-lbl {
+    font-size: 10.5px;
+    color: #64748B;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+}
+.a4-cell-val {
+    color: #0F172A;
+}
+.a4-pass-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+}
+.a4-pass-badge.is-pass {
+    background: #DCFCE7;
+    color: #15803D;
+}
+.a4-pass-badge.is-fail {
+    background: #FEE2E2;
+    color: #B91C1C;
 }
 .a4-report-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 12px 0;
-    font-size: 12.5px;
-    table-layout: auto;
+    margin: 8px 0;
+    font-size: 11.5px;
 }
 .a4-report-table th,
 .a4-report-table td {
     border: 1px solid #CBD5E1;
-    padding: 7px 10px;
-    text-align: start;
-    vertical-align: top;
+    padding: 6px 8px;
+    text-align: right;
+    vertical-align: middle;
 }
 .a4-report-table th {
     background: #F1F5F9;
-    font-weight: 600;
+    color: #0F172A;
+    font-weight: 700;
     white-space: nowrap;
 }
-.a4-report-table .col-time,
-.a4-report-table .col-num,
-.a4-report-table .col-status,
-.a4-report-table .col-event,
-.a4-report-table .col-account,
-.a4-report-table .col-role {
+.a4-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
     white-space: nowrap;
-    width: 1%;
-    font-variant-numeric: tabular-nums;
 }
-.a4-report-table .col-details {
-    white-space: normal;
-    word-break: break-word;
+.a4-badge.is-done {
+    background: #DCFCE7;
+    color: #15803D;
 }
-.a4-account-log-table .col-time {
-    width: 84px;
+.a4-badge.is-partial {
+    background: #FEF3C7;
+    color: #D97706;
 }
-.a4-account-log-table .col-event {
-    min-width: 130px;
+.a4-badge.is-fail {
+    background: #FEE2E2;
+    color: #B91C1C;
 }
-.a4-account-log-table .col-account {
-    min-width: 96px;
+.a4-badge.is-skipped {
+    background: #E2E8F0;
+    color: #475569;
 }
-.a4-account-log-table .col-role {
-    min-width: 120px;
+.a4-footer-sig {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid #CBD5E1;
+    padding-top: 8px;
+    font-size: 11.5px;
 }
 
 @media print {

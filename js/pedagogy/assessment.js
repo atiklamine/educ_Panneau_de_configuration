@@ -853,6 +853,10 @@
                 if (!isGuestNow && student.activeSession) {
                     var penAmt = Math.max(0.25, config.penalty_error || 0.25);
                     if (oIdx > activeTaskIndex) {
+                        if (otherTk.id === 1 && String(st.displayLanguage || '') === 'ar') {
+                            // Reverting display language to Arabic before reaching task is not an early violation
+                            continue;
+                        }
                         earlyTaintedMap[otherTk.id] = true;
                         activeTouchedMap[otherTk.id] = false;
                         recordMistake(
@@ -864,8 +868,8 @@
                         );
                         showOffTaskToast('تم خصم نقاط: إجراء مبكر يخص (' + otherTk.titleAr + ') قبل إتمام (' + (curActiveTk ? curActiveTk.titleAr : '') + ').');
                     } else if (curActiveTk) {
-                        var isImmediateArabicRestore = (otherTk.id === 1 && activeTaskIndex === 1 && String(st.displayLanguage || '') === 'ar');
-                        if (!isImmediateArabicRestore) {
+                        var isLanguageExempt = (otherTk.id === 1 && (String(st.displayLanguage || '') === 'ar' || otherTk.completed));
+                        if (!isLanguageExempt) {
                             recordMistake(
                                 curActiveTk.id,
                                 'تعديل خارج المهمة النشطة (' + otherTk.titleAr + ')',

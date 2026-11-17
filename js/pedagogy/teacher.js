@@ -583,8 +583,9 @@
                                     '<div style="font-weight:700">' + bidi('تخصيص المهام (التفعيل، التعقيد، التنقيط والترتيب):') + '</div>' +
                                     '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
                                         '<button type="button" class="win-btn win-btn-secondary" id="tc-equal-weights" style="min-height:24px;padding:2px 8px;font-size:11.5px">' + bidi('توزيع متساوٍ للمهام') + '</button>' +
+                                        '<button type="button" class="win-btn win-btn-secondary" id="tc-balance-20" style="min-height:24px;padding:2px 8px;font-size:11.5px">' + bidi('موازنة النقاط على 20') + '</button>' +
                                         '<span id="tc-weights-summary" class="win-badge" style="background:' + (isBalanced20 ? '#ECFDF5' : '#FEF3C7') + ';color:' + (isBalanced20 ? '#065F46' : '#B45309') + '">' +
-                                            bidi('مجموع الأوزان المفعّلة:') + ' <bdi dir="ltr">' + totalWeight.toFixed(2) + ' / 20.00</bdi>' +
+                                            bidi('مجموع علامات المهام:') + ' <bdi dir="ltr">' + totalWeight.toFixed(2) + ' / 20.00</bdi>' + (!isBalanced20 ? (' (' + bidi('غير متطابق مع 20') + ')') : '') +
                                         '</span>' +
                                     '</div>' +
                                 '</div>' +
@@ -624,7 +625,6 @@
                                     '<label><input type="checkbox" id="tc-st"' + (cfg.show_time ? ' checked' : '') + '> ' + bidi('إظهار الأوقات التفصيلية') + '</label>' +
                                     '<label><input type="checkbox" id="tc-sc"' + (cfg.show_competency ? ' checked' : '') + '> ' + bidi('إظهار التقدير العام ومستوى الأداء') + '</label>' +
                                     '<label><input type="checkbox" id="tc-sps"' + (cfg.show_partial_scores ? ' checked' : '') + '> ' + bidi('احتساب النقاط الجزئية') + '</label>' +
-                                    '<label><input type="checkbox" id="tc-srk"' + (cfg.show_ranking_criteria ? ' checked' : '') + '> ' + bidi('إظهار شبكة تقدير المستويات') + '</label>' +
                                 '</div>' +
                                 '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
                                     '<label class="win-btn win-btn-secondary" style="cursor:pointer">' + bidi('إدراج شعار المؤسسة في التقرير') +
@@ -768,9 +768,10 @@
                         }
                         var sumEl = wrap.querySelector('#tc-weights-summary');
                         if (sumEl) {
-                            sumEl.style.background = '#ECFDF5';
-                            sumEl.style.color = '#065F46';
-                            sumEl.innerHTML = bidi('مجموع المعاملات النشطة (Total Weight):') + ' <bdi dir="ltr">' + sum + '</bdi>';
+                            var isBalanced = (sum === 20);
+                            sumEl.style.background = isBalanced ? '#ECFDF5' : '#FEF3C7';
+                            sumEl.style.color = isBalanced ? '#065F46' : '#B45309';
+                            sumEl.innerHTML = bidi('مجموع علامات المهام:') + ' <bdi dir="ltr">' + sum + ' / 20.00</bdi>' + (!isBalanced ? (' (' + bidi('غير متطابق مع 20') + ')') : '');
                         }
                     }
 
@@ -783,6 +784,36 @@
                                 var defC = (row.complexity === 'complex') ? 3 : 1;
                                 row.coefficient = defC;
                                 row.weight = defC;
+                            }
+                            isDirty = true;
+                            draw();
+                        };
+                    }
+                    var balBtn = wrap.querySelector('#tc-balance-20');
+                    if (balBtn) {
+                        balBtn.onclick = function () {
+                            var enabledIdxs = [];
+                            var curSum = 0;
+                            for (var bi = 0; bi < cfg.tasks_config.length; bi++) {
+                                if (cfg.tasks_config[bi].enabled !== false) {
+                                    enabledIdxs.push(bi);
+                                    curSum += (Number(cfg.tasks_config[bi].coefficient) || 1);
+                                }
+                            }
+                            if (enabledIdxs.length === 0) return;
+                            var remaining = 20;
+                            for (var bj = 0; bj < enabledIdxs.length; bj++) {
+                                var eIdx = enabledIdxs[bj];
+                                var oldC = Number(cfg.tasks_config[eIdx].coefficient) || 1;
+                                var newC = (bj === enabledIdxs.length - 1)
+                                    ? Math.max(1, remaining)
+                                    : Math.max(1, Math.round((oldC / curSum) * 20));
+                                if (newC > remaining - (enabledIdxs.length - 1 - bj)) {
+                                    newC = Math.max(1, remaining - (enabledIdxs.length - 1 - bj));
+                                }
+                                remaining -= newC;
+                                cfg.tasks_config[eIdx].coefficient = newC;
+                                cfg.tasks_config[eIdx].weight = newC;
                             }
                             isDirty = true;
                             draw();
