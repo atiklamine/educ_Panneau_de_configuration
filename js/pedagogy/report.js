@@ -695,7 +695,10 @@
         }
 
         var completionPct = enabledTasks.length > 0 ? Math.round((doneTasksCount / enabledTasks.length) * 100) : 0;
-        var totalDurationStr = formatArabicDuration(stu.elapsedSeconds || 0);
+        var effectiveSec = (stu.allCompleted && stu.completionElapsedSeconds !== null && stu.completionElapsedSeconds !== undefined)
+            ? stu.completionElapsedSeconds
+            : (stu.elapsedSeconds || 0);
+        var totalDurationStr = formatArabicDuration(effectiveSec);
         var dateFormatted = formatArabicDate();
         var isExam = (stu.mode === 'exam');
         var sessionLabel = isExam ? 'امتحان تطبيقي رسمي' : 'نشاط تطبيقي تدريبي';
@@ -1238,56 +1241,149 @@
 
     function openCertificate() {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
+        var bidi = global.Win11I18N.bidiHtml;
         global.Win11Assessment.evaluate();
         var html = buildA4Html();
+        var allTasks = global.Win11Assessment.getTasks().filter(function (tk) { return tk.enabled !== false; });
+        var uncompletedTasks = allTasks.filter(function (tk) { return !tk.completed; });
+        var doneTasksCount = allTasks.length - uncompletedTasks.length;
+
+        var guidanceBannerHtml = '';
+        if (uncompletedTasks.length > 0) {
+            var taskListItems = '';
+            for (var u = 0; u < uncompletedTasks.length; u++) {
+                var utk = uncompletedTasks[u];
+                var missingNote = utk.skipped
+                    ? 'تم تخطيها — يمكنك العودة وإنجازها'
+                    : (utk.doneStepsCount > 0 ? ('منجزة جزئياً: استيفاء ' + utk.doneStepsCount + ' من ' + utk.totalStepsCount + ' خطوات') : 'لم تُنجز بعد — بحاجة للتنفيذ');
+                taskListItems +=
+                    '<div style="background:#FFFFFF;border:1px solid #FDE68A;border-radius:6px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;">' +
+                        '<div style="text-align:right;">' +
+                            '<strong style="color:#B45309;font-size:12.5px;">' + bidi(utk.titleAr) + '</strong>' +
+                            '<div style="color:#64748B;font-size:11.5px;margin-top:2px;">' + bidi(missingNote) + '</div>' +
+                        '</div>' +
+                        '<button type="button" class="win-btn win-btn-secondary a4-goto-pending-btn" data-task-id="' + utk.id + '" style="min-height:26px;padding:2px 10px;font-size:11.5px;color:#0067C0;flex-shrink:0;">' +
+                            bidi('الانتقال للمهمة ↩') +
+                        '</button>' +
+                    '</div>';
+            }
+
+            guidanceBannerHtml =
+                '<div class="a4-guidance-card" style="margin-bottom:16px;background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:8px;padding:12px 16px;text-align:right;box-shadow:0 2px 8px rgba(245,158,11,0.08);">' +
+                    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+                        '<span style="font-size:20px;color:#D97706;line-height:1;">💡</span>' +
+                        '<strong style="font-size:14px;color:#92400E;">' + bidi('توجيه تربوي — استكمال مسار الأنشطة العملية:') + '</strong>' +
+                    '</div>' +
+                    '<div style="font-size:12.5px;color:#78350F;line-height:1.6;margin-bottom:10px;">' +
+                        bidi('أحسنت صنعاً بما أنجزته حتى الآن (استيفاء ') + '<strong><bdi dir="ltr">' + doneTasksCount + '</bdi></strong>' + bidi(' من أصل ') + '<strong><bdi dir="ltr">' + allTasks.length + '</bdi></strong>' + bidi(' مهام). لتحقيق التحكم التام في الكفاءات المقررة ورفع علامتك المستحقة، نوصيك باستكمال المهام المتبقية التالية:') +
+                    '</div>' +
+                    taskListItems +
+                    '<div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">' +
+                        '<button type="button" class="win-btn win-btn-accent" id="a4-btn-resume-all" style="padding:5px 16px;font-weight:700;">' +
+                            bidi('مواصلة إنجاز المهام الآن ↩') +
+                        '</button>' +
+                        '<span style="font-size:11.5px;color:#92400E;">' +
+                            bidi('(ملاحظة: يمكنك تصدير بطاقة التقييم الحالية كمعاينة مرحلية، أو إتمام ما تبقى لرفع علامتك).') +
+                        '</span>' +
+                    '</div>' +
+                '</div>';
+        } else {
+            guidanceBannerHtml =
+                '<div class="a4-guidance-card" style="margin-bottom:16px;background:#ECFDF5;border:1.5px solid #107C41;border-radius:8px;padding:12px 16px;text-align:right;box-shadow:0 2px 8px rgba(16,124,65,0.08);">' +
+                    '<div style="display:flex;align-items:center;gap:8px;">' +
+                        '<span style="font-size:22px;color:#107C41;line-height:1;">✔</span>' +
+                        '<div>' +
+                            '<strong style="font-size:14px;color:#065F46;">' + bidi('مبارك! تم إنجاز كافة المهام المقررة بنجاح وبتحكم تام (100%).') + '</strong>' +
+                            '<div style="font-size:12px;color:#166534;margin-top:2px;">' + bidi('لقد تم تثبيت وقت إنجازك النهائي، ويمكنك الآن تصدير بطاقة تقييمك الرسمية كملف PDF على سطح المكتب.') + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        var dialogButtons = [];
+        if (uncompletedTasks.length > 0) {
+            dialogButtons.push({
+                id: 'btn-resume-tasks',
+                label: bidi('مواصلة إنجاز المهام ↩'),
+                primary: true,
+                onClick: function (closeDlg) {
+                    closeDlg();
+                    if (global.Win11HUD) global.Win11HUD.open();
+                }
+            });
+            dialogButtons.push({
+                id: 'btn-export-pdf',
+                label: t('pedagogy.exportPdfBtn') + ' (الوضع الحالي)',
+                primary: false,
+                onClick: function (closeDlg) {
+                    closeDlg('export_pdf');
+                    setTimeout(function () {
+                        var pdfFilename = allocateUniqueFilename('pdf');
+                        saveReportToDesktop(pdfFilename);
+                    }, 0);
+                }
+            });
+        } else {
+            dialogButtons.push({
+                id: 'btn-export-pdf',
+                label: t('pedagogy.exportPdfBtn'),
+                primary: true,
+                onClick: function (closeDlg) {
+                    closeDlg('export_pdf');
+                    setTimeout(function () {
+                        var pdfFilename = allocateUniqueFilename('pdf');
+                        saveReportToDesktop(pdfFilename);
+                    }, 0);
+                }
+            });
+        }
+        dialogButtons.push({
+            id: 'btn-print-paper',
+            label: 'طباعة فورية',
+            primary: false,
+            onClick: function () {
+                triggerPdfExport();
+            }
+        });
+        dialogButtons.push({ label: t('app.close'), primary: false, value: false });
 
         global.Win11Dialogs.showCustom({
             title: t('pedagogy.reportBtn'),
             tone: 'info',
             wide: true,
             renderBody: function (wrap) {
-                wrap.innerHTML = html;
+                wrap.innerHTML = guidanceBannerHtml + html;
                 setTimeout(function () {
                     var contentBox = document.querySelector('#dialog-backdrop .win-dialog-content');
                     if (contentBox) contentBox.scrollTop = 0;
                 }, 0);
+
+                var resumeBtns = wrap.querySelectorAll('.a4-goto-pending-btn, #a4-btn-resume-all');
+                for (var rb = 0; rb < resumeBtns.length; rb++) {
+                    resumeBtns[rb].onclick = function () {
+                        var tid = this.getAttribute('data-task-id');
+                        if (global.Win11Dialogs && typeof global.Win11Dialogs.close === 'function') {
+                            global.Win11Dialogs.close(false);
+                        }
+                        if (global.Win11HUD) {
+                            global.Win11HUD.open();
+                            if (tid) {
+                                var allOrdered = global.Win11Assessment.getTasks().filter(function (x) { return x.enabled !== false; });
+                                for (var oi = 0; oi < allOrdered.length; oi++) {
+                                    if (allOrdered[oi].id === Number(tid)) {
+                                        var tabBtn = document.querySelector('[data-hud-tab="' + oi + '"]');
+                                        if (tabBtn && tabBtn.getAttribute('data-hud-locked') !== '1') {
+                                            tabBtn.click();
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    };
+                }
             },
-            buttons: [
-                {
-                    id: 'btn-export-pdf',
-                    label: t('pedagogy.exportPdfBtn'),
-                    primary: true,
-                    onClick: function (closeDlg) {
-                        closeDlg('export_pdf');
-                        // Zero-prompt: instantly export PDF to Desktop without asking for filename confirmation
-                        setTimeout(function () {
-                            var pdfFilename = allocateUniqueFilename('pdf');
-                            saveReportToDesktop(pdfFilename);
-                        }, 0);
-                    }
-                },
-                {
-                    id: 'btn-print-paper',
-                    label: 'طباعة فورية',
-                    primary: false,
-                    onClick: function () {
-                        triggerPdfExport();
-                    }
-                },
-                {
-                    id: 'btn-export-html',
-                    label: t('pedagogy.exportHtmlBtn'),
-                    primary: false,
-                    style: 'display:none',
-                    onClick: function (closeDlg) {
-                        closeDlg('export_html');
-                        setTimeout(function () {
-                            openExportSaveDialog('html', { fromCertificate: true });
-                        }, 0);
-                    }
-                },
-                { label: t('app.close'), primary: false, value: false }
-            ]
+            buttons: dialogButtons
         });
     }
 

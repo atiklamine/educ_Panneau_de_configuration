@@ -127,7 +127,9 @@
         elapsedSeconds: 0,
         suspendedSeconds: 0,
         startedAtIso: null,
-        activeSection: null
+        activeSection: null,
+        completionElapsedSeconds: null,
+        allCompleted: false
     };
 
     var sectionTimings = {};
@@ -915,6 +917,33 @@
             }
         }
 
+        // Check if all enabled tasks are fully completed
+        var allTasksDone = true;
+        var maxTaskEndedAt = 0;
+        if (enabledList.length === 0) {
+            allTasksDone = false;
+        } else {
+            for (var chkI = 0; chkI < enabledList.length; chkI++) {
+                var chkTk = enabledList[chkI];
+                if (!chkTk.completed) {
+                    allTasksDone = false;
+                }
+                if (chkTk.endedAt && chkTk.endedAt > maxTaskEndedAt) {
+                    maxTaskEndedAt = chkTk.endedAt;
+                }
+            }
+        }
+
+        if (allTasksDone) {
+            student.allCompleted = true;
+            if (student.completionElapsedSeconds === null) {
+                student.completionElapsedSeconds = (maxTaskEndedAt > 0) ? maxTaskEndedAt : student.elapsedSeconds;
+            }
+        } else {
+            student.allCompleted = false;
+            student.completionElapsedSeconds = null;
+        }
+
         notify();
     }
 
@@ -1076,6 +1105,7 @@
         if (tickTimer) clearInterval(tickTimer);
         tickTimer = setInterval(function () {
             if (!student.activeSession || student.timeExpired) return;
+            if (student.allCompleted) return;
             if (student.paused) {
                 student.suspendedSeconds += 1;
             } else {
@@ -1113,6 +1143,8 @@
     function resetTimersOnly() {
         student.elapsedSeconds = 0;
         student.suspendedSeconds = 0;
+        student.completionElapsedSeconds = null;
+        student.allCompleted = false;
         student.paused = false;
         student.pauseReason = null;
         student.startedAtIso = new Date().toISOString();
@@ -1122,6 +1154,13 @@
             tasks[i].endedAt = null;
             tasks[i].durationSeconds = 0;
         }
+    }
+
+    function getEffectiveElapsedSeconds() {
+        if (student.allCompleted && student.completionElapsedSeconds !== null && student.completionElapsedSeconds !== undefined) {
+            return student.completionElapsedSeconds;
+        }
+        return student.elapsedSeconds || 0;
     }
 
     /**
@@ -1318,7 +1357,8 @@
             var list = syncConfiguredTasks().filter(function (x) { return x.enabled !== false; });
             return (activeTaskIndex < list.length) ? list[activeTaskIndex].id : null;
         },
-        getElapsedString: function () { return formatDuration(student.elapsedSeconds); },
+        getEffectiveElapsedSeconds: getEffectiveElapsedSeconds,
+        getElapsedString: function () { return formatDuration(getEffectiveElapsedSeconds()); },
         getMistakes: function () { return mistakes; },
         getSectionTimings: function () { return sectionTimings; },
         enterSection: enterSection,
@@ -1585,7 +1625,7 @@
                 appreciation: app,
                 performanceLevel: lvl,
                 levelShort: lvlShort,
-                rankingKey: [net.toFixed(2), student.elapsedSeconds, mistakes.length]
+                rankingKey: [net.toFixed(2), getEffectiveElapsedSeconds(), mistakes.length]
             };
         },
         getSubstepsCatalog: function () {

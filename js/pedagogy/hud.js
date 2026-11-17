@@ -198,15 +198,23 @@
             var stepsHtml = '';
             if (taskSteps.length > 0) {
                 stepsHtml = '<div style="font-size:12px;font-weight:700;margin-top:6px;color:var(--win-text-primary)">' + bidi(t('pedagogy.stepsChecklistTitle')) + '</div><ol class="hud-steps-list" id="hud-steps-list">';
+                var firstPendingFound = false;
                 for (var si = 0; si < taskSteps.length; si++) {
                     var stepObj = taskSteps[si];
                     var doneStep = !!stepObj.ok;
                     var skippedStep = !doneStep && !!stepObj.skipped;
-                    var liCls = doneStep ? 'is-done' : (skippedStep ? 'is-skipped' : 'is-pending');
-                    var iconCh = doneStep ? '✔' : (skippedStep ? '⏭' : '○');
+                    var isNextTarget = false;
+                    if (!doneStep && !skippedStep && !firstPendingFound && isViewingActive) {
+                        isNextTarget = true;
+                        firstPendingFound = true;
+                    }
+                    var liCls = doneStep ? 'is-done' : (skippedStep ? 'is-skipped' : ('is-pending' + (isNextTarget ? ' is-next-target' : '')));
+                    var iconCh = doneStep ? '✔' : (skippedStep ? '⏭' : (isNextTarget ? '👉' : '○'));
                     var stepRightHtml = '';
                     if (skippedStep) {
                         stepRightHtml = '<span class="win-badge win-badge-neutral" style="font-size:10.5px;flex-shrink:0">' + bidi(t('pedagogy.subStepSkippedBadge')) + ' (<bdi dir="ltr">0</bdi>)</span>';
+                    } else if (isNextTarget) {
+                        stepRightHtml = '<span class="win-badge win-badge-info" style="font-size:10.5px;flex-shrink:0">' + bidi('المطلوب حالياً') + '</span>';
                     } else if (!doneStep && !isExamMode && isViewingActive && taskSteps.length > 1) {
                         stepRightHtml = '<button type="button" class="win-btn win-btn-subtle hud-skip-step-btn" data-skip-task-id="' + task.id + '" data-skip-step-idx="' + si + '">' + bidi(t('pedagogy.skipSubStepBtn')) + '</button>';
                     }
@@ -394,11 +402,24 @@
                 if (list[k].id === task.id) { tObj = list[k]; break; }
             }
             if (!tObj) tObj = list[currentTaskIdx] || list[0];
-            global.Win11Dialogs.showMessage(
-                global.Win11I18N.t('pedagogy.checkBtn'),
-                getTaskField(tObj, 'title') + ' — ' + tObj.earnedPoints + ' / ' + tObj.maxPoints,
-                tObj.completed ? 'info' : 'warning'
-            );
+            if (tObj.completed) {
+                global.Win11Dialogs.showMessage(
+                    global.Win11I18N.t('pedagogy.checkBtn'),
+                    'أحسنت! تم استيفاء كافة خطوات هذه المهمة بنجاح (' + tObj.earnedPoints + ' / ' + tObj.maxPoints + ').',
+                    'info'
+                );
+            } else {
+                var missingSteps = (tObj.subSteps || []).filter(function (s) { return !s.ok && !s.skipped; });
+                var checkMsg = 'توجيه تربوي: لقد أحرزت ' + tObj.earnedPoints + ' من أصل ' + tObj.maxPoints + ' نقطة في هذه المهمة.';
+                if (missingSteps.length > 0) {
+                    checkMsg += '\n\n👉 الخطوة التالية المطلوبة: ' + (missingSteps[0].labelAr || missingSteps[0].labelFr || '');
+                }
+                global.Win11Dialogs.showMessage(
+                    global.Win11I18N.t('pedagogy.checkBtn'),
+                    checkMsg,
+                    'warning'
+                );
+            }
             renderContent();
         };
         var skipBtn = el.querySelector('#hud-skip-btn');
