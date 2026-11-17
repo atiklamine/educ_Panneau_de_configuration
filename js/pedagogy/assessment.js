@@ -1541,10 +1541,30 @@
 
             var threshold = Number(config.pass_threshold);
             if (isNaN(threshold)) threshold = 10.0;
-            var app = 'تحكم محدود (Maîtrise Insuffisante)';
-            if (net >= 16) app = 'تحكم أقصى (Maîtrise Maximale)';
-            else if (net >= 12) app = 'تحكم مقبول (Maîtrise Acceptable)';
-            else if (net >= 8) app = 'تحكم جزئي (Maîtrise Partielle)';
+            var app = 'دون المتوسط';
+            var lvl = 'غير مكتسب (صعوبات تتطلب المراجعة والدعم)';
+            var lvlShort = 'غير مكتسب';
+            if (net >= 16) {
+                app = 'ممتاز';
+                lvl = 'مكتسب بجدارة (تحكم شامل وسريع في إعدادات النظام)';
+                lvlShort = 'مكتسب بجدارة';
+            } else if (net >= 14) {
+                app = 'جيد جداً';
+                lvl = 'مكتسب (تحكم جيد في معظم الوظائف والخصائص)';
+                lvlShort = 'مكتسب';
+            } else if (net >= 12) {
+                app = 'جيد';
+                lvl = 'مكتسب (تحكم مقبول مع وجود بعض النقائص البسيطة)';
+                lvlShort = 'مكتسب';
+            } else if (net >= 10) {
+                app = 'متوسط';
+                lvl = 'في طريق الاكتساب (تحكم جزئي يتطلب مزيداً من الممارسة)';
+                lvlShort = 'في طريق الاكتساب';
+            } else if (net >= 8) {
+                app = 'قريب من المتوسط';
+                lvl = 'غير مكتسب (صعوبات جزئية في إنجاز بعض المهام)';
+                lvlShort = 'غير مكتسب';
+            }
 
             return {
                 totalWeight: totalWeight,
@@ -1559,6 +1579,8 @@
                 passed: net >= threshold,
                 passThreshold: threshold,
                 appreciation: app,
+                performanceLevel: lvl,
+                levelShort: lvlShort,
                 rankingKey: [net.toFixed(2), student.elapsedSeconds, mistakes.length]
             };
         },

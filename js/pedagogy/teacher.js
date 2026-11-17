@@ -622,9 +622,9 @@
                                     '<label><input type="checkbox" id="tc-sm"' + (cfg.show_mistakes ? ' checked' : '') + '> ' + bidi('إظهار الأخطاء في التقرير') + '</label>' +
                                     '<label><input type="checkbox" id="tc-sp"' + (cfg.show_penalties ? ' checked' : '') + '> ' + bidi('إظهار الخصومات') + '</label>' +
                                     '<label><input type="checkbox" id="tc-st"' + (cfg.show_time ? ' checked' : '') + '> ' + bidi('إظهار الأوقات التفصيلية') + '</label>' +
-                                    '<label><input type="checkbox" id="tc-sc"' + (cfg.show_competency ? ' checked' : '') + '> ' + bidi('إظهار التقدير البيداغوجي') + '</label>' +
+                                    '<label><input type="checkbox" id="tc-sc"' + (cfg.show_competency ? ' checked' : '') + '> ' + bidi('إظهار التقدير العام ومستوى الأداء') + '</label>' +
                                     '<label><input type="checkbox" id="tc-sps"' + (cfg.show_partial_scores ? ' checked' : '') + '> ' + bidi('احتساب النقاط الجزئية') + '</label>' +
-                                    '<label><input type="checkbox" id="tc-srk"' + (cfg.show_ranking_criteria ? ' checked' : '') + '> ' + bidi('إظهار معيار الترتيب') + '</label>' +
+                                    '<label><input type="checkbox" id="tc-srk"' + (cfg.show_ranking_criteria ? ' checked' : '') + '> ' + bidi('إظهار شبكة تقدير المستويات') + '</label>' +
                                 '</div>' +
                                 '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
                                     '<label class="win-btn win-btn-secondary" style="cursor:pointer">' + bidi('إدراج شعار المؤسسة في التقرير') +

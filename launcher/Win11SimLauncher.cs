@@ -710,7 +710,7 @@ namespace Win11SimHost
                                                     if (p != null)
                                                     {
                                                         p.WaitForExit(10000);
-                                                        if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 1000)
+                                                        if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 100)
                                                         {
                                                             try
                                                             {
@@ -1016,6 +1016,8 @@ namespace Win11SimHost
                         "--no-first-run " +
                         "--no-default-browser-check " +
                         "--noerrdialogs " +
+                        "--disable-infobars " +
+                        "--test-type " +
                         "--disable-save-password-bubble " +
                         "--disable-single-click-autofill " +
                         "--disable-autofill-keyboard-accessory-view " +

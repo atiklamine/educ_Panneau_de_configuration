@@ -246,7 +246,7 @@
             '<div style="background:#ffffff;border-radius:12px;padding:24px 28px;max-width:520px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.4);border:1px solid #cbd5e1">' +
                 '<div style="text-align:center;margin-bottom:16px;border-bottom:2px solid #0067C0;padding-bottom:12px">' +
                     '<h2 style="margin:0 0 4px;font-size:18px;color:#0067C0">' + bidi('تسجيل بيانات التلميذ — لوحة التحكم 1AS') + '</h2>' +
-                    '<p style="margin:0;font-size:12.5px;color:#64748b">' + bidi('يرجى إدخال اسمك ولقبك وفوجك للبدء في إنجاز الأنشطة البيداغوجية') + '</p>' +
+                    '<p style="margin:0;font-size:12.5px;color:#64748b">' + bidi('يرجى إدخال اسمك ولقبك وفوجك للبدء في إنجاز الأنشطة التطبيقية') + '</p>' +
                 '</div>' +
                 '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">' +
                     '<div>' +
@@ -652,145 +652,32 @@
         });
     }
 
-    function renderSectionTimingsHtml(timings, bidi) {
-        var keys = [];
-        for (var k in timings) {
-            if (Object.prototype.hasOwnProperty.call(timings, k) && timings[k].activeSeconds > 0) {
-                keys.push(k);
-            }
-        }
-        if (keys.length === 0) return '';
-        var rows = '';
-        for (var i = 0; i < keys.length; i++) {
-            var sec = keys[i];
-            var lbl = SECTION_LABELS_AR[sec] || sec;
-            rows +=
-                '<tr>' +
-                    '<td>' + bidi(lbl) + '</td>' +
-                    '<td><bdi dir="ltr">' + global.Win11Assessment.formatDuration(timings[sec].activeSeconds) + '</bdi></td>' +
-                '</tr>';
-        }
-        return (
-            '<div style="font-weight:700;font-size:13px;margin:12px 0 4px">' + bidi('توزيع المدة المستغرقة حسب أقسام النظام:') + '</div>' +
-            '<table class="a4-report-table">' +
-                '<thead><tr><th>القسم</th><th>المدة المستغرقة</th></tr></thead>' +
-                '<tbody>' + rows + '</tbody>' +
-            '</table>'
-        );
+    function formatArabicDate(dt) {
+        var d = dt || (global.Win11State && typeof global.Win11State.getSimulatedNow === 'function' ? global.Win11State.getSimulatedNow() : new Date());
+        var yyyy = d.getFullYear();
+        var mm = d.getMonth();
+        var dd = d.getDate();
+        var hh = d.getHours();
+        var min = d.getMinutes();
+        var monthsAr = ['جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان', 'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        return dd + ' ' + (monthsAr[mm] || (mm + 1)) + ' ' + yyyy + ' — ' + pad(hh) + ':' + pad(min);
     }
 
-    function renderDeductionsTableHtml(scores, cfg, bidi) {
-        if (!cfg.show_penalties && !cfg.show_mistakes) return '';
-        var list = (scores && Array.isArray(scores.deductions)) ? scores.deductions : [];
-        var rows = '';
-        for (var i = 0; i < list.length; i++) {
-            var d = list[i];
-            rows +=
-                '<tr>' +
-                    '<td>' + bidi(d.taskTitle || 'تقييم عام') + '</td>' +
-                    '<td>' + bidi(d.reason || '-') + '</td>' +
-                    '<td><bdi dir="ltr">-' + Number(d.points || 0).toFixed(2) + '</bdi></td>' +
-                '</tr>';
+    function formatArabicDuration(secs) {
+        var s = Math.max(0, Math.floor(Number(secs) || 0));
+        var h = Math.floor(s / 3600);
+        var m = Math.floor((s % 3600) / 60);
+        var rem = s % 60;
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        var digital = pad(h) + ':' + pad(m) + ':' + pad(rem);
+        if (h > 0) {
+            return digital + ' (' + h + ' ساعة و ' + m + ' دقيقة و ' + rem + ' ثانية)';
         }
-        if (list.length === 0) {
-            rows = '<tr><td colspan="3" style="text-align:center;color:#065F46">' + bidi('لا توجد أي خصومات أو مخالفات مسجلة (0.00 نقطة).') + '</td></tr>';
+        if (m > 0) {
+            return digital + ' (' + m + ' دقيقة و ' + rem + ' ثانية)';
         }
-        var tot = Number((scores && scores.totalDeductions !== undefined) ? scores.totalDeductions : (scores ? scores.penalties : 0));
-        return (
-            '<div style="margin-top:14px">' +
-                '<div style="font-weight:700;font-size:13px;margin-bottom:4px">' + bidi('جدول الخصومات والمخالفات التفصيلي:') + '</div>' +
-                '<table class="a4-report-table">' +
-                    '<thead><tr><th>المهمة</th><th>سبب الخصم / المخالفة</th><th>النقاط المخصومة</th></tr></thead>' +
-                    '<tbody>' +
-                        rows +
-                        '<tr class="ped-deduction-row-total"><td colspan="2">' + bidi('إجمالي الخصومات') + '</td><td><bdi dir="ltr">-' + tot.toFixed(2) + '</bdi></td></tr>' +
-                    '</tbody>' +
-                '</table>' +
-            '</div>'
-        );
-    }
-
-    var ACCOUNT_EVENT_LABELS_AR = {
-        account_create: 'إنشاء حساب',
-        account_delete: 'حذف حساب',
-        account_type: 'تعديل نوع الحساب',
-        password_change: 'تعديل كلمة المرور',
-        avatar_change: 'تغيير الصورة الرمزية',
-        login: 'تسجيل دخول',
-        login_initial_pw: 'دخول بكلمة المرور الأولى',
-        login_new_pw: 'دخول بكلمة المرور الجديدة',
-        logout_standard: 'تسجيل خروج (قياسي)',
-        switch_user: 'تبديل المستخدم',
-        switch_guest: 'تبديل إلى حساب الضيف',
-        guest_enable: 'تفعيل حساب الضيف',
-        guest_disable: 'تعطيل حساب الضيف',
-        guest_reset: 'إعادة ضبط الضيف',
-        guest_uac_denied: 'حظر إداري (UAC)'
-    };
-
-    var ACCOUNT_ROLE_LABELS_AR = {
-        Administrateur: 'مسؤول (Administrateur)',
-        Standard: 'قياسي (Standard)',
-        'Invité': 'ضيف (Invité)'
-    };
-
-    function renderAccountLogHtml(bidi) {
-        if (!global.Win11State || typeof global.Win11State.get !== 'function') return '';
-        var st = global.Win11State.get();
-        var rawLog = (st && Array.isArray(st.accountActionLog)) ? st.accountActionLog : [];
-        var validEvents = [];
-        for (var i = 0; i < rawLog.length; i++) {
-            var item = rawLog[i];
-            if (item && (item.type || item.event || item.detailAr || item.details)) {
-                validEvents.push(item);
-            }
-        }
-        var headerHtml = '<div style="font-weight:700;font-size:13px;margin-bottom:4px">' +
-            bidi('سجل أحداث الحسابات والتدقيق الزمني') + ' (<bdi dir="ltr">' + validEvents.length + '</bdi>):</div>';
-        if (validEvents.length === 0) {
-            return (
-                '<div style="margin-top:12px">' +
-                    headerHtml +
-                    '<div class="a4-empty-log-msg" style="font-size:12.5px;color:#475569;padding:8px 10px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:4px">' +
-                        bidi('لا توجد أحداث مسجلة.') +
-                    '</div>' +
-                '</div>'
-            );
-        }
-        var rows = '';
-        for (var j = 0; j < validEvents.length; j++) {
-            var e = validEvents[j];
-            var timeText = e.wallTime || e.elapsed || e.time || '00:00:00';
-            var evKey = e.type || e.event || '';
-            var evLabel = ACCOUNT_EVENT_LABELS_AR[evKey] || evKey || 'حدث';
-            var targetName = e.target || e.targetUser || e.actor || '-';
-            var rawRole = e.accountType || '-';
-            var roleLabel = ACCOUNT_ROLE_LABELS_AR[rawRole] || rawRole;
-            var detailText = e.detailAr || e.details || '-';
-            rows +=
-                '<tr>' +
-                    '<td class="col-time"><bdi dir="ltr">' + global.Win11Compat.escapeHtml(timeText) + '</bdi></td>' +
-                    '<td class="col-event">' + bidi(evLabel) + '</td>' +
-                    '<td class="col-account"><bdi dir="ltr">' + global.Win11Compat.escapeHtml(targetName) + '</bdi></td>' +
-                    '<td class="col-role">' + bidi(roleLabel) + '</td>' +
-                    '<td class="col-details" style="font-size:11.5px">' + bidi(detailText) + '</td>' +
-                '</tr>';
-        }
-        return (
-            '<div style="margin-top:12px">' +
-                headerHtml +
-                '<table class="a4-report-table a4-account-log-table">' +
-                    '<thead><tr>' +
-                        '<th class="col-time">التوقيت</th>' +
-                        '<th class="col-event">الحدث</th>' +
-                        '<th class="col-account">اسم الحساب</th>' +
-                        '<th class="col-role">النوع</th>' +
-                        '<th class="col-details">التفاصيل</th>' +
-                    '</tr></thead>' +
-                    '<tbody>' + rows + '</tbody>' +
-                '</table>' +
-            '</div>'
-        );
+        return digital + ' (' + rem + ' ثانية)';
     }
 
     function buildA4Html() {
@@ -799,96 +686,269 @@
         var stu = global.Win11Assessment.getStudent();
         var scores = global.Win11Assessment.getScores();
         var tasks = global.Win11Assessment.getTasks();
-        var timings = (typeof global.Win11Assessment.getSectionTimings === 'function')
-            ? global.Win11Assessment.getSectionTimings()
-            : {};
+
+        var enabledTasks = [];
+        var doneTasksCount = 0;
+        var totalMaxPoints = 0;
+        var totalEarnedPoints = 0;
+
+        for (var t = 0; t < tasks.length; t++) {
+            if (tasks[t].enabled !== false) {
+                enabledTasks.push(tasks[t]);
+                totalMaxPoints += (Number(tasks[t].maxPoints) || 0);
+                totalEarnedPoints += (Number(tasks[t].earnedPoints) || 0);
+                if (tasks[t].completed) doneTasksCount++;
+            }
+        }
+
+        var completionPct = enabledTasks.length > 0 ? Math.round((doneTasksCount / enabledTasks.length) * 100) : 0;
+        var totalDurationStr = formatArabicDuration(stu.elapsedSeconds || 0);
+        var dateFormatted = formatArabicDate();
+        var isExam = (stu.mode === 'exam');
+        var sessionLabel = isExam ? 'امتحان تطبيقي رسمي' : 'نشاط تطبيقي تدريبي';
+        var isPassed = (scores.passed !== false);
+        var finalScoreNum = (scores.finalScore !== undefined ? scores.finalScore : scores.net);
+        var finalScoreStr = Number(finalScoreNum || 0).toFixed(2);
 
         var rowsHtml = '';
-        for (var i = 0; i < tasks.length; i++) {
-            var tk = tasks[i];
-            if (tk.enabled === false) continue;
-            var stTxt = tk.skipped ? 'غير منجزة' : (tk.completed ? 'ناجحة' : (tk.earnedPoints > 0 ? 'جزئية' : 'غير منجزة'));
-            var stColor = tk.skipped ? '#C42B1C' : (tk.completed ? '#107C41' : (tk.earnedPoints > 0 ? '#D97706' : '#C42B1C'));
+        for (var i = 0; i < enabledTasks.length; i++) {
+            var tk = enabledTasks[i];
+            var isDone = !!tk.completed;
+            var isSkip = !!tk.skipped;
+            var isPart = (!isDone && !isSkip && (Number(tk.earnedPoints) > 0));
+
+            var badgeCls = isDone ? 'is-done' : (isPart ? 'is-partial' : (isSkip ? 'is-skipped' : 'is-fail'));
+            var badgeText = isDone ? 'مكتملة ✔' : (isPart ? 'منجزة جزئياً ◐' : (isSkip ? 'تم تخطيها ⏭' : 'غير منجزة ✘'));
+
             var tDur = global.Win11Assessment.formatDuration(tk.durationSeconds || 0);
-            var deductedVal = (tk.deductedPoints !== undefined) ? Number(tk.deductedPoints) : Math.max(0, tk.maxPoints - tk.earnedPoints);
-            var reasonTxt = (tk.deductReasons && tk.deductReasons.length > 0) ? tk.deductReasons.join('؛ ') : 'استيفاء كامل';
+            var reasonTxt = '';
+            if (isDone) {
+                reasonTxt = 'تم إنجاز كافة خطوات المهمة بنجاح.';
+            } else if (isSkip) {
+                reasonTxt = 'تم تخطي المهمة من قبل التلميذ.';
+            } else if (tk.deductReasons && tk.deductReasons.length > 0) {
+                reasonTxt = tk.deductReasons.join('؛ ');
+            } else {
+                reasonTxt = 'لم يتم استيفاء الخطوات العملية المطلوبة.';
+            }
+
             rowsHtml +=
                 '<tr>' +
-                    '<td>' + bidi(tk.titleAr) + (tk.critical ? ' <span style="color:#C42B1C;font-size:11px">(' + bidi('حرج') + ')</span>' : '') + '</td>' +
-                    (cfg.show_time ? ('<td class="col-time"><bdi dir="ltr">' + tDur + '</bdi></td>') : '') +
-                    '<td class="col-num"><bdi dir="ltr">' + tk.maxPoints.toFixed(2) + '</bdi></td>' +
-                    '<td class="col-num"><bdi dir="ltr">' + tk.earnedPoints.toFixed(2) + '</bdi></td>' +
-                    '<td class="col-num"><bdi dir="ltr">' + deductedVal.toFixed(2) + '</bdi></td>' +
-                    '<td class="col-details" style="font-size:11.5px">' + bidi(reasonTxt) + '</td>' +
-                    '<td class="col-status" style="color:' + stColor + ';font-weight:700">' + bidi(stTxt) + '</td>' +
+                    '<td style="text-align:center;font-weight:700;color:#64748B;">' + (i + 1) + '</td>' +
+                    '<td><strong>' + bidi(tk.titleAr) + '</strong>' + (tk.critical ? ' <span style="color:#DC2626;font-size:11px;font-weight:700;">(مهمة أساسية)</span>' : '') + '</td>' +
+                    (cfg.show_time ? ('<td style="text-align:center;font-variant-numeric:tabular-nums;"><bdi dir="ltr">' + tDur + '</bdi></td>') : '') +
+                    '<td style="text-align:center;font-weight:600;"><bdi dir="ltr">' + Number(tk.maxPoints || 0).toFixed(2) + '</bdi></td>' +
+                    '<td style="text-align:center;font-weight:700;color:#1E3A8A;"><bdi dir="ltr">' + Number(tk.earnedPoints || 0).toFixed(2) + '</bdi></td>' +
+                    '<td style="text-align:center;"><span class="a4-badge ' + badgeCls + '">' + bidi(badgeText) + '</span></td>' +
+                    '<td style="font-size:11.5px;color:#334155;line-height:1.45;">' + bidi(reasonTxt) + '</td>' +
                 '</tr>';
         }
 
-        var modeLabel = (stu.mode === 'exam') ? 'امتحان رسمي (تقييمي)' : 'استطلاع وتدريب (غير مصنّف)';
+        // Summary row for general penalties (if any)
+        var penaltiesRowHtml = '';
+        if (scores.penalties > 0 && cfg.show_penalties) {
+            var mistakesList = (global.Win11Assessment && typeof global.Win11Assessment.getMistakes === 'function')
+                ? global.Win11Assessment.getMistakes()
+                : [];
+            var mistDesc = [];
+            for (var m = 0; m < mistakesList.length; m++) {
+                if (mistakesList[m] && mistakesList[m].title && mistDesc.indexOf(mistakesList[m].title) === -1) {
+                    mistDesc.push(mistakesList[m].title);
+                }
+            }
+            var penaltyReason = mistDesc.length > 0 ? mistDesc.join('؛ ') : 'تعديلات أو أفعال خارج نطاق المهمة النشطة';
+            penaltiesRowHtml =
+                '<tr style="background:#FFF5F5;color:#991B1B;">' +
+                    '<td style="text-align:center;">-</td>' +
+                    '<td colspan="' + (cfg.show_time ? 2 : 1) + '"><strong>خصومات عامة (مخالفة تسلسل المهام النشطة)</strong></td>' +
+                    '<td style="text-align:center;">-</td>' +
+                    '<td style="text-align:center;font-weight:700;color:#DC2626;"><bdi dir="ltr">-' + Number(scores.penalties).toFixed(2) + '</bdi></td>' +
+                    '<td style="text-align:center;"><span class="a4-badge is-fail">خصم نقاط</span></td>' +
+                    '<td style="font-size:11.5px;line-height:1.45;">' + bidi(penaltyReason) + '</td>' +
+                '</tr>';
+        }
+
         var logoHtml = (cfg.report_logo_b64 && String(cfg.report_logo_b64).indexOf('data:image/') === 0)
-            ? '<img src="' + cfg.report_logo_b64 + '" alt="logo" style="max-height:54px;max-width:88px;object-fit:contain;margin-bottom:4px">'
+            ? '<img src="' + cfg.report_logo_b64 + '" alt="logo" style="max-height:50px;max-width:85px;object-fit:contain;">'
             : '';
+
+        var rubricHtml = '';
+        if (cfg.show_ranking_criteria !== false) {
+            rubricHtml =
+                '<div class="a4-rubric-card">' +
+                    '<div style="font-weight:700;margin-bottom:4px;color:#1E3A8A;font-size:11.5px;">' + bidi('شبكة تقدير المستويات والتحكم في المهارات العملية المعتمدة:') + '</div>' +
+                    '<div class="a4-rubric-grid">' +
+                        '<div class="a4-rubric-item' + (finalScoreNum >= 16 ? ' is-active' : '') + '">' +
+                            '<div style="font-weight:700;color:#15803D;">[16.00 – 20.00] ممتاز</div>' +
+                            '<div style="font-size:10px;color:#475569;margin-top:1px;">مكتسب بجدارة (تحكم شامل)</div>' +
+                        '</div>' +
+                        '<div class="a4-rubric-item' + (finalScoreNum >= 14 && finalScoreNum < 16 ? ' is-active' : '') + '">' +
+                            '<div style="font-weight:700;color:#1D4ED8;">[14.00 – 15.99] جيد جداً</div>' +
+                            '<div style="font-size:10px;color:#475569;margin-top:1px;">مكتسب (تحكم جيد)</div>' +
+                        '</div>' +
+                        '<div class="a4-rubric-item' + (finalScoreNum >= 12 && finalScoreNum < 14 ? ' is-active' : '') + '">' +
+                            '<div style="font-weight:700;color:#0284C7;">[12.00 – 13.99] جيد</div>' +
+                            '<div style="font-size:10px;color:#475569;margin-top:1px;">مكتسب (تحكم مقبول)</div>' +
+                        '</div>' +
+                        '<div class="a4-rubric-item' + (finalScoreNum >= 10 && finalScoreNum < 12 ? ' is-active' : '') + '">' +
+                            '<div style="font-weight:700;color:#D97706;">[10.00 – 11.99] متوسط</div>' +
+                            '<div style="font-size:10px;color:#475569;margin-top:1px;">في طريق الاكتساب (تحكم جزئي)</div>' +
+                        '</div>' +
+                        '<div class="a4-rubric-item' + (finalScoreNum < 10 ? ' is-active' : '') + '">' +
+                            '<div style="font-weight:700;color:#DC2626;">[أقل من 10.00] دون المتوسط</div>' +
+                            '<div style="font-size:10px;color:#475569;margin-top:1px;">غير مكتسب (بحاجة لدعم ومراجعة)</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+        }
 
         return (
             '<div class="a4-report-sheet" dir="rtl" lang="ar">' +
-                '<div style="text-align:center;border-bottom:2px solid #0067C0;padding-bottom:10px;margin-bottom:14px">' +
-                    logoHtml +
-                    '<div style="font-size:15px;font-weight:700">' + bidi('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية') + '</div>' +
-                    '<div style="font-size:14px;font-weight:600;color:#0067C0;margin-top:2px">' + bidi(cfg.institution_name + ' | ' + cfg.teacher_name) + '</div>' +
-                    '<div style="font-size:13px;color:#475569">' + bidi(cfg.target_level) + ' (<bdi dir="ltr">' + global.Win11Compat.escapeHtml(cfg.academic_year) + '</bdi>)</div>' +
-                '</div>' +
-                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13px">' +
-                    '<div><strong>اللقب:</strong> ' + bidi(stu.lastName || stu.fullName) + ' &nbsp;|&nbsp; <strong>الاسم:</strong> ' + bidi(stu.firstName || '') + '</div>' +
-                    '<div><strong>الفوج:</strong> ' + bidi(stu.classGroup) + ' &nbsp;|&nbsp; <strong>الحاسوب:</strong> <bdi dir="ltr">#' + global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01')) + '</bdi></div>' +
-                    '<div><strong>نمط الجلسة:</strong> ' + bidi(modeLabel) + '</div>' +
-                    '<div><strong>مجموع المعاملات (Total Weight):</strong> <bdi dir="ltr">' + (scores.totalWeight !== undefined ? scores.totalWeight : 20) + '</bdi> &nbsp;|&nbsp; <strong>العلامة القاعدية:</strong> <bdi dir="ltr">' + (scores.baseScore !== undefined ? scores.baseScore.toFixed(2) : scores.gross.toFixed(2)) + ' / 20</bdi></div>' +
-                    (cfg.show_time ? (
-                        '<div><strong>المدة النشطة:</strong> <bdi dir="ltr">' + global.Win11Assessment.formatDuration(stu.elapsedSeconds) + '</bdi>' +
-                        ' &nbsp;|&nbsp; <strong>التوقف/التبديل:</strong> <bdi dir="ltr">' + global.Win11Assessment.formatDuration(stu.suspendedSeconds || 0) + '</bdi></div>'
-                    ) : '<div></div>') +
-                    '<div style="font-size:17px;font-weight:700;color:#0067C0">العلامة النهائية (Final Score): <bdi dir="ltr">' + (scores.finalScore !== undefined ? scores.finalScore.toFixed(2) : scores.net.toFixed(2)) + ' / 20</bdi> ' +
-                        (scores.passThreshold !== undefined ? '<span style="font-size:12px;color:' + (scores.passed ? '#107C41' : '#C42B1C') + '">(' + bidi(scores.passed ? 'مقبول >= ' : 'دون العتبة < ') + '<bdi dir="ltr">' + Number(scores.passThreshold).toFixed(1) + '</bdi>)</span>' : '') +
+                // Header
+                '<div class="a4-header">' +
+                    '<div class="a4-header-republic">' + bidi('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية') + '</div>' +
+                    '<div class="a4-header-grid">' +
+                        '<div style="text-align:right;">' +
+                            '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong></div>' +
+                            '<div>الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
+                        '</div>' +
+                        (logoHtml ? '<div>' + logoHtml + '</div>' : '') +
+                        '<div style="text-align:left;" dir="ltr">' +
+                            '<div>Année scolaire: <strong>' + global.Win11Compat.escapeHtml(cfg.academic_year) + '</strong></div>' +
+                            '<div>Niveau: <strong>' + global.Win11Compat.escapeHtml(cfg.target_level) + '</strong></div>' +
+                        '</div>' +
                     '</div>' +
-                    (cfg.show_penalties ? '<div><strong>إجمالي الخصومات:</strong> <bdi dir="ltr">' + (scores.penalties > 0 ? '-' : '') + scores.penalties.toFixed(2) + '</bdi></div>' : '') +
+                    '<div class="a4-banner">' +
+                        '<div class="a4-banner-title">' + bidi('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي') + '</div>' +
+                        '<div class="a4-banner-sub">' + bidi('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)') + '</div>' +
+                    '</div>' +
                 '</div>' +
-                (cfg.show_competency ? '<div style="padding:8px 12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:5px;margin-bottom:10px;font-size:13px"><strong>التقدير البيداغوجي:</strong> ' + bidi(scores.appreciation) + '</div>' : '') +
-                (cfg.show_ranking_criteria ? '<div style="font-size:12px;color:#475569;margin-bottom:8px"><strong>معيار الترتيب عند التساوي:</strong> ' + bidi(stu.mode === 'exam' ? 'العلامة الصافية الأعلى أولاً، ثم أقصر مدة زمنية نشطة لإنجاز المهام.' : 'جلسة استطلاع وتدريب — الترتيب التنافسي يفعّل في نمط الامتحان الرسمي.') + '</div>' : '') +
-                '<table class="a4-report-table">' +
-                    '<thead><tr><th>المهمة المطلوبة</th>' + (cfg.show_time ? '<th class="col-time">المدة المستغرقة</th>' : '') + '<th class="col-num">المعامل (Weight)</th><th class="col-num">الممنوحة</th><th class="col-num">المخصومة</th><th class="col-details">أسباب الخصم / النقص</th><th class="col-status">الحالة</th></tr></thead>' +
-                    '<tbody>' + rowsHtml + '</tbody>' +
+
+                // Student & Session Details
+                '<table class="a4-info-table">' +
+                    '<tr>' +
+                        '<td style="width:50%;"><strong>اسم ولقب التلميذ:</strong> <span style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi((stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || '')) + '</span></td>' +
+                        '<td style="width:50%;"><strong>الفوج التربوي:</strong> <span style="font-weight:700;color:#2563EB;">' + bidi(stu.classGroup) + '</span> &nbsp;|&nbsp; <strong>رقم الجهاز:</strong> <span>حاسوب <bdi dir="ltr">#' + global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01')) + '</bdi></span></td>' +
+                    '</tr>' +
+                    '<tr>' +
+                        '<td><strong>طبيعة النشاط:</strong> ' + bidi(sessionLabel) + ' &nbsp;|&nbsp; <strong>التاريخ:</strong> <bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></td>' +
+                        '<td><strong>الوقت الإجمالي المستغرق:</strong> <span style="font-weight:700;color:#0F172A;"><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></span></td>' +
+                    '</tr>' +
                 '</table>' +
-                (cfg.show_time ? renderSectionTimingsHtml(timings, bidi) : '') +
-                renderAccountLogHtml(bidi) +
-                renderDeductionsTableHtml(scores, cfg, bidi) +
-                '<div style="margin-top:16px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px dashed #94A3B8;padding-top:10px;font-size:12.5px">' +
-                    '<div><strong>' + bidi('ملاحظة الأستاذ:') + '</strong> ................................................................</div>' +
-                    '<div style="text-align:center;border:1px dashed #64748B;padding:6px 14px;border-radius:4px;color:#475569;font-size:11.5px">' + bidi('ختم وتوقيع الأستاذ / المؤسسة') + '</div>' +
+
+                // Prominent Score & Level Card
+                '<div class="a4-summary-card" style="border-color:' + (isPassed ? '#107C41' : '#D97706') + ';">' +
+                    '<div class="a4-score-box">' +
+                        '<div style="font-size:12px;font-weight:700;color:#64748B;margin-bottom:2px;">' + bidi('العلامة الإجمالية المستحقة') + '</div>' +
+                        '<div class="a4-score-val"><bdi dir="ltr">' + finalScoreStr + '</bdi> <span class="a4-score-max">/ 20</span></div>' +
+                        '<div><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '">' + bidi(isPassed ? '✔ مستوفٍ لمعيار النجاح' : '✘ دون المعدل المطلوب') + '</span></div>' +
+                    '</div>' +
+                    '<div class="a4-level-box">' +
+                        (cfg.show_competency !== false ? (
+                            '<div><strong>التقدير العام:</strong> <span style="display:inline-block;margin-right:4px;padding:1px 10px;border-radius:4px;font-weight:700;font-size:13px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;">' + bidi(scores.appreciation || 'متوسط') + '</span></div>' +
+                            '<div><strong>مستوى التحكم في المهارات:</strong> <span style="font-weight:700;color:#0F172A;">' + bidi(scores.performanceLevel || 'في طريق الاكتساب') + '</span></div>'
+                        ) : '') +
+                        '<div style="font-size:12px;color:#475569;">' +
+                            '<strong>نسبة الإنجاز العملي:</strong> ' +
+                            '<span>تم استيفاء <bdi dir="ltr">' + doneTasksCount + '</bdi> من أصل <bdi dir="ltr">' + enabledTasks.length + '</bdi> مهام مطلوبة (نسبة النجاح: <bdi dir="ltr">' + completionPct + '%</bdi>)</span>' +
+                            (scores.penalties > 0 ? (' &nbsp;|&nbsp; <span style="color:#DC2626;font-weight:600;">الخصومات المطبقة: <bdi dir="ltr">-' + Number(scores.penalties).toFixed(2) + '</bdi></span>') : '') +
+                        '</div>' +
+                    '</div>' +
                 '</div>' +
-                '<div style="margin-top:12px;font-size:11.5px;color:#64748B"><strong>اسم الملف المقترح (ASCII):</strong> ' + formatFilenamePreviewHtml(formatSuggestedFilename('pdf')) + '</div>' +
+
+                // Single Unified Detailed Tasks Table
+                '<table class="a4-report-table">' +
+                    '<thead>' +
+                        '<tr>' +
+                            '<th style="width:28px;text-align:center;">#</th>' +
+                            '<th style="text-align:right;">المهمة التطبيقية المطلوبة</th>' +
+                            (cfg.show_time ? '<th style="width:75px;text-align:center;">المدة</th>' : '') +
+                            '<th style="width:65px;text-align:center;">العلامة القصوى</th>' +
+                            '<th style="width:65px;text-align:center;">الممنوحة</th>' +
+                            '<th style="width:85px;text-align:center;">حالة الإنجاز</th>' +
+                            '<th style="text-align:right;">الملاحظات وتفاصيل الإنجاز</th>' +
+                        '</tr>' +
+                    '</thead>' +
+                    '<tbody>' +
+                        rowsHtml +
+                        penaltiesRowHtml +
+                    '</tbody>' +
+                    '<tfoot>' +
+                        '<tr style="background:#F8FAFC;font-weight:700;border-top:2px solid #CBD5E1;">' +
+                            '<td colspan="' + (cfg.show_time ? 3 : 2) + '" style="text-align:left;padding:6px 10px;">المجموع الكلي:</td>' +
+                            '<td style="text-align:center;"><bdi dir="ltr">' + totalMaxPoints.toFixed(2) + '</bdi></td>' +
+                            '<td style="text-align:center;color:#1E3A8A;font-size:13px;"><bdi dir="ltr">' + totalEarnedPoints.toFixed(2) + '</bdi></td>' +
+                            '<td colspan="2" style="text-align:right;padding:6px 10px;font-size:12px;color:#1E293B;">' +
+                                (scores.penalties > 0
+                                    ? ('العلامة الصافية بعد الخصم: <bdi dir="ltr"><strong style="color:#1E3A8A;font-size:13px;">' + finalScoreStr + ' / 20</strong></bdi>')
+                                    : ('العلامة النهائية: <bdi dir="ltr"><strong style="color:#1E3A8A;font-size:13px;">' + finalScoreStr + ' / 20</strong></bdi>')
+                                ) +
+                            '</td>' +
+                        '</tr>' +
+                    '</tfoot>' +
+                '</table>' +
+
+                // Rubric reference
+                rubricHtml +
+
+                // Teacher Observations & Official Seal
+                '<div class="a4-footer-sig">' +
+                    '<div style="flex:1;padding-left:24px;">' +
+                        '<div style="font-weight:700;margin-bottom:4px;color:#0F172A;">' + bidi('ملاحظات وتوجيهات الأستاذ(ة):') + '</div>' +
+                        '<div style="border-bottom:1px dotted #94A3B8;height:20px;"></div>' +
+                        '<div style="border-bottom:1px dotted #94A3B8;height:20px;margin-top:4px;"></div>' +
+                    '</div>' +
+                    '<div style="flex:0 0 210px;text-align:center;">' +
+                        '<div style="font-size:11px;color:#64748B;margin-bottom:3px;">حرر في: <bdi dir="ltr">' + bidi(dateFormatted.split('—')[0].trim()) + '</bdi></div>' +
+                        '<div style="border:1px dashed #64748B;border-radius:6px;padding:8px 12px;min-height:55px;display:flex;flex-direction:column;justify-content:space-between;background:#FAFAFA;">' +
+                            '<span style="font-weight:700;font-size:11.5px;color:#475569;">' + bidi('توقيع وختم الأستاذ(ة)') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
             '</div>'
         );
     }
 
     function buildStandaloneHtmlDoc() {
         var stu = global.Win11Assessment.getStudent();
-        var title = 'بطاقة التقييم - ' + stu.fullName;
+        var title = 'بطاقة تقويم الأعمال التطبيقية - ' + stu.fullName;
         var a4Inner = buildA4Html();
         return '<!DOCTYPE html>\n' +
             '<html lang="ar" dir="rtl">\n<head>\n<meta charset="utf-8">\n' +
             '<title>' + global.Win11Compat.escapeHtml(title) + '</title>\n' +
             '<style>\n' +
-            'body{margin:24px;background:#F3F4F6;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#111827;direction:rtl;}\n' +
-            '.a4-report-sheet{max-width:840px;margin:0 auto;background:#FFFFFF;border:1px solid #D1D5DB;border-radius:8px;padding:24px 28px;line-height:1.65;box-shadow:0 4px 16px rgba(0,0,0,0.08);}\n' +
-            '.a4-report-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12.5px;table-layout:auto;}\n' +
-            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1;padding:7px 10px;text-align:start;vertical-align:top;}\n' +
-            '.a4-report-table th{background:#F1F5F9;font-weight:600;white-space:nowrap;}\n' +
-            '.a4-report-table .col-time,.a4-report-table .col-num,.a4-report-table .col-status,.a4-report-table .col-event,.a4-report-table .col-account,.a4-report-table .col-role{white-space:nowrap;width:1%;font-variant-numeric:tabular-nums;}\n' +
-            '.a4-report-table .col-details{white-space:normal;word-break:break-word;}\n' +
-            '.a4-account-log-table .col-time{width:84px;}\n' +
-            '.a4-account-log-table .col-event{min-width:130px;}\n' +
-            '.a4-account-log-table .col-account{min-width:96px;}\n' +
-            '.a4-account-log-table .col-role{min-width:120px;}\n' +
-            '@media print{@page{size:A4;margin:12mm;}body{background:#fff;margin:0;}.a4-report-sheet{box-shadow:none;border:none;padding:0;max-width:none;}}\n' +
+            'body{margin:20px auto;background:#F1F5F9;font-family:"Segoe UI",Tahoma,Arial,"Noto Sans Arabic",sans-serif;color:#0F172A;direction:rtl;line-height:1.5;}\n' +
+            '.a4-report-sheet{max-width:820px;margin:0 auto;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;padding:22px 26px;box-shadow:0 4px 16px rgba(0,0,0,0.06);box-sizing:border-box;}\n' +
+            '.a4-header{border-bottom:2px solid #1E3A8A;padding-bottom:8px;margin-bottom:10px;}\n' +
+            '.a4-header-republic{text-align:center;font-size:13.5px;font-weight:700;color:#0F172A;margin-bottom:6px;}\n' +
+            '.a4-header-grid{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#334155;margin-bottom:8px;line-height:1.4;}\n' +
+            '.a4-banner{text-align:center;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 12px;}\n' +
+            '.a4-banner-title{font-size:15.5px;font-weight:800;color:#1E3A8A;}\n' +
+            '.a4-banner-sub{font-size:11.5px;color:#475569;margin-top:2px;}\n' +
+            '.a4-info-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;}\n' +
+            '.a4-info-table td{padding:6px 10px;border:1px solid #E2E8F0;vertical-align:middle;}\n' +
+            '.a4-summary-card{display:flex;align-items:stretch;background:#FFFFFF;border:2px solid #2563EB;border-radius:8px;padding:10px 14px;margin-bottom:10px;gap:14px;}\n' +
+            '.a4-score-box{flex:0 0 170px;text-align:center;border-left:1px solid #E2E8F0;padding-left:14px;display:flex;flex-direction:column;justify-content:center;}\n' +
+            '.a4-score-val{font-size:27px;font-weight:900;color:#1E3A8A;line-height:1.1;}\n' +
+            '.a4-score-max{font-size:15px;font-weight:700;color:#64748B;}\n' +
+            '.a4-pass-badge{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;}\n' +
+            '.a4-pass-badge.is-pass{background:#DCFCE7;color:#15803D;}\n' +
+            '.a4-pass-badge.is-fail{background:#FEE2E2;color:#B91C1C;}\n' +
+            '.a4-level-box{flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px;font-size:12px;}\n' +
+            '.a4-report-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11.5px;}\n' +
+            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1;padding:6px 8px;text-align:right;vertical-align:middle;}\n' +
+            '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;white-space:nowrap;}\n' +
+            '.a4-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:700;white-space:nowrap;}\n' +
+            '.a4-badge.is-done{background:#DCFCE7;color:#15803D;}\n' +
+            '.a4-badge.is-partial{background:#FEF3C7;color:#D97706;}\n' +
+            '.a4-badge.is-fail{background:#FEE2E2;color:#B91C1C;}\n' +
+            '.a4-badge.is-skipped{background:#E2E8F0;color:#475569;}\n' +
+            '.a4-rubric-card{margin:8px 0;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;font-size:10.5px;}\n' +
+            '.a4-rubric-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin-top:4px;}\n' +
+            '.a4-rubric-item{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:4px;padding:4px 2px;}\n' +
+            '.a4-rubric-item.is-active{border:2px solid #2563EB;background:#EFF6FF;}\n' +
+            '.a4-footer-sig{margin-top:10px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #CBD5E1;padding-top:8px;font-size:11.5px;}\n' +
+            '@media print{@page{size:A4 portrait;margin:8mm 10mm;}body{background:#FFFFFF;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.a4-report-sheet{border:none;box-shadow:none;padding:0;max-width:none;width:100%;}}\n' +
             '</style>\n</head>\n<body>\n' + a4Inner + '\n</body>\n</html>';
     }
 
