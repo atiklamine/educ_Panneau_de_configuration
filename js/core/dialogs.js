@@ -170,7 +170,7 @@
                         '<div style="border-radius:12px;overflow:hidden;border:1px solid var(--win-border-card);background:var(--win-surface-subtle);box-shadow:0 4px 16px rgba(0,0,0,0.08)">' +
                             '<div style="position:relative;height:225px;background:linear-gradient(135deg,#0f223d 0%,#12355b 100%);overflow:hidden">' +
                                 '<img id="about-teacher-hero-img" src="' + heroImgSrc + '" alt="أستاذ الإعلام الآلي والتلاميذ في مخبر المعلوماتية" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;display:block">' +
-                                '<span style="position:absolute;top:10px;inset-inline-end:12px;padding:3px 11px;border-radius:999px;background:rgba(0,103,192,0.92);color:#fff;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.28);backdrop-filter:blur(6px)"><bdi dir="ltr">v1.0.0</bdi></span>' +
+                                '<span style="position:absolute;top:10px;inset-inline-end:12px;padding:3px 11px;border-radius:999px;background:rgba(0,103,192,0.92);color:#fff;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.28);backdrop-filter:blur(6px)"><bdi dir="ltr">v2.0.0</bdi></span>' +
                             '</div>' +
                             '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:11px 14px;border-top:1px solid var(--win-border-card)">' +
                                 '<div style="display:flex;align-items:center;gap:12px">' +
@@ -192,7 +192,7 @@
                                 '<div><strong>' + bidi('المستوى الدراسي:') + '</strong></div><div>' + bidi('السنة الأولى ثانوي (جذع مشترك علوم وتكنولوجيا + جذع مشترك آداب)') + '</div>' +
                                 '<div><strong>' + bidi('الكفاءة المستهدفة:') + '</strong></div><div>' + bidi('التحكم في بيئة الحاسوب، تخصيص الواجهة، ضبط الفأرة واللغة، وتسيير البرامج والحسابات بأمان') + '</div>' +
                                 '<div><strong>' + bidi('المطور والإشراف:') + '</strong></div><div>' + bidi('أستاذ مادة الإعلام الآلي — التعليم الثانوي (الجزائر)') + '</div>' +
-                                '<div><strong>' + bidi('الإصدار الميداني:') + '</strong></div><div><bdi dir="ltr">1.0.0</bdi></div>' +
+                                '<div><strong>' + bidi('الإصدار الميداني:') + '</strong></div><div><bdi dir="ltr">2.0.0</bdi></div>' +
                                 '<div><strong>' + bidi('محطة المخبر:') + '</strong></div><div style="color:var(--win-text-secondary)"><bdi dir="ltr">' + global.Win11Compat.escapeHtml(st.deviceName) + '</bdi> | <bdi dir="ltr">Windows 11 Pro Education (23H2)</bdi></div>' +
                             '</div>' +
                         '</div>' +

@@ -728,6 +728,14 @@
                 reasonTxt = 'لم يتم استيفاء الخطوات العملية المطلوبة.';
             }
 
+            if (tk.quizResult && typeof tk.quizResult.earnedPoints === 'number') {
+                reasonTxt += '<div style="margin-top:3px;font-size:11px;color:#0284C7;">' +
+                    '<strong>تقويم الكفاءة:</strong> ' +
+                    '<bdi dir="ltr">' + tk.quizResult.earnedPoints.toFixed(2) + ' / ' + Number(tk.quizResult.maxPoints || 1).toFixed(2) + '</bdi>' +
+                    ' (محاولة ' + tk.quizResult.attempts + ')' +
+                    '</div>';
+            }
+
             rowsHtml +=
                 '<tr>' +
                     '<td style="text-align:center;font-weight:700;color:#64748B;">' + (i + 1) + '</td>' +
@@ -768,8 +776,12 @@
             ? '<img src="' + cfg.report_logo_b64 + '" alt="logo" style="max-height:50px;max-width:85px;object-fit:contain;">'
             : '';
 
+        if (scores.grandTotalMax && scores.grandTotalMax > 0) {
+            totalMaxPoints = scores.grandTotalMax;
+            totalEarnedPoints = scores.grandTotalEarned !== undefined ? scores.grandTotalEarned : totalEarnedPoints;
+        }
         var isScale20 = Math.abs(totalMaxPoints - 20) < 0.01;
-        var baseScoreOutOf20 = totalMaxPoints > 0 ? Number(((totalEarnedPoints / totalMaxPoints) * 20).toFixed(2)) : 0;
+        var baseScoreOutOf20 = scores.baseScore !== undefined ? scores.baseScore : (totalMaxPoints > 0 ? Number(((totalEarnedPoints / totalMaxPoints) * 20).toFixed(2)) : 0);
         var pen = Number(scores.penalties || 0);
         var studentName = (stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || '');
         var pcNum = global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01'));
@@ -875,8 +887,11 @@
                                 '</div>' +
                             '</td>' +
                             '<td>' +
-                                '<div class="a4-cell-lbl">' + bidi('نسبة الإنجاز العملي:') + '</div>' +
-                                '<div class="a4-cell-val">استيفاء <strong>' + doneTasksCount + '</strong> من <strong>' + enabledTasks.length + '</strong> مهام (<bdi dir="ltr">' + completionPct + '%</bdi>)</div>' +
+                                '<div class="a4-cell-lbl">' + bidi('نسبة الإنجاز وتقويم الكفاءات:') + '</div>' +
+                                '<div class="a4-cell-val">' +
+                                    'استيفاء <strong>' + doneTasksCount + '</strong> من <strong>' + enabledTasks.length + '</strong> مهام (<bdi dir="ltr">' + completionPct + '%</bdi>)' +
+                                    (scores.quizMax > 0 ? ('<div style="font-size:11px;color:#0284C7;font-weight:700;margin-top:2px;">الأسئلة التقويمية: <bdi dir="ltr">' + scores.quizEarned.toFixed(2) + ' / ' + scores.quizMax.toFixed(2) + '</bdi></div>') : '') +
+                                '</div>' +
                             '</td>' +
                             '<td>' +
                                 '<div class="a4-cell-lbl">' + bidi('الخصومات والمخالفات:') + '</div>' +
@@ -891,6 +906,11 @@
                                 '<div style="font-size:26px;font-weight:900;color:#1E3A8A;line-height:1.1;">' +
                                     '<bdi dir="ltr">' + finalScoreStr + '</bdi> <span style="font-size:14px;color:#64748B;font-weight:700;">/ 20</span>' +
                                 '</div>' +
+                                (scores.quizMax > 0 ? (
+                                    '<div style="font-size:10px;color:#475569;margin-top:2px;">' +
+                                        'تطبيق: <bdi dir="ltr">' + (scores.practicalEarned !== undefined ? scores.practicalEarned.toFixed(2) : '0.00') + '/' + (scores.practicalMax || 0) + '</bdi> | أسئلة: <bdi dir="ltr">' + scores.quizEarned.toFixed(2) + '/' + scores.quizMax.toFixed(2) + '</bdi>' +
+                                    '</div>'
+                                ) : '') +
                                 '<div style="margin-top:3px;">' +
                                     '<span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '">' + bidi(isPassed ? '✔ مستوفٍ لمعيار النجاح' : '✘ دون المعدل المطلوب') + '</span>' +
                                 '</div>' +

@@ -190,7 +190,7 @@
                     '<div style="display:flex;align-items:center;gap:10px">' +
                         global.Win11Icons.get('graduation', 22) +
                         '<div>' +
-                            '<div style="font-weight:600;font-size:13.5px">' + bidi('حول التطبيق — محاكي وحدة لوحة التحكم (1AS v1.0.0)') + '</div>' +
+                            '<div style="font-weight:600;font-size:13.5px">' + bidi('حول التطبيق — محاكي وحدة لوحة التحكم (1AS v2.0.0)') + '</div>' +
                             '<div style="font-size:12px;color:var(--win-text-secondary)">' + bidi('المجال الأول: بيئة التعامل مع الحاسوب • رسالة الأستاذ والرؤية التعليمية') + '</div>' +
                         '</div>' +
                     '</div>' +

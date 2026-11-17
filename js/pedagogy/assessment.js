@@ -91,6 +91,12 @@
             penalty_hint: 0.25,
             penalty_error: 0.25,
             penalty_skip: 0,
+            quiz_enabled: true,
+            quiz_options_count: 4,
+            quiz_disabled_tasks: [],
+            custom_quiz_questions: [],
+            quiz_disabled_questions: [],
+            quiz_disabled_distractors: {},
             class_groups: [
                 '1AS_ST_G1',
                 '1AS_ST_G2',
@@ -129,7 +135,8 @@
         startedAtIso: null,
         activeSection: null,
         completionElapsedSeconds: null,
-        allCompleted: false
+        allCompleted: false,
+        quizResults: []
     };
 
     var sectionTimings = {};
@@ -870,17 +877,18 @@
                         );
                         showOffTaskToast('تم خصم نقاط: إجراء مبكر يخص (' + otherTk.titleAr + ') قبل إتمام (' + (curActiveTk ? curActiveTk.titleAr : '') + ').');
                     } else if (curActiveTk) {
-                        var isLanguageExempt = (otherTk.id === 1 && (String(st.displayLanguage || '') === 'ar' || otherTk.completed));
-                        if (!isLanguageExempt) {
-                            recordMistake(
-                                curActiveTk.id,
-                                'تعديل خارج المهمة النشطة (' + otherTk.titleAr + ')',
-                                'تم تنفيذ تعديل يخص (' + otherTk.titleAr + ') أثناء تفعيل مهمة (' + curActiveTk.titleAr + ').',
-                                penAmt,
-                                'off_task'
-                            );
-                            showOffTaskToast('تم خصم نقاط: أنت الآن في مهمة "' + curActiveTk.titleAr + '" وليس "' + otherTk.titleAr + '".');
+                        // Display language adjustments (Task 1) - e.g. reverting to Arabic for comfort - are exempt from off-task penalty
+                        if (otherTk.id === 1) {
+                            continue;
                         }
+                        recordMistake(
+                            curActiveTk.id,
+                            'تعديل خارج المهمة النشطة (' + otherTk.titleAr + ')',
+                            'تم تنفيذ تعديل يخص (' + otherTk.titleAr + ') أثناء تفعيل مهمة (' + curActiveTk.titleAr + ').',
+                            penAmt,
+                            'off_task'
+                        );
+                        showOffTaskToast('تم خصم نقاط: أنت الآن في مهمة "' + curActiveTk.titleAr + '" وليس "' + otherTk.titleAr + '".');
                     }
                 }
             }
@@ -910,9 +918,42 @@
                     curActiveTk.skipped = true;
                 }
                 curActiveTk.lockedDone = true;
-                advanceToNextTask(enabledList, st);
-                if (activeTaskIndex < enabledList.length) {
-                    evaluateSingleTask(enabledList[activeTaskIndex], st);
+
+                // VERSION 2.0 QUIZ INTERCEPTION:
+                // Present quiz modal before advancing to next task unless disabled
+                var isQuizOn = (config.quiz_enabled !== false) &&
+                    (!Array.isArray(config.quiz_disabled_tasks) || config.quiz_disabled_tasks.indexOf(curActiveTk.id) === -1);
+
+                if (isQuizOn && !curActiveTk.quizCompleted && !curActiveTk.skipped && global.Win11Quiz) {
+                    if (!curActiveTk.quizActive) {
+                        curActiveTk.quizActive = true;
+                        var qOpts = {
+                            taskTitle: curActiveTk.titleAr,
+                            maxPoints: 1.0,
+                            optionsCount: config.quiz_options_count || 4
+                        };
+                        global.Win11Quiz.presentQuizForTask(curActiveTk.id, qOpts, function (resData) {
+                            curActiveTk.quizActive = false;
+                            curActiveTk.quizCompleted = true;
+                            curActiveTk.quizResult = resData;
+                            if (resData) {
+                                student.quizResults = student.quizResults || [];
+                                student.quizResults.push(resData);
+                            }
+                            advanceToNextTask(enabledList, st);
+                            if (activeTaskIndex < enabledList.length) {
+                                evaluateSingleTask(enabledList[activeTaskIndex], st);
+                            }
+                            evaluate();
+                            notify();
+                        });
+                    }
+                    // Retain on current task until quiz is completed
+                } else {
+                    advanceToNextTask(enabledList, st);
+                    if (activeTaskIndex < enabledList.length) {
+                        evaluateSingleTask(enabledList[activeTaskIndex], st);
+                    }
                 }
             }
         }
@@ -925,7 +966,10 @@
         } else {
             for (var chkI = 0; chkI < enabledList.length; chkI++) {
                 var chkTk = enabledList[chkI];
-                if (!chkTk.completed) {
+                var qDone = (config.quiz_enabled === false) ||
+                    (Array.isArray(config.quiz_disabled_tasks) && config.quiz_disabled_tasks.indexOf(chkTk.id) !== -1) ||
+                    chkTk.quizCompleted || chkTk.skipped;
+                if (!chkTk.completed || !qDone) {
                     allTasksDone = false;
                 }
                 if (chkTk.endedAt && chkTk.endedAt > maxTaskEndedAt) {
@@ -1074,6 +1118,14 @@
 
     function saveConfig(newCfg) {
         config = global.Win11Compat.assign(getDefaultConfig(), newCfg);
+        if (global.Win11QuizBank) {
+            config.custom_quiz_questions = global.Win11QuizBank.getAllQuestions().filter(function (q) {
+                return !!q.isCustom;
+            });
+            config.quiz_disabled_questions = global.Win11QuizBank.getAllQuestions().filter(function (q) {
+                return q.enabled === false;
+            }).map(function (q) { return q.id; });
+        }
         student.mode = config.mode || 'training';
         if (config.class_groups && config.class_groups.length > 0 && config.class_groups.indexOf(student.classGroup) === -1) {
             student.classGroup = config.class_groups[0];
@@ -1148,11 +1200,15 @@
         student.paused = false;
         student.pauseReason = null;
         student.startedAtIso = new Date().toISOString();
+        student.quizResults = [];
         sectionTimings = {};
         for (var i = 0; i < tasks.length; i++) {
             tasks[i].startedAt = null;
             tasks[i].endedAt = null;
             tasks[i].durationSeconds = 0;
+            tasks[i].quizActive = false;
+            tasks[i].quizCompleted = false;
+            tasks[i].quizResult = null;
         }
     }
 
@@ -1209,6 +1265,18 @@
         infState.errorReason = '';
         infState.loadedEnvelope = parsed;
         config = global.Win11Compat.assign(getDefaultConfig(), parsed.config);
+        if (global.Win11QuizBank) {
+            if (Array.isArray(config.custom_quiz_questions)) {
+                for (var cqi = 0; cqi < config.custom_quiz_questions.length; cqi++) {
+                    global.Win11QuizBank.addQuestion(config.custom_quiz_questions[cqi]);
+                }
+            }
+            if (Array.isArray(config.quiz_disabled_questions)) {
+                for (var dqi = 0; dqi < config.quiz_disabled_questions.length; dqi++) {
+                    global.Win11QuizBank.toggleQuestionEnabled(config.quiz_disabled_questions[dqi], false);
+                }
+            }
+        }
         student.classGroup = (config.class_groups && config.class_groups[0]) || student.classGroup;
         student.mode = config.mode || 'training';
         notify();
@@ -1520,6 +1588,8 @@
             var activeTasks = syncConfiguredTasks();
             var totalWeight = 0;
             var earnedWeight = 0;
+            var totalQuizMax = 0;
+            var totalQuizEarned = 0;
             var deductionRows = [];
             for (var i = 0; i < activeTasks.length; i++) {
                 var atk = activeTasks[i];
@@ -1539,6 +1609,18 @@
                             points: Number(missScaled.toFixed(2))
                         });
                     }
+
+                    // VERSION 2.0: Tally quiz points per task
+                    var isQuizOn = (config.quiz_enabled !== false) &&
+                        (!Array.isArray(config.quiz_disabled_tasks) || config.quiz_disabled_tasks.indexOf(atk.id) === -1);
+                    if (isQuizOn) {
+                        var qMax = 1.0;
+                        totalQuizMax += qMax;
+                        var qEarned = (atk.quizResult && typeof atk.quizResult.earnedPoints === 'number')
+                            ? atk.quizResult.earnedPoints
+                            : 0;
+                        totalQuizEarned += qEarned;
+                    }
                 } else {
                     atk.coefficient = 0;
                     atk.maxPoints = 0;
@@ -1548,8 +1630,10 @@
             }
 
             // Rule of Three (القاعدة الثلاثية):
-            // Base_Score_Out_of_20 = (Earned_Weight / Total_Weight) * 20
-            var baseScore = totalWeight > 0 ? Number(((earnedWeight / totalWeight) * 20).toFixed(2)) : 0;
+            // Combined practical weight + quiz weight
+            var grandTotalMax = totalWeight + totalQuizMax;
+            var grandTotalEarned = earnedWeight + totalQuizEarned;
+            var baseScore = grandTotalMax > 0 ? Number(((grandTotalEarned / grandTotalMax) * 20).toFixed(2)) : 0;
             var gross = baseScore;
 
             var pen = 0;
@@ -1613,6 +1697,14 @@
             return {
                 totalWeight: totalWeight,
                 earnedWeight: Number(earnedWeight.toFixed(2)),
+                totalQuizMax: totalQuizMax,
+                totalQuizEarned: Number(totalQuizEarned.toFixed(2)),
+                grandTotalMax: grandTotalMax,
+                grandTotalEarned: Number(grandTotalEarned.toFixed(2)),
+                practicalEarned: Number(earnedWeight.toFixed(2)),
+                practicalMax: totalWeight,
+                quizEarned: Number(totalQuizEarned.toFixed(2)),
+                quizMax: totalQuizMax,
                 baseScore: baseScore,
                 finalScore: finalScore,
                 gross: gross,
@@ -1625,6 +1717,8 @@
                 appreciation: app,
                 performanceLevel: lvl,
                 levelShort: lvlShort,
+                mistakes: mistakes.slice(),
+                quizResults: (student.quizResults || []).slice(),
                 rankingKey: [net.toFixed(2), getEffectiveElapsedSeconds(), mistakes.length]
             };
         },

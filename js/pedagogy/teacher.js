@@ -263,6 +263,8 @@
         var setupPass2 = '';
         var setupErrMsg = '';
         var passMismatchMsg = '';
+        var quizTaskFilter = 0;
+        var showAddQuestionForm = false;
         var needsInitialPass = !!(opts.firstTimeSetup && !(global.Win11Assessment.getActivePasswordInRam && global.Win11Assessment.getActivePasswordInRam()));
 
         // Track current token order for the visual builder
@@ -343,6 +345,11 @@
                     if (peEl) cfg.penalty_error = Math.max(0, Number(peEl.value) || 0);
                     if (psEl) cfg.penalty_skip = Math.max(0, Number(psEl.value) || 0);
 
+                    var qeEl = wrap.querySelector('#tc-quiz-enabled');
+                    var qoEl = wrap.querySelector('#tc-quiz-options-count');
+                    if (qeEl) cfg.quiz_enabled = qeEl.checked;
+                    if (qoEl) cfg.quiz_options_count = Number(qoEl.value) || 4;
+
                     var fpEl = wrap.querySelector('#tc-fname-pattern');
                     var smEl = wrap.querySelector('#tc-sm');
                     var spEl = wrap.querySelector('#tc-sp');
@@ -392,6 +399,7 @@
                     var tabs = [
                         { id: 'general', label: 'المؤسسة والأفواج' },
                         { id: 'exam', label: 'النشاط والمهام' },
+                        { id: 'questions', label: 'إدارة الأسئلة' },
                         { id: 'report', label: 'التسمية والتقرير' },
                         { id: 'security', label: 'الأمان والملف' }
                     ];
@@ -590,6 +598,189 @@
                                     '</div>' +
                                 '</div>' +
                                 '<div id="ctrl-tc-tasks">' + tasksHtml + '</div>' +
+                            '</div>';
+                    } else if (activeTab === 'questions') {
+                        var bank = global.Win11QuizBank;
+                        var allQuestions = bank ? bank.getAllQuestions() : [];
+                        var filteredQuestions = allQuestions;
+                        if (quizTaskFilter > 0) {
+                            filteredQuestions = allQuestions.filter(function (q) {
+                                return q.taskId === quizTaskFilter;
+                            });
+                        }
+
+                        // Task selector options
+                        var taskFilterOpts = '<option value="0"' + (quizTaskFilter === 0 ? ' selected' : '') + '>' + bidi('كافة المهام (جميع المراحل والمجالات)') + '</option>';
+                        var taskCatalog = [
+                            { id: 1, title: 'المهمة 1: تغيير لغة عرض واجهة Windows' },
+                            { id: 2, title: 'المهمة 2: ضبط خصائص الفأرة' },
+                            { id: 3, title: 'المهمة 3: إضافة لغة إدخال وضبط المنطقة الزمنية' },
+                            { id: 4, title: 'المهمة 4: تخصيص الخلفية ولون التمييز' },
+                            { id: 5, title: 'المهمة 5: تثبيت وإزالة البرامج والميزات' },
+                            { id: 6, title: 'المهمة 6: إدارة حسابات المستخدمين والصلاحيات' }
+                        ];
+                        for (var tci = 0; tci < taskCatalog.length; tci++) {
+                            var tcItem = taskCatalog[tci];
+                            taskFilterOpts += '<option value="' + tcItem.id + '"' + (quizTaskFilter === tcItem.id ? ' selected' : '') + '>' + bidi(tcItem.title) + '</option>';
+                        }
+
+                        var disabledTasks = Array.isArray(cfg.quiz_disabled_tasks) ? cfg.quiz_disabled_tasks : [];
+                        var isCurrentTaskQuizEnabled = (quizTaskFilter === 0) || (disabledTasks.indexOf(quizTaskFilter) === -1);
+
+                        // Question cards HTML
+                        var questionsCardsHtml = '';
+                        if (filteredQuestions.length === 0) {
+                            questionsCardsHtml = '<div style="text-align:center;padding:24px;color:var(--win-text-secondary);font-size:12.5px;">' + bidi('لا توجد أسئلة متطابقة مع التصفية الحالية.') + '</div>';
+                        } else {
+                            for (var qi = 0; qi < filteredQuestions.length; qi++) {
+                                var qObj = filteredQuestions[qi];
+                                var isQEnabled = (qObj.enabled !== false);
+                                var qTaskTitle = 'المهمة ' + qObj.taskId;
+                                for (var tkI = 0; tkI < taskCatalog.length; tkI++) {
+                                    if (taskCatalog[tkI].id === qObj.taskId) {
+                                        qTaskTitle = taskCatalog[tkI].title;
+                                        break;
+                                    }
+                                }
+
+                                var distractorsListHtml = '';
+                                var dPool = Array.isArray(qObj.distractorsAr) ? qObj.distractorsAr : [];
+                                var disabledDistractors = Array.isArray(qObj.disabledDistractors) ? qObj.disabledDistractors : [];
+
+                                for (var di = 0; di < dPool.length; di++) {
+                                    var dText = dPool[di];
+                                    var isDistractorActive = (disabledDistractors.indexOf(dText) === -1);
+                                    distractorsListHtml +=
+                                        '<label style="display:flex;align-items:center;gap:6px;font-size:11.5px;padding:3px 6px;border-radius:4px;background:' + (isDistractorActive ? 'transparent' : '#FEE2E2') + ';cursor:pointer;">' +
+                                            '<input type="checkbox" data-q-distractor-toggle="' + esc(qObj.id) + '" data-distractor-idx="' + di + '" ' + (isDistractorActive ? 'checked' : '') + ' style="cursor:pointer;">' +
+                                            '<span style="' + (isDistractorActive ? 'color:#334155;' : 'color:#991B1B;text-decoration:line-through;') + '">' + bidi(dText) + '</span>' +
+                                        '</label>';
+                                }
+
+                                questionsCardsHtml +=
+                                    '<div class="tc-section-card" style="margin-bottom:10px;border-right:3px solid ' + (isQEnabled ? 'var(--win-accent)' : '#94A3B8') + ';background:' + (isQEnabled ? '#FFFFFF' : '#F8FAFC') + ';">' +
+                                        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">' +
+                                            '<div style="display:flex;align-items:center;gap:8px;">' +
+                                                '<span class="win-badge" style="background:#EFF6FF;color:#1D4ED8;font-weight:700;font-size:11px;">' + bidi(qTaskTitle) + '</span>' +
+                                                '<strong style="font-size:12.5px;color:#0F172A;">' + bidi(qObj.titleAr || '') + '</strong>' +
+                                                (qObj.isCustom ? ' <span class="win-badge" style="background:#ECFDF5;color:#065F46;font-size:10px;">' + bidi('سؤال مخصص') + '</span>' : '') +
+                                            '</div>' +
+                                            '<div style="display:flex;align-items:center;gap:10px;">' +
+                                                '<label style="display:flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer;">' +
+                                                    '<input type="checkbox" data-q-toggle="' + esc(qObj.id) + '" ' + (isQEnabled ? 'checked' : '') + '> ' +
+                                                    '<span>' + bidi(isQEnabled ? 'مفعّل' : 'معطّل') + '</span>' +
+                                                '</label>' +
+                                                '<button type="button" class="win-btn win-btn-danger" data-q-del="' + esc(qObj.id) + '" style="min-height:22px;padding:1px 8px;font-size:11px;">' + bidi('حذف') + '</button>' +
+                                            '</div>' +
+                                        '</div>' +
+                                        '<div style="font-weight:700;font-size:12.5px;color:#0F172A;margin-bottom:8px;line-height:1.5;">' +
+                                            bidi(qObj.questionAr) +
+                                        '</div>' +
+                                        '<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11.5px;color:#065F46;">' +
+                                            '<strong>' + bidi('✔ الإجابة الصحيحة:') + '</strong> ' + bidi(qObj.correctAnswerAr) +
+                                        '</div>' +
+                                        '<details style="margin-bottom:8px;font-size:11.5px;">' +
+                                            '<summary style="cursor:pointer;color:var(--win-accent);font-weight:700;">' + bidi('قائمة المموهات الخاطئة المتاحة في المخزن (' + dPool.length + ' مموهات) — انقر للتعديل') + '</summary>' +
+                                            '<div style="margin-top:6px;display:grid;grid-template-columns:1fr;gap:4px;max-height:160px;overflow-y:auto;border:1px solid var(--win-border-control);border-radius:4px;padding:6px;">' +
+                                                distractorsListHtml +
+                                            '</div>' +
+                                        '</details>' +
+                                        '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;font-size:11.5px;color:#475569;">' +
+                                            '<strong>' + bidi('💡 التلميح البيداغوجي الذكي:') + '</strong> ' + bidi(qObj.hintAr || '') +
+                                        '</div>' +
+                                    '</div>';
+                            }
+                        }
+
+                        // Add question form HTML
+                        var addFormHtml = '';
+                        if (showAddQuestionForm) {
+                            addFormHtml =
+                                '<div class="tc-section-card" style="border:1.5px solid var(--win-accent);background:#F0F7FF;margin-bottom:12px;padding:12px 14px;">' +
+                                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+                                        '<strong style="color:var(--win-accent);font-size:13px;">' + bidi('إضافة سؤال تقويمي جديد إلى بنك الأسئلة') + '</strong>' +
+                                        '<button type="button" class="win-btn win-btn-secondary" id="tc-addq-cancel" style="min-height:22px;padding:2px 8px;font-size:11px;">✕ ' + bidi('إلغاء') + '</button>' +
+                                    '</div>' +
+                                    '<div class="tc-field-grid" style="margin-bottom:8px;">' +
+                                        '<label><strong>' + bidi('المهمة / المرحلة:') + '</strong>' +
+                                            '<select class="win-select" id="tc-addq-task">' +
+                                                '<option value="1">المهمة 1: تغيير لغة عرض واجهة Windows</option>' +
+                                                '<option value="2">المهمة 2: ضبط خصائص الفأرة</option>' +
+                                                '<option value="3">المهمة 3: إضافة لغة إدخال وضبط المنطقة الزمنية</option>' +
+                                                '<option value="4">المهمة 4: تخصيص الخلفية ولون التمييز</option>' +
+                                                '<option value="5">المهمة 5: تثبيت وإزالة البرامج والميزات</option>' +
+                                                '<option value="6">المهمة 6: إدارة حسابات المستخدمين والصلاحيات</option>' +
+                                            '</select>' +
+                                        '</label>' +
+                                        '<label><strong>' + bidi('عنوان السؤال / الكفاءة المستهدفة:') + '</strong>' +
+                                            '<input class="win-input" id="tc-addq-title" placeholder="مثال: التمييز بين لغة العرض ولغة الإدخال">' +
+                                        '</label>' +
+                                    '</div>' +
+                                    '<label style="display:block;margin-bottom:8px;"><strong>' + bidi('نص السؤال باللغة العربية:') + '</strong>' +
+                                        '<textarea class="win-input" id="tc-addq-text" rows="2" style="resize:vertical;" placeholder="اكتب نص السؤال التقويمي هنا..."></textarea>' +
+                                    '</label>' +
+                                    '<label style="display:block;margin-bottom:8px;"><strong>' + bidi('الإجابة الصحيحة الواحدة (المطابقة للمنهاج):') + '</strong>' +
+                                        '<input class="win-input" id="tc-addq-correct" placeholder="نص الإجابة الصحيحة بدقة...">' +
+                                    '</label>' +
+                                    '<label style="display:block;margin-bottom:8px;"><strong>' + bidi('مخزن المموهات والإجابات الخاطئة (أدخل كل مموه في سطر مستقل — على الأقل 3 مموهات، ويفضل 10):') + '</strong>' +
+                                        '<textarea class="win-input" id="tc-addq-distractors" rows="4" style="resize:vertical;" placeholder="مموه 1&#10;مموه 2&#10;مموه 3&#10;مموه 4&#10;..."></textarea>' +
+                                    '</label>' +
+                                    '<label style="display:block;margin-bottom:10px;"><strong>' + bidi('التلميح البيداغوجي المساعد (يظهر عند الخطأ دون كشف الإجابة):') + '</strong>' +
+                                        '<input class="win-input" id="tc-addq-hint" placeholder="تلميح توجيهي دون ذكر كلمات الإجابة الصريحة...">' +
+                                    '</label>' +
+                                    '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
+                                        '<button type="button" class="win-btn win-btn-accent" id="tc-addq-submit" style="padding:4px 14px;font-weight:700;">' + bidi('✔ إضافة السؤال وحفظه') + '</button>' +
+                                    '</div>' +
+                                '</div>';
+                        }
+
+                        bodyHtml =
+                            '<div class="tc-section-card">' +
+                                '<div style="font-weight:700;margin-bottom:8px;color:#0F172A;font-size:13px;">' + bidi('الإعدادات العامة للأسئلة التقويمية التفاعلية:') + '</div>' +
+                                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">' +
+                                    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">' +
+                                        '<input type="checkbox" id="tc-quiz-enabled" ' + (cfg.quiz_enabled !== false ? 'checked' : '') + '> ' +
+                                        '<strong>' + bidi('تفعيل التقويم التفاعلي عند إتمام كل مهمة') + '</strong>' +
+                                    '</label>' +
+                                    '<label style="display:flex;align-items:center;gap:8px;">' +
+                                        '<strong>' + bidi('عدد الخيارات المعروضة لكل سؤال:') + '</strong> ' +
+                                        '<select class="win-select" id="tc-quiz-options-count" style="flex:1;">' +
+                                            '<option value="4"' + (cfg.quiz_options_count !== 3 ? ' selected' : '') + '>' + bidi('4 خيارات (1 صحيحة + 3 مموهات عشوائية)') + '</option>' +
+                                            '<option value="3"' + (cfg.quiz_options_count === 3 ? ' selected' : '') + '>' + bidi('3 خيارات (1 صحيحة + 2 مموهان عشوائيان)') + '</option>' +
+                                        '</select>' +
+                                    '</label>' +
+                                '</div>' +
+                                '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:8px 12px;font-size:12px;color:#475569;line-height:1.5;">' +
+                                    'ℹ <strong>' + bidi('نظام مكافحة التخمين وتدرج العلامات:') + '</strong> ' +
+                                    bidi('يتم اختيار سؤال واحد عشوائياً لكل مهمة من بنك الأسئلة، مع اختيار مموهات عشوائية وخلط مواقع الخيارات تماماً. تُمنح العلامة كاملة (100%) في المحاولة الأولى، ونصف العلامة (50%) في المحاولة الثانية، و0 نقطة في المحاولات اللاحقة مع إلزام التلميذ بالوصول للإجابة الصحيحة لمواصلة المحاكاة.') +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="tc-section-card">' +
+                                '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">' +
+                                    '<div style="display:flex;align-items:center;gap:10px;flex:1;">' +
+                                        '<strong>' + bidi('تصفية الأسئلة حسب المهمة:') + '</strong> ' +
+                                        '<select class="win-select" id="tc-quiz-task-filter" style="max-width:280px;">' +
+                                            taskFilterOpts +
+                                        '</select>' +
+                                    '</div>' +
+                                    '<div style="display:flex;align-items:center;gap:8px;">' +
+                                        (quizTaskFilter > 0 ? (
+                                            '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:#F1F5F9;padding:3px 8px;border-radius:4px;">' +
+                                                '<input type="checkbox" id="tc-quiz-stage-toggle" ' + (isCurrentTaskQuizEnabled ? 'checked' : '') + '> ' +
+                                                '<span>' + bidi('تفعيل الأسئلة لهذه المهمة') + '</span>' +
+                                            '</label>'
+                                        ) : '') +
+                                        (!showAddQuestionForm ? (
+                                            '<button type="button" class="win-btn win-btn-accent" id="tc-quiz-add-btn" style="min-height:26px;padding:2px 12px;font-size:12px;font-weight:700;">' +
+                                                '➕ ' + bidi('إضافة سؤال جديد') +
+                                            '</button>'
+                                        ) : '') +
+                                    '</div>' +
+                                '</div>' +
+                                addFormHtml +
+                                '<div style="max-height:480px;overflow-y:auto;padding-right:4px;">' +
+                                    questionsCardsHtml +
+                                '</div>' +
                             '</div>';
                     } else if (activeTab === 'report') {
                         var tokRows = '';
@@ -1064,6 +1255,155 @@
                         rstDefBtn.onclick = function () {
                             cfg = global.Win11Compat.deepClone(global.Win11Assessment.getDefaultConfig());
                             tokenOrderState = parseOrderedTokens();
+                            isDirty = true;
+                            draw();
+                        };
+                    }
+
+                    // Quiz Bank Management Events
+                    var qeEl = wrap.querySelector('#tc-quiz-enabled');
+                    if (qeEl) {
+                        qeEl.onchange = function () {
+                            cfg.quiz_enabled = this.checked;
+                            isDirty = true;
+                            draw();
+                        };
+                    }
+                    var qoEl = wrap.querySelector('#tc-quiz-options-count');
+                    if (qoEl) {
+                        qoEl.onchange = function () {
+                            cfg.quiz_options_count = Number(this.value) || 4;
+                            isDirty = true;
+                        };
+                    }
+                    var qtfEl = wrap.querySelector('#tc-quiz-task-filter');
+                    if (qtfEl) {
+                        qtfEl.onchange = function () {
+                            quizTaskFilter = Number(this.value) || 0;
+                            draw();
+                        };
+                    }
+                    var qstEl = wrap.querySelector('#tc-quiz-stage-toggle');
+                    if (qstEl) {
+                        qstEl.onchange = function () {
+                            cfg.quiz_disabled_tasks = Array.isArray(cfg.quiz_disabled_tasks) ? cfg.quiz_disabled_tasks : [];
+                            var idx = cfg.quiz_disabled_tasks.indexOf(quizTaskFilter);
+                            if (this.checked && idx !== -1) {
+                                cfg.quiz_disabled_tasks.splice(idx, 1);
+                            } else if (!this.checked && idx === -1) {
+                                cfg.quiz_disabled_tasks.push(quizTaskFilter);
+                            }
+                            isDirty = true;
+                            draw();
+                        };
+                    }
+                    var addQBtn = wrap.querySelector('#tc-quiz-add-btn');
+                    if (addQBtn) {
+                        addQBtn.onclick = function () {
+                            showAddQuestionForm = true;
+                            draw();
+                        };
+                    }
+                    var addQCancel = wrap.querySelector('#tc-addq-cancel');
+                    if (addQCancel) {
+                        addQCancel.onclick = function () {
+                            showAddQuestionForm = false;
+                            draw();
+                        };
+                    }
+                    var addQSubmit = wrap.querySelector('#tc-addq-submit');
+                    if (addQSubmit) {
+                        addQSubmit.onclick = function () {
+                            var tId = Number(wrap.querySelector('#tc-addq-task').value) || 1;
+                            var title = wrap.querySelector('#tc-addq-title').value.trim();
+                            var text = wrap.querySelector('#tc-addq-text').value.trim();
+                            var corr = wrap.querySelector('#tc-addq-correct').value.trim();
+                            var rawDist = wrap.querySelector('#tc-addq-distractors').value.trim();
+                            var hint = wrap.querySelector('#tc-addq-hint').value.trim();
+
+                            if (!text || !corr) {
+                                if (global.Win11Dialogs && typeof global.Win11Dialogs.showMessage === 'function') {
+                                    global.Win11Dialogs.showMessage('بيانات ناقصة', 'يرجى كتابة نص السؤال والإجابة الصحيحة على الأقل.', 'warning');
+                                }
+                                return;
+                            }
+                            var distList = rawDist.split('\n').map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+                            if (distList.length < 2) {
+                                if (global.Win11Dialogs && typeof global.Win11Dialogs.showMessage === 'function') {
+                                    global.Win11Dialogs.showMessage('المموهات غير كافية', 'يرجى إدخال مموهين اثنين على الأقل (ويفضل 3 إلى 10 مموهات).', 'warning');
+                                }
+                                return;
+                            }
+
+                            if (global.Win11QuizBank) {
+                                global.Win11QuizBank.addQuestion({
+                                    taskId: tId,
+                                    titleAr: title || ('سؤال مخصص للمهمة ' + tId),
+                                    questionAr: text,
+                                    correctAnswerAr: corr,
+                                    distractorsAr: distList,
+                                    hintAr: hint || 'راجع خطوات النشاط بعناية.'
+                                });
+                            }
+                            isDirty = true;
+                            showAddQuestionForm = false;
+                            draw();
+                        };
+                    }
+
+                    // Toggles & deletes for questions
+                    var qToggles = wrap.querySelectorAll('[data-q-toggle]');
+                    for (var qti = 0; qti < qToggles.length; qti++) {
+                        qToggles[qti].onchange = function () {
+                            var qId = this.getAttribute('data-q-toggle');
+                            if (global.Win11QuizBank) {
+                                global.Win11QuizBank.toggleQuestionEnabled(qId, this.checked);
+                            }
+                            isDirty = true;
+                            draw();
+                        };
+                    }
+                    var qDels = wrap.querySelectorAll('[data-q-del]');
+                    for (var qdi = 0; qdi < qDels.length; qdi++) {
+                        qDels[qdi].onclick = function () {
+                            var qId = this.getAttribute('data-q-del');
+                            if (global.Win11Dialogs && typeof global.Win11Dialogs.confirm === 'function') {
+                                global.Win11Dialogs.confirm('حذف السؤال', 'هل أنت متأكد من حذف هذا السؤال من بنك الأسئلة نهائياً؟', function (yes) {
+                                    if (yes) {
+                                        if (global.Win11QuizBank) {
+                                            global.Win11QuizBank.deleteQuestion(qId);
+                                        }
+                                        isDirty = true;
+                                        draw();
+                                    }
+                                });
+                            } else {
+                                if (global.Win11QuizBank) {
+                                    global.Win11QuizBank.deleteQuestion(qId);
+                                }
+                                isDirty = true;
+                                draw();
+                            }
+                        };
+                    }
+                    var distToggles = wrap.querySelectorAll('[data-q-distractor-toggle]');
+                    for (var dti = 0; dti < distToggles.length; dti++) {
+                        distToggles[dti].onchange = function () {
+                            var qId = this.getAttribute('data-q-distractor-toggle');
+                            var dIdx = Number(this.getAttribute('data-distractor-idx'));
+                            if (global.Win11QuizBank) {
+                                var q = global.Win11QuizBank.getQuestionById(qId);
+                                if (q && Array.isArray(q.distractorsAr) && q.distractorsAr[dIdx]) {
+                                    var dVal = q.distractorsAr[dIdx];
+                                    q.disabledDistractors = Array.isArray(q.disabledDistractors) ? q.disabledDistractors : [];
+                                    var exIdx = q.disabledDistractors.indexOf(dVal);
+                                    if (this.checked && exIdx !== -1) {
+                                        q.disabledDistractors.splice(exIdx, 1);
+                                    } else if (!this.checked && exIdx === -1) {
+                                        q.disabledDistractors.push(dVal);
+                                    }
+                                }
+                            }
                             isDirty = true;
                             draw();
                         };

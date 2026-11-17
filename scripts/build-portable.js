@@ -74,6 +74,8 @@ const CORE_AND_APP_SCRIPTS = [
     'js/apps/file-explorer.js',
     'js/apps/edge-browser.js',
     'js/core/config-crypto.js',
+    'js/pedagogy/quiz-bank.js',
+    'js/pedagogy/quiz.js',
     'js/pedagogy/assessment.js',
     'js/pedagogy/hud.js',
     'js/pedagogy/teacher.js',
