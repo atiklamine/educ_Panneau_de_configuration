@@ -163,7 +163,17 @@ namespace Win11SimHost
 
                 if (ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
-                    return "ERROR:Failed to generate valid binary PDF";
+                    // Fallback: save clean standalone HTML directly on Desktop
+                    string htmlTarget = Path.ChangeExtension(targetPath, ".html");
+                    int hCounter = 1;
+                    string hBaseName = Path.GetFileNameWithoutExtension(htmlTarget);
+                    while (File.Exists(htmlTarget))
+                    {
+                        htmlTarget = Path.Combine(desktopDir, string.Format("{0}_{1}.html", hBaseName, hCounter));
+                        hCounter++;
+                    }
+                    File.WriteAllBytes(htmlTarget, bytes);
+                    return htmlTarget;
                 }
 
                 File.WriteAllBytes(targetPath, bytes);
@@ -203,12 +213,31 @@ namespace Win11SimHost
         {
             try
             {
-                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                if (!string.IsNullOrEmpty(path))
                 {
-                    ProcessStartInfo psi = new ProcessStartInfo(path);
-                    psi.UseShellExecute = true;
-                    Process.Start(psi);
-                    return true;
+                    if (File.Exists(path))
+                    {
+                        ProcessStartInfo psi = new ProcessStartInfo(path);
+                        psi.UseShellExecute = true;
+                        Process.Start(psi);
+                        return true;
+                    }
+                    string altPath = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                        ? Path.ChangeExtension(path, ".html")
+                        : Path.ChangeExtension(path, ".pdf");
+                    if (File.Exists(altPath))
+                    {
+                        ProcessStartInfo psi = new ProcessStartInfo(altPath);
+                        psi.UseShellExecute = true;
+                        Process.Start(psi);
+                        return true;
+                    }
+                    string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                    if (Directory.Exists(desktopDir))
+                    {
+                        Process.Start("explorer.exe", "\"" + desktopDir + "\"");
+                        return true;
+                    }
                 }
                 return false;
             }
@@ -743,10 +772,28 @@ namespace Win11SimHost
 
                             if (!pdfDone)
                             {
-                                string errJson = "{\"ok\":false,\"error\":\"Failed to generate valid binary PDF on Desktop.\"}";
-                                SendResponse(stream, 500, "Internal Server Error", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(errJson), true);
-                                client.Close();
-                                return;
+                                // Guaranteed File Write: Fallback to standalone HTML directly on Desktop
+                                string htmlTarget = Path.ChangeExtension(targetPath, ".html");
+                                int hCounter = 1;
+                                string hBaseName = Path.GetFileNameWithoutExtension(htmlTarget);
+                                while (File.Exists(htmlTarget))
+                                {
+                                    htmlTarget = Path.Combine(desktopDir, string.Format("{0}_{1}.html", hBaseName, hCounter));
+                                    hCounter++;
+                                }
+
+                                byte[] saveBytes = fileBytes;
+                                if ((saveBytes == null || saveBytes.Length == 0) && !string.IsNullOrEmpty(htmlStr))
+                                {
+                                    saveBytes = Encoding.UTF8.GetBytes(htmlStr);
+                                }
+                                if (saveBytes == null || saveBytes.Length == 0)
+                                {
+                                    saveBytes = body;
+                                }
+
+                                File.WriteAllBytes(htmlTarget, saveBytes ?? new byte[0]);
+                                targetPath = htmlTarget;
                             }
                         }
                         else
@@ -758,10 +805,11 @@ namespace Win11SimHost
                         string escapedPath = targetPath.Replace("\\", "\\\\").Replace("\"", "\\\"");
                         string escapedDir = desktopDir.Replace("\\", "\\\\").Replace("\"", "\\\"");
                         string escapedName = finalFilename.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                        bool isPdf = targetPath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
 
                         string resJson = string.Format(
-                            "{{\"ok\":true,\"filename\":\"{0}\",\"path\":\"{1}\",\"desktopDir\":\"{2}\"}}",
-                            escapedName, escapedPath, escapedDir);
+                            "{{\"ok\":true,\"filename\":\"{0}\",\"path\":\"{1}\",\"desktopDir\":\"{2}\",\"format\":\"{3}\"}}",
+                            escapedName, escapedPath, escapedDir, isPdf ? "pdf" : "html");
 
                         byte[] resBytes = Encoding.UTF8.GetBytes(resJson);
                         SendResponse(stream, 200, "OK", "application/json; charset=utf-8", resBytes, true);
@@ -838,6 +886,35 @@ namespace Win11SimHost
                             psi.FileName = targetPath;
                             psi.UseShellExecute = true;
                             Process.Start(psi);
+                        }
+                        else if (!string.IsNullOrEmpty(targetPath))
+                        {
+                            string altPath = targetPath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                                ? Path.ChangeExtension(targetPath, ".html")
+                                : Path.ChangeExtension(targetPath, ".pdf");
+                            if (File.Exists(altPath))
+                            {
+                                ProcessStartInfo psi = new ProcessStartInfo();
+                                psi.FileName = altPath;
+                                psi.UseShellExecute = true;
+                                Process.Start(psi);
+                            }
+                            else
+                            {
+                                string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                                if (Directory.Exists(desktopDir))
+                                {
+                                    Process.Start("explorer.exe", "\"" + desktopDir + "\"");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            string desktopDir = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                            if (Directory.Exists(desktopDir))
+                            {
+                                Process.Start("explorer.exe", "\"" + desktopDir + "\"");
+                            }
                         }
 
                         byte[] okBytes = Encoding.UTF8.GetBytes("{\"ok\":true}");

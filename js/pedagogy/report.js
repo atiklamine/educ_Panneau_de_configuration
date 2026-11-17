@@ -19,7 +19,7 @@
         }
     }
 
-    function showExportSuccessToast(filename, desktopPath) {
+    function showExportSuccessToast(filename, desktopPath, isFallbackHtml) {
         dismissExportSuccessToast();
         var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
         var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
@@ -30,30 +30,37 @@
         toast.setAttribute('role', 'alert');
 
         var pathAttr = desktopPath ? (' data-folder-path="' + esc(desktopPath) + '"') : '';
-        var hasFolderAction = !!desktopPath || (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0);
+        var locMsg = desktopPath ? 'تم حفظ التقرير على سطح المكتب باسم:' : 'تم استخراج التقرير وتنزيله باسم:';
 
         toast.innerHTML =
             '<span class="export-toast-icon">✓</span>' +
             '<div class="export-toast-body">' +
-                '<span>' + bidi('تم حفظ التقرير على سطح المكتب باسم:') + ' </span>' +
+                '<span>' + bidi(locMsg) + ' </span>' +
                 '<bdi dir="ltr" class="export-toast-filename">' + esc(filename) + '</bdi>' +
             '</div>' +
-            (hasFolderAction ? '<button type="button" class="win-btn win-btn-accent export-toast-open-btn" id="export-toast-open-file"' + pathAttr + '>' + bidi('فتح الملف') + '</button>' : '') +
-            (hasFolderAction ? '<button type="button" class="win-btn win-btn-secondary export-toast-open-btn" id="export-toast-open-folder"' + pathAttr + '>' + bidi('فتح المجلد') + '</button>' : '') +
+            '<button type="button" class="win-btn win-btn-accent export-toast-open-btn" id="export-toast-open-file"' + pathAttr + '>' + bidi('فتح الملف') + '</button>' +
+            (desktopPath ? ('<button type="button" class="win-btn win-btn-secondary export-toast-open-btn" id="export-toast-open-folder"' + pathAttr + '>' + bidi('فتح المجلد') + '</button>') : '') +
             '<button type="button" class="export-toast-close" aria-label="Close">&times;</button>';
 
         var openFileBtn = toast.querySelector('#export-toast-open-file');
         if (openFileBtn) {
             openFileBtn.onclick = function () {
                 var targetPath = openFileBtn.getAttribute('data-folder-path') || '';
-                if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
-                    global.fetch('/api/open-file', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ path: targetPath })
-                    }).catch(function () {});
-                } else if (global.external && typeof global.external.OpenFile === 'function') {
-                    try { global.external.OpenFile(targetPath); } catch (e) {}
+                if (targetPath) {
+                    if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
+                        global.fetch('/api/open-file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path: targetPath })
+                        }).catch(function () {});
+                    } else if (global.external && typeof global.external.OpenFile === 'function') {
+                        try { global.external.OpenFile(targetPath); } catch (e) {}
+                    }
+                } else {
+                    var htmlDoc = buildStandaloneHtmlDoc();
+                    var blob = new Blob(['\uFEFF' + htmlDoc], { type: 'text/html;charset=utf-8' });
+                    var url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
                 }
             };
         }
@@ -83,39 +90,33 @@
         exportToastTimer = setTimeout(dismissExportSuccessToast, 12000);
     }
 
-    function showExportSuccessDialog(filename, desktopPath) {
+    function showExportSuccessDialog(filename, desktopPath, isFallbackHtml) {
         var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
         var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
 
-        global.Win11Dialogs.showCustom({
-            title: bidi('تأكيد حفظ ملف التقييم'),
-            tone: 'info',
-            wide: false,
-            renderBody: function (wrap) {
-                wrap.innerHTML =
-                    '<div style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:4px 0">' +
-                        '<div style="font-size:36px;color:#107C41;line-height:1">✓</div>' +
-                        '<div style="font-size:14.5px;font-weight:700;color:var(--win-text-primary)">' +
-                            bidi('تم حفظ بطاقة التقييم بنجاح بصيغة PDF على سطح المكتب.') +
-                        '</div>' +
-                        '<div style="background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;direction:ltr;text-align:center">' +
-                            '<div style="font-size:11px;color:var(--win-text-secondary);margin-bottom:3px;direction:rtl">' + bidi('اسم الملف المحفوظ:') + '</div>' +
-                            '<div id="export-success-filename" style="font-family:Consolas,monospace;font-size:13px;font-weight:700;color:#0F172A;word-break:break-all;user-select:all">' +
-                                esc(filename) +
-                            '</div>' +
-                        '</div>' +
-                        '<div style="font-size:12px;color:var(--win-text-secondary)">' +
-                            bidi('يمكنك الآن فتح الملف لمعاينته أو فتح مكانه في مجلد سطح المكتب.') +
-                        '</div>' +
-                    '</div>';
-            },
-            buttons: [
-                {
-                    id: 'btn-open-file-direct',
-                    label: bidi('فتح الملف'),
-                    primary: true,
-                    onClick: function (closeDlg) {
-                        var targetPath = desktopPath || '';
+        var mainMsg = '';
+        if (desktopPath) {
+            if (isFallbackHtml) {
+                mainMsg = bidi('تم حفظ بطاقة التقييم بنجاح بصيغة HTML المستقلة والقابلة للطباعة على سطح المكتب.');
+            } else {
+                mainMsg = bidi('تم حفظ بطاقة التقييم بنجاح بصيغة PDF على سطح المكتب.');
+            }
+        } else {
+            mainMsg = bidi('تم استخراج بطاقة التقييم بنجاح وتنزيلها كملف ويب مستقل (HTML).');
+        }
+
+        var subMsg = desktopPath
+            ? bidi('يمكنك الآن فتح الملف مباشرة لمعاينته أو الانتقال إلى مكانه على سطح المكتب.')
+            : bidi('يمكنك الآن فتح الملف لمعاينته في تبويب جديد أو الاطلاع عليه من مجلد التنزيلات.');
+
+        var dlgButtons = [
+            {
+                id: 'btn-open-file-direct',
+                label: bidi('فتح الملف'),
+                primary: true,
+                onClick: function (closeDlg) {
+                    var targetPath = desktopPath || '';
+                    if (targetPath) {
                         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
                             global.fetch('/api/open-file', {
                                 method: 'POST',
@@ -125,43 +126,108 @@
                         } else if (global.external && typeof global.external.OpenFile === 'function') {
                             try { global.external.OpenFile(targetPath); } catch (e) {}
                         }
-                        closeDlg(true);
+                    } else {
+                        var htmlDoc = buildStandaloneHtmlDoc();
+                        var blob = new Blob(['\uFEFF' + htmlDoc], { type: 'text/html;charset=utf-8' });
+                        var url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
                     }
-                },
-                {
-                    id: 'btn-open-folder-direct',
-                    label: bidi('فتح مكان الملف'),
-                    primary: false,
-                    onClick: function (closeDlg) {
-                        var targetPath = desktopPath || '';
-                        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
-                            global.fetch('/api/open-folder', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ path: targetPath })
-                            }).catch(function () {});
-                        } else if (global.external && typeof global.external.OpenFolder === 'function') {
-                            try { global.external.OpenFolder(targetPath); } catch (e) {}
-                        }
-                        closeDlg(true);
-                    }
+                    closeDlg(true);
                 }
-            ]
+            }
+        ];
+
+        if (desktopPath) {
+            dlgButtons.push({
+                id: 'btn-open-folder-direct',
+                label: bidi('فتح مكان الملف'),
+                primary: false,
+                onClick: function (closeDlg) {
+                    var targetPath = desktopPath || '';
+                    if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
+                        global.fetch('/api/open-folder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path: targetPath })
+                        }).catch(function () {});
+                    } else if (global.external && typeof global.external.OpenFolder === 'function') {
+                        try { global.external.OpenFolder(targetPath); } catch (e) {}
+                    }
+                    closeDlg(true);
+                }
+            });
+        }
+
+        dlgButtons.push({
+            id: 'btn-close-export-dlg',
+            label: bidi('إغلاق'),
+            primary: false,
+            value: false
         });
+
+        global.Win11Dialogs.showCustom({
+            title: bidi('تأكيد استخراج وحفظ التقرير'),
+            tone: 'info',
+            wide: false,
+            renderBody: function (wrap) {
+                wrap.innerHTML =
+                    '<div style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:4px 0">' +
+                        '<div style="font-size:36px;color:#107C41;line-height:1">✓</div>' +
+                        '<div style="font-size:14.5px;font-weight:700;color:var(--win-text-primary)">' +
+                            mainMsg +
+                        '</div>' +
+                        '<div style="background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;direction:ltr;text-align:center">' +
+                            '<div style="font-size:11px;color:var(--win-text-secondary);margin-bottom:3px;direction:rtl">' + bidi('اسم الملف:') + '</div>' +
+                            '<div id="export-success-filename" style="font-family:Consolas,monospace;font-size:13px;font-weight:700;color:#0F172A;word-break:break-all;user-select:all">' +
+                                esc(filename) +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="font-size:12px;color:var(--win-text-secondary)">' +
+                            subMsg +
+                        '</div>' +
+                    '</div>';
+            },
+            buttons: dlgButtons
+        });
+    }
+
+    function showExportErrorDialog(errorMessage) {
+        var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
+        var msg = errorMessage || 'فشل حفظ الملف. يرجى التحقق من صلاحيات الكتابة على سطح المكتب أو إعدادات المتصفح.';
+        if (global.Win11Dialogs && typeof global.Win11Dialogs.showAlert === 'function') {
+            global.Win11Dialogs.showAlert(bidi('خطأ في استخراج التقرير'), bidi(msg), 'error');
+        } else {
+            alert(msg);
+        }
     }
 
     function saveReportToDesktop(filename, onComplete, opts) {
         opts = opts || {};
         var htmlContent = buildStandaloneHtmlDoc();
         var cleanName = normalizeExportFilename(filename, 'pdf', formatSuggestedFilename('pdf'));
-        hasExportedPdfFlag = true;
 
-        function handleSuccess(finalName, finalPath) {
-            showExportSuccessToast(finalName, finalPath);
+        function handleSuccess(finalName, finalPath, isFallbackHtml) {
+            hasExportedPdfFlag = true;
+            showExportSuccessToast(finalName, finalPath, isFallbackHtml);
             if (!opts.skipDialog) {
-                showExportSuccessDialog(finalName, finalPath);
+                showExportSuccessDialog(finalName, finalPath, isFallbackHtml);
             }
-            if (onComplete) onComplete(null, { ok: true, filename: finalName, path: finalPath });
+            if (onComplete) onComplete(null, { ok: true, filename: finalName, path: finalPath, isFallbackHtml: isFallbackHtml });
+        }
+
+        function handleFailure(errText) {
+            showExportErrorDialog(errText);
+            if (onComplete) onComplete(new Error(errText));
+        }
+
+        function triggerBrowserDownloadFallback() {
+            try {
+                var htmlFallbackName = cleanName.replace(/\.pdf$/i, '.html');
+                downloadTextFile(htmlFallbackName, 'text/html', htmlContent);
+                handleSuccess(htmlFallbackName, null, true);
+            } catch (dlErr) {
+                handleFailure('فشل حفظ الملف. تعذر تحميل المستند في المتصفح: ' + (dlErr && dlErr.message ? dlErr.message : dlErr));
+            }
         }
 
         // 1. Host TCP server loopback (/api/save-to-desktop)
@@ -182,15 +248,19 @@
                     html: htmlContent
                 })
             }).then(function (r) {
+                if (!r.ok) {
+                    throw new Error('Server returned HTTP ' + r.status);
+                }
                 return r.json();
             }).then(function (data) {
-                if (data && data.ok) {
-                    handleSuccess(data.filename || cleanName, data.path || null);
+                if (data && data.ok && data.path) {
+                    var isHtml = !!(data.format === 'html' || (data.filename && /\.html$/i.test(data.filename)));
+                    handleSuccess(data.filename || cleanName, data.path, isHtml);
                 } else {
-                    handleSuccess(cleanName, null);
+                    triggerBrowserDownloadFallback();
                 }
-            }).catch(function () {
-                handleSuccess(cleanName, null);
+            }).catch(function (fetchErr) {
+                triggerBrowserDownloadFallback();
             });
             return;
         }
@@ -202,16 +272,17 @@
                 var savedPath = global.external.SaveToDesktop(cleanName, b64COM);
                 if (savedPath && savedPath.indexOf('ERROR:') !== 0) {
                     var finalName = savedPath.replace(/^.*[\\\/]/, '');
-                    handleSuccess(finalName, savedPath);
+                    var isHtml = /\.html$/i.test(savedPath);
+                    handleSuccess(finalName, savedPath, isHtml);
                     return;
                 }
             } catch (ex) {}
+            triggerBrowserDownloadFallback();
+            return;
         }
 
-        // 3. Fallback: Browser downloadTextFile (download clean HTML document rather than broken raw HTML disguised as PDF)
-        var htmlFallbackName = cleanName.replace(/\.pdf$/i, '.html');
-        downloadTextFile(htmlFallbackName, 'text/html; charset=utf-8', htmlContent);
-        handleSuccess(htmlFallbackName, null);
+        // 3. Fallback: Browser downloadTextFile
+        triggerBrowserDownloadFallback();
     }
 
     function injectPlainStudentFormFallback(opts) {
@@ -279,6 +350,18 @@
                         '</label>' +
                     '</div>' +
                 '</div>' +
+                '<div style="margin-bottom:14px">' +
+                    '<label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px">' + bidi('التقويم البيداغوجي:') + '</label>' +
+                    '<div style="padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px">' +
+                        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">' +
+                            '<input type="checkbox" id="fallback-stu-quiz" checked> ' +
+                            '<span style="font-weight:500;">' + bidi('تفعيل الأسئلة التقويمية المرحلية (كفاءات لوحة التحكم)') + '</span>' +
+                        '</label>' +
+                        '<div style="font-size:11px;color:#64748b;margin-top:4px;">' +
+                            bidi('* ملاحظة: تعطيل الأسئلة يخصم نقاطها من العلامة القصوى (لا يمكن نيل 20/20 دون الإجابة على الأسئلة).') +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
                 '<div id="fallback-stu-err" style="color:#dc2626;font-size:12px;min-height:18px;margin-bottom:12px"></div>' +
                 '<button type="button" id="fallback-stu-submit" class="win-btn win-btn-accent" style="width:100%;padding:10px;font-size:14px;font-weight:700;border-radius:6px;background:#0067C0;color:#fff;border:none;cursor:pointer">' +
                     bidi('بدء الجلسة والمحاكاة') +
@@ -303,6 +386,8 @@
             }
             var modeRadio = wrap.querySelector('input[name="fallback-stu-mode"]:checked');
             var chosenMode = modeRadio ? modeRadio.value : 'training';
+            var quizChk = wrap.querySelector('#fallback-stu-quiz');
+            var isQuizOptIn = quizChk ? quizChk.checked : true;
 
             if (global.Win11Assessment && typeof global.Win11Assessment.startSession === 'function') {
                 global.Win11Assessment.startSession({
@@ -311,7 +396,8 @@
                     fullName: ln + ' ' + fn,
                     classGroup: grpSel ? grpSel.value : (groups[0] || '1AS-1'),
                     pcNumber: pcSel ? pcSel.value : '01',
-                    mode: chosenMode
+                    mode: chosenMode,
+                    quizOptIn: isQuizOptIn
                 });
             }
             if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
@@ -538,6 +624,8 @@
                     var grpEl = document.getElementById('stu-reg-grp');
                     var pcEl = document.getElementById('stu-reg-pc');
                     var modeChecked = document.querySelector('input[name="stu-reg-mode"]:checked');
+                    var quizEl = document.getElementById('stu-reg-quiz');
+                    var isQuizOptIn = quizEl ? quizEl.checked : true;
                     var errEl = document.getElementById('stu-reg-err');
 
                     var ln = lnEl ? lnEl.value.trim() : '';
@@ -553,7 +641,8 @@
                                 firstName: fn,
                                 fullName: ln + ' ' + fn,
                                 classGroup: grpEl ? grpEl.value : '',
-                                pcNumber: pcEl ? pcEl.value : '01'
+                                pcNumber: pcEl ? pcEl.value : '01',
+                                quizOptIn: isQuizOptIn
                             });
                         }
                         closeDlg(true);
@@ -574,7 +663,8 @@
                         fullName: ln + ' ' + fn,
                         classGroup: grpEl ? grpEl.value : '',
                         pcNumber: pcEl ? pcEl.value : '01',
-                        mode: modeChecked ? modeChecked.value : (cfg.mode || 'training')
+                        mode: modeChecked ? modeChecked.value : (cfg.mode || 'training'),
+                        quizOptIn: isQuizOptIn
                     });
                     closeDlg(true);
                     if (global.Win11HUD) global.Win11HUD.open();
@@ -609,6 +699,8 @@
                 var initLn = (stu.activeSession && stu.lastName) ? stu.lastName : '';
                 var initFn = (stu.activeSession && stu.firstName) ? stu.firstName : '';
                 var lockModeAttr = (isEditOnly && stu.activeSession) ? ' disabled' : '';
+                var lockQuizAttr = (isEditOnly && stu.activeSession) ? ' disabled' : '';
+                var lockQuizNote = (isEditOnly && stu.activeSession) ? ('<div style="font-size:11px;color:var(--win-text-secondary);margin-top:4px;">' + bidi('لا يمكن تعديل خيار الأسئلة التقويمية أثناء الجلسة النشطة.') + '</div>') : '';
                 wrap.innerHTML =
                     '<div style="display:flex;flex-direction:column;gap:10px">' +
                         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
@@ -643,6 +735,19 @@
                                     '<span>' + bidi(t('pedagogy.modeExamRadio')) + '</span>' +
                                 '</label>' +
                                 (lockModeAttr ? ('<div style="font-size:11.5px;color:var(--win-text-secondary)">' + bidi(t('pedagogy.modeLockedEditNote')) + '</div>') : '') +
+                            '</div>' +
+                        '</div>' +
+                        '<div>' +
+                            '<div style="font-weight:600;margin-bottom:6px">' + bidi('التقويم البيداغوجي (الأسئلة):') + '</div>' +
+                            '<div style="padding:8px 10px;border:1px solid var(--win-border-control);border-radius:6px;background:var(--win-surface-subtle)">' +
+                                '<label style="display:flex;align-items:center;gap:8px;cursor:pointer">' +
+                                    '<input type="checkbox" id="stu-reg-quiz"' + (stu.quizOptIn !== false ? ' checked' : '') + lockQuizAttr + '>' +
+                                    '<span style="font-size:13px;font-weight:600;">' + bidi('تفعيل الأسئلة التقويمية المرحلية (كفاءات لوحة التحكم)') + '</span>' +
+                                '</label>' +
+                                '<div style="font-size:11.5px;color:var(--win-text-secondary);margin-top:4px;line-height:1.4;">' +
+                                    bidi('* ملاحظة هامة: تعطيل الأسئلة التقويمية سيؤدي إلى خصم نقاطها من المجموع الأقصى للعلامة ولن تتمكن من نيل العلامة الكاملة (20/20).') +
+                                '</div>' +
+                                lockQuizNote +
                             '</div>' +
                         '</div>' +
                         '<div id="stu-reg-err" style="color:var(--win-danger);font-size:12px;min-height:16px"></div>' +
@@ -728,11 +833,22 @@
                 reasonTxt = 'لم يتم استيفاء الخطوات العملية المطلوبة.';
             }
 
+            var notesHtml = '<div style="color:#334155;">' + bidi(reasonTxt) + '</div>';
+
             if (tk.quizResult && typeof tk.quizResult.earnedPoints === 'number') {
-                reasonTxt += '<div style="margin-top:3px;font-size:11px;color:#0284C7;">' +
-                    '<strong>تقويم الكفاءة:</strong> ' +
-                    '<bdi dir="ltr">' + tk.quizResult.earnedPoints.toFixed(2) + ' / ' + Number(tk.quizResult.maxPoints || 1).toFixed(2) + '</bdi>' +
-                    ' (محاولة ' + tk.quizResult.attempts + ')' +
+                var qAtt = tk.quizResult.attempts || 1;
+                var qEarned = Number(tk.quizResult.earnedPoints).toFixed(2);
+                var qMax = Number(tk.quizResult.maxPoints || 1).toFixed(2);
+                notesHtml +=
+                    '<div style="margin-top:3px;font-size:11px;color:#0284C7;font-weight:600;">' +
+                        bidi('تقويم الكفاءة: ') +
+                        '<bdi dir="ltr"><strong>' + qEarned + ' / ' + qMax + '</strong></bdi>' +
+                        ' (' + bidi('محاولة ' + qAtt) + ')' +
+                    '</div>';
+            } else if (stu.quizOptIn === false) {
+                notesHtml +=
+                    '<div style="margin-top:3px;font-size:11px;color:#94A3B8;font-weight:600;">' +
+                        bidi('تقويم الكفاءة: معطّل بطلب التلميذ (0.00 / 1.00)') +
                     '</div>';
             }
 
@@ -744,7 +860,7 @@
                     '<td style="text-align:center;font-weight:600;"><bdi dir="ltr">' + Number(tk.maxPoints || 0).toFixed(2) + '</bdi></td>' +
                     '<td style="text-align:center;font-weight:700;color:#1E3A8A;"><bdi dir="ltr">' + Number(tk.earnedPoints || 0).toFixed(2) + '</bdi></td>' +
                     '<td style="text-align:center;"><span class="a4-badge ' + badgeCls + '">' + bidi(badgeText) + '</span></td>' +
-                    '<td style="font-size:11.5px;color:#334155;line-height:1.45;">' + bidi(reasonTxt) + '</td>' +
+                    '<td style="font-size:11.5px;line-height:1.45;">' + notesHtml + '</td>' +
                 '</tr>';
         }
 
@@ -840,6 +956,15 @@
                 '</tr>';
         }
 
+        var quizOptOutBanner = '';
+        if (stu.quizOptIn === false) {
+            quizOptOutBanner =
+                '<div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:6px;padding:8px 12px;margin:10px 0;color:#92400E;font-size:11.5px;line-height:1.5;">' +
+                    '<strong>' + bidi('تنبيه بيداغوجي حول التقويم:') + '</strong> ' +
+                    bidi('تم إلغاء تفعيل الأسئلة التقويمية بناءً على رغبة التلميذ عند التسجيل. تم احتساب نقاط الأسئلة (0.00 نقطة) ضمن المجموع الكلي المطلوب، مما يضع سقفاً على العلامة القصوى الممكنة دون إمكانية نيل العلامة الكاملة (20/20).') +
+                '</div>';
+        }
+
         return (
             '<div class="a4-report-sheet" dir="rtl" lang="ar">' +
                 // Header
@@ -861,6 +986,7 @@
                         '<div class="a4-banner-sub">' + bidi('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)') + '</div>' +
                     '</div>' +
                 '</div>' +
+                quizOptOutBanner +
 
                 // Unified Student & Session & Score Table
                 '<table class="a4-summary-table">' +
@@ -890,7 +1016,10 @@
                                 '<div class="a4-cell-lbl">' + bidi('نسبة الإنجاز وتقويم الكفاءات:') + '</div>' +
                                 '<div class="a4-cell-val">' +
                                     'استيفاء <strong>' + doneTasksCount + '</strong> من <strong>' + enabledTasks.length + '</strong> مهام (<bdi dir="ltr">' + completionPct + '%</bdi>)' +
-                                    (scores.quizMax > 0 ? ('<div style="font-size:11px;color:#0284C7;font-weight:700;margin-top:2px;">الأسئلة التقويمية: <bdi dir="ltr">' + scores.quizEarned.toFixed(2) + ' / ' + scores.quizMax.toFixed(2) + '</bdi></div>') : '') +
+                                    (stu.quizOptIn === false
+                                        ? ('<div style="font-size:11px;color:#D97706;font-weight:700;margin-top:2px;">الأسئلة التقويمية: معطّلة بطلب التلميذ (0.00 / <bdi dir="ltr">' + (scores.quizMax || 0).toFixed(2) + '</bdi>)</div>')
+                                        : (scores.quizMax > 0 ? ('<div style="font-size:11px;color:#0284C7;font-weight:700;margin-top:2px;">الأسئلة التقويمية: <bdi dir="ltr">' + scores.quizEarned.toFixed(2) + ' / ' + scores.quizMax.toFixed(2) + '</bdi></div>') : '')
+                                    ) +
                                 '</div>' +
                             '</td>' +
                             '<td>' +
@@ -906,11 +1035,15 @@
                                 '<div style="font-size:26px;font-weight:900;color:#1E3A8A;line-height:1.1;">' +
                                     '<bdi dir="ltr">' + finalScoreStr + '</bdi> <span style="font-size:14px;color:#64748B;font-weight:700;">/ 20</span>' +
                                 '</div>' +
-                                (scores.quizMax > 0 ? (
+                                (stu.quizOptIn === false ? (
+                                    '<div style="font-size:10px;color:#92400E;margin-top:2px;font-weight:600;">' +
+                                        'تطبيق: <bdi dir="ltr">' + (scores.practicalEarned !== undefined ? scores.practicalEarned.toFixed(2) : '0.00') + '/' + (scores.practicalMax || 0) + '</bdi> | أسئلة: معطّلة (0.00/<bdi dir="ltr">' + (scores.quizMax || 0).toFixed(2) + '</bdi>)' +
+                                    '</div>'
+                                ) : (scores.quizMax > 0 ? (
                                     '<div style="font-size:10px;color:#475569;margin-top:2px;">' +
                                         'تطبيق: <bdi dir="ltr">' + (scores.practicalEarned !== undefined ? scores.practicalEarned.toFixed(2) : '0.00') + '/' + (scores.practicalMax || 0) + '</bdi> | أسئلة: <bdi dir="ltr">' + scores.quizEarned.toFixed(2) + '/' + scores.quizMax.toFixed(2) + '</bdi>' +
                                     '</div>'
-                                ) : '') +
+                                ) : '')) +
                                 '<div style="margin-top:3px;">' +
                                     '<span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '">' + bidi(isPassed ? '✔ مستوفٍ لمعيار النجاح' : '✘ دون المعدل المطلوب') + '</span>' +
                                 '</div>' +

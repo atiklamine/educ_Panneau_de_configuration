@@ -181,15 +181,28 @@
         // Attempt indicator badge
         var attemptBadgeText = '';
         var attemptBadgeClass = '';
-        if (attempts === 0) {
-            attemptBadgeText = 'المحاولة الأولى: كامل العلامة (100%)';
-            attemptBadgeClass = 'quiz-badge-full';
-        } else if (attempts === 1) {
-            attemptBadgeText = 'المحاولة الثانية: نصف العلامة (50%)';
-            attemptBadgeClass = 'quiz-badge-half';
+        if (isResolved) {
+            if (attempts <= 1) {
+                attemptBadgeText = 'تم الاجتياز من المحاولة الأولى: كامل العلامة (100%)';
+                attemptBadgeClass = 'quiz-badge-full';
+            } else if (attempts === 2) {
+                attemptBadgeText = 'تم الاجتياز من المحاولة الثانية: نصف العلامة (50%)';
+                attemptBadgeClass = 'quiz-badge-half';
+            } else {
+                attemptBadgeText = 'تم استيفاء شرط التقويم: 0.00 نقطة (محاولة للتعلم)';
+                attemptBadgeClass = 'quiz-badge-zero';
+            }
         } else {
-            attemptBadgeText = 'المحاولة ' + (attempts + 1) + ': 0 نقطة (محاولة للتعلم والاستيعاب)';
-            attemptBadgeClass = 'quiz-badge-zero';
+            if (attempts === 0) {
+                attemptBadgeText = 'المحاولة الأولى: كامل العلامة (100%)';
+                attemptBadgeClass = 'quiz-badge-full';
+            } else if (attempts === 1) {
+                attemptBadgeText = 'المحاولة الثانية: نصف العلامة (50%)';
+                attemptBadgeClass = 'quiz-badge-half';
+            } else {
+                attemptBadgeText = 'المحاولة ' + (attempts + 1) + ': 0 نقطة (محاولة للتعلم والاستيعاب)';
+                attemptBadgeClass = 'quiz-badge-zero';
+            }
         }
 
         var optionsHtml = '';

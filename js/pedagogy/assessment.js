@@ -130,6 +130,7 @@
         classGroup: config.class_groups[0],
         pcNumber: '01',
         mode: 'training', // 'training' | 'exam'
+        quizOptIn: true,
         elapsedSeconds: 0,
         suspendedSeconds: 0,
         startedAtIso: null,
@@ -305,6 +306,7 @@
             clearTimeout(offTaskToastTimer);
             offTaskToastTimer = null;
         }
+        if (typeof document === 'undefined' || !document.getElementById) return;
         var existing = document.getElementById('off-task-warning-toast');
         if (existing && existing.parentNode) {
             existing.parentNode.removeChild(existing);
@@ -920,8 +922,9 @@
                 curActiveTk.lockedDone = true;
 
                 // VERSION 2.0 QUIZ INTERCEPTION:
-                // Present quiz modal before advancing to next task unless disabled
+                // Present quiz modal before advancing to next task unless disabled or student opted out
                 var isQuizOn = (config.quiz_enabled !== false) &&
+                    (student.quizOptIn !== false) &&
                     (!Array.isArray(config.quiz_disabled_tasks) || config.quiz_disabled_tasks.indexOf(curActiveTk.id) === -1);
 
                 if (isQuizOn && !curActiveTk.quizCompleted && !curActiveTk.skipped && global.Win11Quiz) {
@@ -967,6 +970,7 @@
             for (var chkI = 0; chkI < enabledList.length; chkI++) {
                 var chkTk = enabledList[chkI];
                 var qDone = (config.quiz_enabled === false) ||
+                    (student.quizOptIn === false) ||
                     (Array.isArray(config.quiz_disabled_tasks) && config.quiz_disabled_tasks.indexOf(chkTk.id) !== -1) ||
                     chkTk.quizCompleted || chkTk.skipped;
                 if (!chkTk.completed || !qDone) {
@@ -1502,6 +1506,7 @@
             student.classGroup = (studentInfo && studentInfo.classGroup) || config.class_groups[0];
             student.pcNumber = (studentInfo && studentInfo.pcNumber) || config.default_device || '01';
             student.mode = (studentInfo && studentInfo.mode) || config.mode || 'training';
+            student.quizOptIn = (studentInfo && studentInfo.quizOptIn !== undefined) ? !!studentInfo.quizOptIn : true;
             student.activeSession = true;
             student.timeExpired = false;
             mistakes = [];
@@ -1525,6 +1530,7 @@
             student.fullName = rawFull || (student.lastName + (student.firstName ? ' ' + student.firstName : ''));
             if (studentInfo.classGroup) student.classGroup = studentInfo.classGroup;
             if (studentInfo.pcNumber) student.pcNumber = studentInfo.pcNumber;
+            if (studentInfo.quizOptIn !== undefined) student.quizOptIn = !!studentInfo.quizOptIn;
             notify();
         },
         getOverallProgress: function () {
@@ -1616,7 +1622,7 @@
                     if (isQuizOn) {
                         var qMax = 1.0;
                         totalQuizMax += qMax;
-                        var qEarned = (atk.quizResult && typeof atk.quizResult.earnedPoints === 'number')
+                        var qEarned = (student.quizOptIn !== false && atk.quizResult && typeof atk.quizResult.earnedPoints === 'number')
                             ? atk.quizResult.earnedPoints
                             : 0;
                         totalQuizEarned += qEarned;
@@ -1718,6 +1724,7 @@
                 performanceLevel: lvl,
                 levelShort: lvlShort,
                 mistakes: mistakes.slice(),
+                quizOptIn: student.quizOptIn !== false,
                 quizResults: (student.quizResults || []).slice(),
                 rankingKey: [net.toFixed(2), getEffectiveElapsedSeconds(), mistakes.length]
             };
