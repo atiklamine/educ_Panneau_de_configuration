@@ -19,7 +19,7 @@
         }
     }
 
-    function showExportSuccessToast(filename, desktopPath, isFallbackHtml) {
+    function showExportSuccessToast(filename, desktopPath) {
         dismissExportSuccessToast();
         var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
         var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
@@ -30,7 +30,7 @@
         toast.setAttribute('role', 'alert');
 
         var pathAttr = desktopPath ? (' data-folder-path="' + esc(desktopPath) + '"') : '';
-        var locMsg = desktopPath ? 'تم حفظ التقرير على سطح المكتب باسم:' : 'تم استخراج التقرير وتنزيله باسم:';
+        var locMsg = desktopPath ? 'تم حفظ تقرير PDF الرسمي على سطح المكتب باسم:' : 'تم استخراج وحفظ تقرير PDF الرسمي باسم:';
 
         toast.innerHTML =
             '<span class="export-toast-icon">✓</span>' +
@@ -57,10 +57,7 @@
                         try { global.external.OpenFile(targetPath); } catch (e) {}
                     }
                 } else {
-                    var htmlDoc = buildStandaloneHtmlDoc();
-                    var blob = new Blob(['\uFEFF' + htmlDoc], { type: 'text/html;charset=utf-8' });
-                    var url = URL.createObjectURL(blob);
-                    window.open(url, '_blank');
+                    window.print();
                 }
             };
         }
@@ -90,24 +87,17 @@
         exportToastTimer = setTimeout(dismissExportSuccessToast, 12000);
     }
 
-    function showExportSuccessDialog(filename, desktopPath, isFallbackHtml) {
+    function showExportSuccessDialog(filename, desktopPath) {
         var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
         var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
 
-        var mainMsg = '';
-        if (desktopPath) {
-            if (isFallbackHtml) {
-                mainMsg = bidi('تم حفظ بطاقة التقييم بنجاح بصيغة HTML المستقلة والقابلة للطباعة على سطح المكتب.');
-            } else {
-                mainMsg = bidi('تم حفظ بطاقة التقييم بنجاح بصيغة PDF على سطح المكتب.');
-            }
-        } else {
-            mainMsg = bidi('تم استخراج بطاقة التقييم بنجاح وتنزيلها كملف ويب مستقل (HTML).');
-        }
+        var mainMsg = desktopPath
+            ? bidi('تم حفظ بطاقة تقويم الأعمال التطبيقية بنجاح كملف PDF رسمي غير قابل للتعديل على سطح المكتب.')
+            : bidi('تم استخراج بطاقة تقويم الأعمال التطبيقية بنجاح كملف PDF رسمي غير قابل للتعديل.');
 
         var subMsg = desktopPath
             ? bidi('يمكنك الآن فتح الملف مباشرة لمعاينته أو الانتقال إلى مكانه على سطح المكتب.')
-            : bidi('يمكنك الآن فتح الملف لمعاينته في تبويب جديد أو الاطلاع عليه من مجلد التنزيلات.');
+            : bidi('تمت معالجة المستند الرسمي بصيغة PDF؛ يمكنك حفظه أو طباعته فوراً.');
 
         var dlgButtons = [
             {
@@ -127,10 +117,7 @@
                             try { global.external.OpenFile(targetPath); } catch (e) {}
                         }
                     } else {
-                        var htmlDoc = buildStandaloneHtmlDoc();
-                        var blob = new Blob(['\uFEFF' + htmlDoc], { type: 'text/html;charset=utf-8' });
-                        var url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
+                        window.print();
                     }
                     closeDlg(true);
                 }
@@ -166,7 +153,7 @@
         });
 
         global.Win11Dialogs.showCustom({
-            title: bidi('تأكيد استخراج وحفظ التقرير'),
+            title: bidi('تأكيد استخراج وحفظ تقرير PDF'),
             tone: 'info',
             wide: false,
             renderBody: function (wrap) {
@@ -206,13 +193,13 @@
         var htmlContent = buildStandaloneHtmlDoc();
         var cleanName = normalizeExportFilename(filename, 'pdf', formatSuggestedFilename('pdf'));
 
-        function handleSuccess(finalName, finalPath, isFallbackHtml) {
+        function handleSuccess(finalName, finalPath) {
             hasExportedPdfFlag = true;
-            showExportSuccessToast(finalName, finalPath, isFallbackHtml);
+            showExportSuccessToast(finalName, finalPath);
             if (!opts.skipDialog) {
-                showExportSuccessDialog(finalName, finalPath, isFallbackHtml);
+                showExportSuccessDialog(finalName, finalPath);
             }
-            if (onComplete) onComplete(null, { ok: true, filename: finalName, path: finalPath, isFallbackHtml: isFallbackHtml });
+            if (onComplete) onComplete(null, { ok: true, filename: finalName, path: finalPath, format: 'pdf' });
         }
 
         function handleFailure(errText) {
@@ -220,13 +207,63 @@
             if (onComplete) onComplete(new Error(errText));
         }
 
-        function triggerBrowserDownloadFallback() {
+        function triggerBrowserPrintFallback() {
             try {
-                var htmlFallbackName = cleanName.replace(/\.pdf$/i, '.html');
-                downloadTextFile(htmlFallbackName, 'text/html', htmlContent);
-                handleSuccess(htmlFallbackName, null, true);
-            } catch (dlErr) {
-                handleFailure('فشل حفظ الملف. تعذر تحميل المستند في المتصفح: ' + (dlErr && dlErr.message ? dlErr.message : dlErr));
+                var printEl = document.getElementById('print-report-container');
+                if (printEl) {
+                    printEl.innerHTML = buildA4Html();
+                }
+                var prevTitle = document.title;
+                document.title = cleanName.replace(/\.pdf$/i, '');
+                hasExportedPdfFlag = true;
+
+                var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
+                if (global.Win11Dialogs && typeof global.Win11Dialogs.showCustom === 'function') {
+                    global.Win11Dialogs.showCustom({
+                        title: bidi('تصدير التقرير الرسمي (PDF غير قابل للتعديل)'),
+                        tone: 'info',
+                        wide: false,
+                        renderBody: function (wrap) {
+                            wrap.innerHTML =
+                                '<div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px">' +
+                                    '<div style="font-size:36px;color:#0067C0">🖨️</div>' +
+                                    '<div style="font-size:14px;font-weight:700;color:var(--win-text-primary)">' +
+                                        bidi('سيتم فتح نافذة الطباعة للنظام الآن لحفظ التقرير بصيغة PDF غير قابلة للتعديل.') +
+                                    '</div>' +
+                                    '<div style="font-size:12.5px;color:var(--win-text-secondary);background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;line-height:1.6">' +
+                                        bidi('يرجى اختيار الوجهة: <b>«حفظ بتنسيق PDF»</b> أو <b>«Microsoft Print to PDF»</b>، ثم النقر على <b>«حفظ»</b>.') +
+                                    '</div>' +
+                                '</div>';
+                        },
+                        buttons: [
+                            {
+                                id: 'btn-proceed-print-pdf',
+                                label: bidi('متابعة وحفظ PDF الآن'),
+                                primary: true,
+                                onClick: function (closeDlg) {
+                                    closeDlg(true);
+                                    setTimeout(function () {
+                                        window.print();
+                                        setTimeout(function () { document.title = prevTitle; }, 3000);
+                                        handleSuccess(cleanName, null);
+                                    }, 150);
+                                }
+                            },
+                            {
+                                id: 'btn-cancel-print-pdf',
+                                label: bidi('إلغاء'),
+                                primary: false,
+                                value: false
+                            }
+                        ]
+                    });
+                } else {
+                    window.print();
+                    setTimeout(function () { document.title = prevTitle; }, 3000);
+                    handleSuccess(cleanName, null);
+                }
+            } catch (pErr) {
+                handleFailure('تعذر فتح نافذة الطباعة لتوليد ملف PDF: ' + (pErr && pErr.message ? pErr.message : pErr));
             }
         }
 
@@ -254,13 +291,12 @@
                 return r.json();
             }).then(function (data) {
                 if (data && data.ok && data.path) {
-                    var isHtml = !!(data.format === 'html' || (data.filename && /\.html$/i.test(data.filename)));
-                    handleSuccess(data.filename || cleanName, data.path, isHtml);
+                    handleSuccess(data.filename || cleanName, data.path);
                 } else {
-                    triggerBrowserDownloadFallback();
+                    triggerBrowserPrintFallback();
                 }
             }).catch(function (fetchErr) {
-                triggerBrowserDownloadFallback();
+                triggerBrowserPrintFallback();
             });
             return;
         }
@@ -272,17 +308,16 @@
                 var savedPath = global.external.SaveToDesktop(cleanName, b64COM);
                 if (savedPath && savedPath.indexOf('ERROR:') !== 0) {
                     var finalName = savedPath.replace(/^.*[\\\/]/, '');
-                    var isHtml = /\.html$/i.test(savedPath);
-                    handleSuccess(finalName, savedPath, isHtml);
+                    handleSuccess(finalName, savedPath);
                     return;
                 }
             } catch (ex) {}
-            triggerBrowserDownloadFallback();
+            triggerBrowserPrintFallback();
             return;
         }
 
-        // 3. Fallback: Browser downloadTextFile
-        triggerBrowserDownloadFallback();
+        // 3. Fallback: Browser print to PDF
+        triggerBrowserPrintFallback();
     }
 
     function injectPlainStudentFormFallback(opts) {
@@ -1297,25 +1332,25 @@
 
     function openExportSaveDialog(ext, opts) {
         opts = opts || {};
-        var cleanExt = (String(ext || 'pdf').toLowerCase() === 'html') ? 'html' : 'pdf';
+        var cleanExt = 'pdf'; // STRICT PDF ONLY
         var lang = global.Win11I18N.getLang();
         var bidi = global.Win11I18N.bidiHtml;
         var esc = global.Win11Compat.escapeHtml;
         global.Win11Assessment.evaluate();
-        var suggestedName = previewNextFilename(cleanExt);
+        var suggestedName = previewNextFilename('pdf');
 
         var titleText = (lang === 'fr')
-            ? ('Enregistrer le rapport final (' + cleanExt.toUpperCase() + ')')
+            ? 'Enregistrer le rapport final (PDF)'
             : (lang === 'en'
-                ? ('Save Final Evaluation Report (' + cleanExt.toUpperCase() + ')')
-                : ('حفظ ملف التقييم النهائي (' + cleanExt.toUpperCase() + ')'));
+                ? 'Save Final Evaluation Report (PDF)'
+                : 'حفظ ملف تقويم الأعمال التطبيقية (PDF)');
         var labelText = (lang === 'fr') ? 'Nom du fichier :' : (lang === 'en' ? 'File Name:' : 'اسم الملف:');
         var hintText = (lang === 'fr')
-            ? 'Le nom généré selon les règles de l\'enseignant est sélectionné. Vous pouvez l\'enregistrer directement ou le modifier.'
+            ? 'Le nom généré selon les règles de l\'enseignant est sélectionné. Le document sera exporté au format PDF non modifiable.'
             : (lang === 'en'
-                ? 'The teacher-defined filename is pre-selected. Press Save directly or type a new name.'
-                : 'تم اقتراح اسم الملف تلقائياً وفق قواعد الأستاذ وتحديده بالكامل؛ يمكنك الضغط على "حفظ" مباشرة أو كتابة اسم جديد.');
-        var saveLabel = (lang === 'fr') ? 'Enregistrer' : (lang === 'en' ? 'Save' : 'حفظ');
+                ? 'The teacher-defined filename is pre-selected. The report will be exported as a non-editable PDF.'
+                : 'تم اقتراح اسم الملف تلقائياً وفق القواعد الرسمية للأستاذ؛ سيتم استخراج التقرير بصيغة PDF غير قابلة للتعديل.');
+        var saveLabel = (lang === 'fr') ? 'Enregistrer PDF' : (lang === 'en' ? 'Save PDF' : 'حفظ بصيغة PDF');
         var cancelLabel = global.Win11I18N.t('app.cancel');
 
         global.Win11Dialogs.showCustom({
@@ -1363,20 +1398,28 @@
                             if (inp) inp.focus();
                             return true;
                         }
-                        var chosenFilename = normalizeExportFilename(raw, cleanExt, suggestedName);
+                        var chosenFilename = normalizeExportFilename(raw, 'pdf', suggestedName);
                         closeDlg(true);
-                        if (cleanExt === 'pdf') {
-                            triggerPdfExport(chosenFilename);
-                        } else {
-                            var baseKey = (buildFilenameCore('html').base + '.html').toLowerCase();
-                            issuedExportCounts[baseKey] = (issuedExportCounts[baseKey] || 0) + 1;
-                            saveReportToDesktop(chosenFilename);
-                        }
+                        triggerPdfExport(chosenFilename);
                         if (typeof opts.onExported === 'function') {
                             opts.onExported(chosenFilename);
                         }
                     }
                 },
+                {
+                    id: 'btn-cancel-export-save',
+                    label: cancelLabel,
+                    primary: false,
+                    onClick: function (closeDlg) {
+                        closeDlg(false);
+                        if (opts.fromCertificate) {
+                            setTimeout(function () { openCertificate(); }, 0);
+                        }
+                    }
+                }
+            ]
+        });
+    }
                 {
                     id: 'btn-cancel-export-save',
                     label: cancelLabel,
@@ -1472,7 +1515,7 @@
                     closeDlg('export_pdf');
                     setTimeout(function () {
                         var pdfFilename = allocateUniqueFilename('pdf');
-                        saveReportToDesktop(pdfFilename);
+                        triggerPdfExport(pdfFilename);
                     }, 0);
                 }
             });
@@ -1485,7 +1528,7 @@
                     closeDlg('export_pdf');
                     setTimeout(function () {
                         var pdfFilename = allocateUniqueFilename('pdf');
-                        saveReportToDesktop(pdfFilename);
+                        triggerPdfExport(pdfFilename);
                     }, 0);
                 }
             });

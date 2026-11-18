@@ -123,14 +123,14 @@ namespace Win11SimHost
                     if (!string.IsNullOrEmpty(chromium) && File.Exists(chromium))
                     {
                         string tmpHtml = Path.Combine(Path.GetTempPath(), "print_doc_" + Guid.NewGuid().ToString("N") + ".html");
-                        string tmpProf = Path.Combine(Path.GetTempPath(), "print_prof_" + Guid.NewGuid().ToString("N"));
                         try
                         {
                             File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
                             string fileUrl = "file:///" + tmpHtml.Replace('\\', '/');
-                            string[] headlessVariants = new string[] { "--headless", "--headless=new" };
+                            string[] headlessVariants = new string[] { "--headless=new", "--headless" };
                             for (int v = 0; v < headlessVariants.Length; v++)
                             {
+                                string tmpProf = Path.Combine(Path.GetTempPath(), "print_prof_" + Guid.NewGuid().ToString("N"));
                                 try
                                 {
                                     ProcessStartInfo pPsi = new ProcessStartInfo();
@@ -142,38 +142,41 @@ namespace Win11SimHost
                                     pPsi.CreateNoWindow = true;
                                     using (Process p = Process.Start(pPsi))
                                     {
-                                        if (p != null) p.WaitForExit(10000);
+                                        if (p != null) p.WaitForExit(15000);
                                     }
-                                    if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 1000)
+                                    if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 100)
                                     {
-                                        return targetPath;
+                                        try
+                                        {
+                                            byte[] header = new byte[4];
+                                            using (FileStream fs = File.OpenRead(targetPath))
+                                            {
+                                                if (fs.Read(header, 0, 4) == 4 &&
+                                                    header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46) // %PDF
+                                                {
+                                                    return targetPath;
+                                                }
+                                            }
+                                        }
+                                        catch { }
                                     }
                                 }
                                 catch { }
+                                finally
+                                {
+                                    try { if (Directory.Exists(tmpProf)) Directory.Delete(tmpProf, true); } catch { }
+                                }
                             }
                         }
                         catch { }
                         finally
                         {
                             try { File.Delete(tmpHtml); } catch { }
-                            try { if (Directory.Exists(tmpProf)) Directory.Delete(tmpProf, true); } catch { }
                         }
                     }
-                }
 
-                if (ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Fallback: save clean standalone HTML directly on Desktop
-                    string htmlTarget = Path.ChangeExtension(targetPath, ".html");
-                    int hCounter = 1;
-                    string hBaseName = Path.GetFileNameWithoutExtension(htmlTarget);
-                    while (File.Exists(htmlTarget))
-                    {
-                        htmlTarget = Path.Combine(desktopDir, string.Format("{0}_{1}.html", hBaseName, hCounter));
-                        hCounter++;
-                    }
-                    File.WriteAllBytes(htmlTarget, bytes);
-                    return htmlTarget;
+                    // Strict PDF requirement: NEVER fallback to .html
+                    return "ERROR: تعذر توليد ملف PDF بواسطة محرك النظام. يرجى استخدام خيار الطباعة لحفظ التقرير بصيغة PDF.";
                 }
 
                 File.WriteAllBytes(targetPath, bytes);
@@ -657,13 +660,17 @@ namespace Win11SimHost
                         }
                         if (string.IsNullOrEmpty(filename))
                         {
-                            filename = "1AS_Report.html";
+                            filename = "1AS_Report.pdf";
                         }
 
                         string safeName = SanitizeFileName(filename);
-                        if (string.IsNullOrEmpty(safeName)) safeName = "1AS_Report.html";
+                        if (string.IsNullOrEmpty(safeName)) safeName = "1AS_Report.pdf";
                         string ext = Path.GetExtension(safeName);
-                        if (string.IsNullOrEmpty(ext)) ext = ".html";
+                        if (string.IsNullOrEmpty(ext))
+                        {
+                            ext = ".pdf";
+                            safeName = safeName + ".pdf";
+                        }
                         string baseName = Path.GetFileNameWithoutExtension(safeName);
 
                         string targetPath = Path.Combine(desktopDir, safeName);
@@ -717,14 +724,14 @@ namespace Win11SimHost
                                 if (!string.IsNullOrEmpty(chromium) && File.Exists(chromium) && !string.IsNullOrEmpty(htmlStr))
                                 {
                                     string tmpHtml = Path.Combine(Path.GetTempPath(), "print_doc_" + Guid.NewGuid().ToString("N") + ".html");
-                                    string tmpProf = Path.Combine(Path.GetTempPath(), "print_prof_" + Guid.NewGuid().ToString("N"));
                                     try
                                     {
                                         File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
                                         string fileUrl = "file:///" + tmpHtml.Replace('\\', '/');
-                                        string[] headlessVariants = new string[] { "--headless", "--headless=new" };
+                                        string[] headlessVariants = new string[] { "--headless=new", "--headless" };
                                         for (int v = 0; v < headlessVariants.Length && !pdfDone; v++)
                                         {
+                                            string tmpProf = Path.Combine(Path.GetTempPath(), "print_prof_" + Guid.NewGuid().ToString("N"));
                                             try
                                             {
                                                 ProcessStartInfo pPsi = new ProcessStartInfo();
@@ -738,7 +745,7 @@ namespace Win11SimHost
                                                 {
                                                     if (p != null)
                                                     {
-                                                        p.WaitForExit(10000);
+                                                        p.WaitForExit(15000);
                                                         if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 100)
                                                         {
                                                             try
@@ -759,41 +766,27 @@ namespace Win11SimHost
                                                 }
                                             }
                                             catch { }
+                                            finally
+                                            {
+                                                try { if (Directory.Exists(tmpProf)) Directory.Delete(tmpProf, true); } catch { }
+                                            }
                                         }
                                     }
                                     catch { }
                                     finally
                                     {
                                         try { File.Delete(tmpHtml); } catch { }
-                                        try { if (Directory.Exists(tmpProf)) Directory.Delete(tmpProf, true); } catch { }
                                     }
                                 }
                             }
 
                             if (!pdfDone)
                             {
-                                // Guaranteed File Write: Fallback to standalone HTML directly on Desktop
-                                string htmlTarget = Path.ChangeExtension(targetPath, ".html");
-                                int hCounter = 1;
-                                string hBaseName = Path.GetFileNameWithoutExtension(htmlTarget);
-                                while (File.Exists(htmlTarget))
-                                {
-                                    htmlTarget = Path.Combine(desktopDir, string.Format("{0}_{1}.html", hBaseName, hCounter));
-                                    hCounter++;
-                                }
-
-                                byte[] saveBytes = fileBytes;
-                                if ((saveBytes == null || saveBytes.Length == 0) && !string.IsNullOrEmpty(htmlStr))
-                                {
-                                    saveBytes = Encoding.UTF8.GetBytes(htmlStr);
-                                }
-                                if (saveBytes == null || saveBytes.Length == 0)
-                                {
-                                    saveBytes = body;
-                                }
-
-                                File.WriteAllBytes(htmlTarget, saveBytes ?? new byte[0]);
-                                targetPath = htmlTarget;
+                                // Strict PDF requirement: NEVER fallback to .html
+                                string errJson = "{\"ok\":false,\"error\":\"PDF rendering engine failed to generate PDF file\"}";
+                                SendResponse(stream, 500, "Internal Server Error", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(errJson), true);
+                                client.Close();
+                                return;
                             }
                         }
                         else
