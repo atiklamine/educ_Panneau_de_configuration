@@ -62,6 +62,10 @@
      */
     function bidiHtml(str) {
         if (str === null || str === undefined) return '';
+        // If string already contains formatted bdi tags, return directly to prevent double-encoding
+        if (typeof str === 'string' && str.indexOf('<bdi') !== -1 && str.indexOf('</bdi>') !== -1) {
+            return str;
+        }
         var escaped = global.Win11Compat.escapeHtml(formatDigits(str));
         if (currentLang !== 'ar' || !hasArabicChars(escaped)) {
             return escaped;

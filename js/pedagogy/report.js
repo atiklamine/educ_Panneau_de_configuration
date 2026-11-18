@@ -102,7 +102,7 @@
         var dlgButtons = [
             {
                 id: 'btn-open-file-direct',
-                label: bidi('فتح الملف'),
+                label: 'فتح الملف',
                 primary: true,
                 onClick: function (closeDlg) {
                     var targetPath = desktopPath || '';
@@ -127,7 +127,7 @@
         if (desktopPath) {
             dlgButtons.push({
                 id: 'btn-open-folder-direct',
-                label: bidi('فتح مكان الملف'),
+                label: 'فتح مكان الملف',
                 primary: false,
                 onClick: function (closeDlg) {
                     var targetPath = desktopPath || '';
@@ -147,13 +147,13 @@
 
         dlgButtons.push({
             id: 'btn-close-export-dlg',
-            label: bidi('إغلاق'),
+            label: 'إغلاق',
             primary: false,
             value: false
         });
 
         global.Win11Dialogs.showCustom({
-            title: bidi('تأكيد استخراج وحفظ تقرير PDF'),
+            title: 'تأكيد استخراج وحفظ تقرير PDF',
             tone: 'info',
             wide: false,
             renderBody: function (wrap) {
@@ -217,10 +217,9 @@
                 document.title = cleanName.replace(/\.pdf$/i, '');
                 hasExportedPdfFlag = true;
 
-                var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
                 if (global.Win11Dialogs && typeof global.Win11Dialogs.showCustom === 'function') {
                     global.Win11Dialogs.showCustom({
-                        title: bidi('تصدير التقرير الرسمي (PDF غير قابل للتعديل)'),
+                        title: 'تصدير التقرير الرسمي (PDF غير قابل للتعديل)',
                         tone: 'info',
                         wide: false,
                         renderBody: function (wrap) {
@@ -228,17 +227,17 @@
                                 '<div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px">' +
                                     '<div style="font-size:36px;color:#0067C0">🖨️</div>' +
                                     '<div style="font-size:14px;font-weight:700;color:var(--win-text-primary)">' +
-                                        bidi('سيتم فتح نافذة الطباعة للنظام الآن لحفظ التقرير بصيغة PDF غير قابلة للتعديل.') +
+                                        'سيتم فتح نافذة الطباعة للنظام الآن لحفظ التقرير بصيغة PDF غير قابلة للتعديل.' +
                                     '</div>' +
                                     '<div style="font-size:12.5px;color:var(--win-text-secondary);background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;line-height:1.6">' +
-                                        bidi('يرجى اختيار الوجهة: <b>«حفظ بتنسيق PDF»</b> أو <b>«Microsoft Print to PDF»</b>، ثم النقر على <b>«حفظ»</b>.') +
+                                        'يرجى اختيار الوجهة: <strong>«حفظ بتنسيق PDF»</strong> أو <strong>«Microsoft Print to PDF»</strong>، ثم النقر على <strong>«حفظ»</strong>.' +
                                     '</div>' +
                                 '</div>';
                         },
                         buttons: [
                             {
                                 id: 'btn-proceed-print-pdf',
-                                label: bidi('متابعة وحفظ PDF الآن'),
+                                label: 'متابعة وحفظ PDF الآن',
                                 primary: true,
                                 onClick: function (closeDlg) {
                                     closeDlg(true);
@@ -251,7 +250,7 @@
                             },
                             {
                                 id: 'btn-cancel-print-pdf',
-                                label: bidi('إلغاء'),
+                                label: 'إلغاء',
                                 primary: false,
                                 value: false
                             }
@@ -1486,7 +1485,7 @@
         if (uncompletedTasks.length > 0) {
             dialogButtons.push({
                 id: 'btn-resume-tasks',
-                label: bidi('مواصلة إنجاز المهام ↩'),
+                label: 'مواصلة إنجاز المهام ↩',
                 primary: true,
                 onClick: function (closeDlg) {
                     closeDlg();
