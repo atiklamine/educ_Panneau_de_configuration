@@ -92,6 +92,7 @@
             penalty_error: 0.25,
             penalty_skip: 0,
             quiz_enabled: true,
+            show_no_quiz_note: true,
             quiz_options_count: 4,
             quiz_disabled_tasks: [],
             custom_quiz_questions: [],

@@ -215,27 +215,55 @@ assert(!reportHtml.includes('&lt;strong'), 'Must not contain escaped &lt;strong'
 assert(!reportHtml.includes('&lt;span'), 'Must not contain escaped &lt;span');
 console.log('[PASS] Clean HTML confirmed with zero escaped tags in table/prose.');
 
-console.log('--- TEST 6: VERIFY SECTION 3 (EXCLUDED QUIZZES NOTICE) ---');
-// Disable quizzes in config
+console.log('--- TEST 6: VERIFY SECTION 3 (TEACHER DISABLED QUIZZES) ---');
+// Case A: Teacher disables quizzes in config (with show_no_quiz_note: true)
 const cfg = global.Win11Assessment.getConfig();
 cfg.quiz_enabled = false;
+cfg.show_no_quiz_note = true;
 global.Win11Assessment.evaluate();
 const reportDisabledHtml = global.Win11Report.buildA4Html();
 
-// When quizzes disabled:
+// When teacher disabled quizzes:
 // Section B must NOT show any quiz rows ("سؤال تقويمي")
-assert(!reportDisabledHtml.includes('a4-type-badge is-quiz'), 'Section B must not show quiz rows when disabled');
-// Section C must show the dedicated notice:
+assert(!reportDisabledHtml.includes('a4-type-badge is-quiz'), 'Section B must not show quiz rows when teacher disabled');
+// Section C must show the dedicated teacher note:
 assert(
     reportDisabledHtml.includes('ملاحظة:') &&
-    reportDisabledHtml.includes('تم تعطيل الأسئلة التقويمية') &&
+    reportDisabledHtml.includes('تقييم بدون أسئلة') &&
     reportDisabledHtml.includes('العلامة القصوى الممكنة هي'),
     'Section C must show dedicated disabled notice with max possible score'
 );
-console.log('[PASS] Section 3 verified: Quizzes omitted from Section B and dedicated note displayed in Section C.');
+console.log('[PASS] Teacher disabled quizzes with note: Quizzes omitted from Section B, note displayed in Section C.');
 
-// Restore quiz_enabled for clean state
+// Case A.2: Teacher disables note display (show_no_quiz_note: false)
+cfg.show_no_quiz_note = false;
+const reportNoNoteHtml = global.Win11Report.buildA4Html();
+assert(!reportNoNoteHtml.includes('a4-quiz-disabled-notice'), 'Section C must NOT show notice when show_no_quiz_note is false');
+console.log('[PASS] Teacher disabled note: Note correctly omitted from Section C.');
+
+console.log('--- TEST 7: VERIFY SECTION 3 (STUDENT OPTED OUT OF QUIZZES) ---');
+// Case B: Student opted out of quizzes (quiz_enabled is true, but quizOptIn is false)
 cfg.quiz_enabled = true;
+cfg.show_no_quiz_note = true;
+const stu = global.Win11Assessment.getStudent();
+stu.quizOptIn = false;
+const optOutScores = global.Win11Assessment.evaluate();
+const reportOptOutHtml = global.Win11Report.buildA4Html(optOutScores);
+
+// Section B MUST show quiz rows because points were zeroed/deducted!
+assert(reportOptOutHtml.includes('a4-type-badge is-quiz'), 'Section B must show quiz rows when student opted out');
+assert(reportOptOutHtml.includes('معطّل بطلب التلميذ ✘'), 'Section B must show opted-out badge');
+assert(reportOptOutHtml.includes('معطّل'), 'Section B must show opted out status');
+assert(reportOptOutHtml.includes('0.00 (0%)'), 'Section B must show 0.00 earned');
+assert(reportOptOutHtml.includes('-1.00'), 'Section B must show deduction for opted out quiz');
+// Section C must show pedagogical warning alert:
+assert(reportOptOutHtml.includes('تنبيه بيداغوجي:'), 'Section C must show warning alert when student opted out');
+assert(reportOptOutHtml.includes('تم تصفير نقاط الأسئلة وخصمها بالكامل'), 'Section C must explain zeroing and deduction');
+
+// Restore clean state
+stu.quizOptIn = true;
+global.Win11Assessment.evaluate();
+console.log('[PASS] Student opted out: Section B shows zeroed/deducted rows, Section C displays pedagogical warning.');
 
 console.log('\n=========================================');
 console.log('ALL REPORT REDESIGN TESTS PASSED 100%!');

@@ -851,7 +851,7 @@
 
         var isQuizGloballyDisabled = (cfg.quiz_enabled === false);
         var isQuizOptedOut = (stu.quizOptIn === false);
-        var showQuizzes = !isQuizGloballyDisabled && !isQuizOptedOut;
+        var showQuizzes = !isQuizGloballyDisabled;
 
         // Weights & Rule of Three calculation values
         var practicalMax = Number(scores.practicalMax || practicalMaxPoints || 0);
@@ -928,38 +928,56 @@
                 var qEarned = Number(qRes && typeof qRes.earnedPoints === 'number' ? qRes.earnedPoints : 0);
                 var qAttempts = (qRes && qRes.attempts) ? qRes.attempts : (isDone ? 1 : 0);
                 var qDeduct = Number((qMax - qEarned).toFixed(2));
-                if (qDeduct > 0) totalDeductionsInTable += qDeduct;
 
-                var qStatusCls = (qRes && qRes.answeredCorrectly) ? 'is-done' : (isSkip ? 'is-skipped' : 'is-skipped');
-                var qStatusText = (qRes && qRes.answeredCorrectly) ? 'إجابة صحيحة ✔' : (isSkip ? 'تم تخطيه ⏭' : 'في الانتظار ⏳');
-
+                var qStatusCls = '';
+                var qStatusText = '';
                 var qNameText = '';
-                if (qRes && qRes.questionText) {
-                    var fullQ = qRes.questionText.trim();
-                    qNameText = fullQ.length > 70 ? (fullQ.substring(0, 68) + '...') : fullQ;
-                } else if (qRes && qRes.questionTitle) {
-                    qNameText = qRes.questionTitle;
-                } else {
-                    qNameText = 'سؤال تقويم الكفاءة المرحلة (' + tk.titleAr + ')';
-                }
-
-                var qAttemptsLabel = qRes ? ('محاولة ' + qAttempts) : '-';
-                var qEarnedPct = (qAttempts === 1) ? ' (100%)' : ((qAttempts === 2) ? ' (50%)' : ' (0%)');
-                var qEarnedDisplay = qRes ? (qEarned.toFixed(2) + qEarnedPct) : '0.00 (0%)';
-
+                var qAttemptsLabel = '';
+                var qEarnedDisplay = '';
                 var qNotes = '';
-                if (qRes) {
-                    if (qAttempts === 1) {
-                        qNotes = 'إجابة صحيحة من المحاولة الأولى (كامل العلامة 100%)';
-                    } else if (qAttempts === 2) {
-                        qNotes = 'إجابة صحيحة من المحاولة الثانية (خصم 50% من علامة السؤال)';
-                    } else {
-                        qNotes = 'استنفاد المحاولات (0% من النقاط — بعد إظهار التلميح)';
-                    }
-                } else if (isSkip) {
-                    qNotes = 'تم تخطي السؤال التقويمي لتخطي المهمة العملية';
+
+                if (isQuizOptedOut) {
+                    qEarned = 0;
+                    qAttempts = 0;
+                    qDeduct = qMax;
+                    totalDeductionsInTable += qDeduct;
+                    qStatusCls = 'is-skipped';
+                    qStatusText = 'معطّل بطلب التلميذ ✘';
+                    qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
+                    qAttemptsLabel = '0 (معطّل)';
+                    qEarnedDisplay = '0.00 (0%)';
+                    qNotes = 'تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (' + qMax.toFixed(2) + ' نقطة).';
                 } else {
-                    qNotes = 'السؤال التقويمي مرتبط باستكمال إنجاز المهمة';
+                    if (qDeduct > 0) totalDeductionsInTable += qDeduct;
+                    qStatusCls = (qRes && qRes.answeredCorrectly) ? 'is-done' : (isSkip ? 'is-skipped' : 'is-skipped');
+                    qStatusText = (qRes && qRes.answeredCorrectly) ? 'إجابة صحيحة ✔' : (isSkip ? 'تم تخطيه ⏭' : 'في الانتظار ⏳');
+
+                    if (qRes && qRes.questionText) {
+                        var fullQ = qRes.questionText.trim();
+                        qNameText = fullQ.length > 70 ? (fullQ.substring(0, 68) + '...') : fullQ;
+                    } else if (qRes && qRes.questionTitle) {
+                        qNameText = qRes.questionTitle;
+                    } else {
+                        qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
+                    }
+
+                    qAttemptsLabel = qRes ? ('محاولة ' + qAttempts) : '-';
+                    var qEarnedPct = (qAttempts === 1) ? ' (100%)' : ((qAttempts === 2) ? ' (50%)' : ' (0%)');
+                    qEarnedDisplay = qRes ? (qEarned.toFixed(2) + qEarnedPct) : '0.00 (0%)';
+
+                    if (qRes) {
+                        if (qAttempts === 1) {
+                            qNotes = 'إجابة صحيحة من المحاولة الأولى (كامل العلامة 100%)';
+                        } else if (qAttempts === 2) {
+                            qNotes = 'إجابة صحيحة من المحاولة الثانية (خصم 50% من علامة السؤال)';
+                        } else {
+                            qNotes = 'استنفاد المحاولات (0% من النقاط — بعد إظهار التلميح)';
+                        }
+                    } else if (isSkip) {
+                        qNotes = 'تم تخطي السؤال التقويمي لتخطي المهمة العملية';
+                    } else {
+                        qNotes = 'السؤال التقويمي مرتبط باستكمال إنجاز المهمة';
+                    }
                 }
 
                 rowsHtml +=
@@ -1025,18 +1043,20 @@
         // ==========================================
         var quizDisabledNoticeHtml = '';
         if (isQuizGloballyDisabled) {
-            quizDisabledNoticeHtml =
-                '<div class="a4-quiz-disabled-notice">' +
-                    '<strong>' + bidi('ملاحظة:') + '</strong> ' +
-                    bidi('تم تعطيل الأسئلة التقويمية. تم احتساب العلامة بناءً على المهام العملية فقط، والعلامة القصوى الممكنة هي ') +
-                    '<bdi dir="ltr"><strong>' + maxPossibleScore.toFixed(2) + '</strong></bdi>/20.' +
-                '</div>';
+            if (cfg.show_no_quiz_note !== false) {
+                quizDisabledNoticeHtml =
+                    '<div class="a4-quiz-disabled-notice">' +
+                        '<strong>' + bidi('ملاحظة:') + '</strong> ' +
+                        bidi('تقييم بدون أسئلة بناءً على رغبة الأستاذ (تم تعطيل الأسئلة التقويمية؛ تم احتساب العلامة على المهام العملية فقط، والعلامة القصوى الممكنة هي ') +
+                        '<bdi dir="ltr"><strong>' + maxPossibleScore.toFixed(2) + '</strong></bdi>/20).' +
+                    '</div>';
+            }
         } else if (isQuizOptedOut) {
             quizDisabledNoticeHtml =
-                '<div class="a4-quiz-disabled-notice">' +
-                    '<strong>' + bidi('ملاحظة:') + '</strong> ' +
-                    bidi('تم إلغاء تفعيل الأسئلة التقويمية بطلب من التلميذ عند التسجيل. تم احتساب العلامة بناءً على المهام العملية فقط، والعلامة القصوى الممكنة هي ') +
-                    '<bdi dir="ltr"><strong>' + maxPossibleScore.toFixed(2) + '</strong></bdi>/20.' +
+                '<div class="a4-quiz-disabled-notice is-warning" style="background:#FEF2F2;border-right-color:#DC2626;color:#991B1B;">' +
+                    '<strong>' + bidi('تنبيه بيداغوجي:') + '</strong> ' +
+                    bidi('قام التلميذ بإلغاء تفعيل الأسئلة التقويمية عند بدء الجلسة؛ تم تصفير نقاط الأسئلة وخصمها بالكامل من العلامة الإجمالية (أقصى علامة ممكنة: ') +
+                    '<bdi dir="ltr"><strong>' + maxPossibleScore.toFixed(2) + '</strong></bdi>/20).' +
                 '</div>';
         }
 
@@ -1060,14 +1080,24 @@
                             '<span class="a4-step-num">2</span>' +
                             '<span class="a4-step-lbl">' + bidi('مجموع معاملات الأسئلة:') + '</span>' +
                             '<span class="a4-step-val"><bdi dir="ltr"><strong>' + (showQuizzes ? quizMax.toFixed(2) : '0.00') + '</strong></bdi> ' + bidi('نقطة') + '</span>' +
-                            '<span class="a4-step-sub">(' + (showQuizzes ? (bidi('حصلت على:') + ' <bdi dir="ltr"><strong>' + quizEarned.toFixed(2) + '</strong></bdi>') : bidi('معطّلة')) + ')</span>' +
+                            '<span class="a4-step-sub">' +
+                                (isQuizGloballyDisabled
+                                    ? bidi('معطّلة بناءً على رغبة الأستاذ')
+                                    : (isQuizOptedOut
+                                        ? ('<span style="color:#DC2626;">' + bidi('حصلت على: 0.00 (معطّل بطلب التلميذ)') + '</span>')
+                                        : (bidi('حصلت على:') + ' <bdi dir="ltr"><strong>' + quizEarned.toFixed(2) + '</strong></bdi>'))) +
+                            '</span>' +
                         '</div>' +
 
                         '<div class="a4-math-step">' +
                             '<span class="a4-step-num">3</span>' +
                             '<span class="a4-step-lbl">' + bidi('مجموع النقاط التي حصلت عليها (أوزان):') + '</span>' +
                             '<span class="a4-step-val" style="color:#1E3A8A;"><bdi dir="ltr"><strong>' + grandTotalEarned.toFixed(2) + '</strong> / <strong>' + grandTotalMax.toFixed(2) + '</strong></bdi> ' + bidi('نقطة') + '</span>' +
-                            '<span class="a4-step-sub">(<bdi dir="ltr">' + practicalEarned.toFixed(2) + '</bdi> ' + bidi('عملي') + ' + <bdi dir="ltr">' + quizEarned.toFixed(2) + '</bdi> ' + bidi('أسئلة') + ' = <bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi>)</span>' +
+                            '<span class="a4-step-sub">(' +
+                                (isQuizGloballyDisabled
+                                    ? ('<bdi dir="ltr">' + practicalEarned.toFixed(2) + '</bdi> ' + bidi('عملي (فقط)'))
+                                    : ('<bdi dir="ltr">' + practicalEarned.toFixed(2) + '</bdi> ' + bidi('عملي') + ' + <bdi dir="ltr">' + quizEarned.toFixed(2) + '</bdi> ' + bidi('أسئلة') + ' = <bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi>')) +
+                            ')</span>' +
                         '</div>' +
 
                         '<div class="a4-math-step highlight-rule3">' +

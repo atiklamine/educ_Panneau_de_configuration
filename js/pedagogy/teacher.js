@@ -347,8 +347,10 @@
 
                     var qeEl = wrap.querySelector('#tc-quiz-enabled');
                     var qoEl = wrap.querySelector('#tc-quiz-options-count');
+                    var qnEl = wrap.querySelector('#tc-quiz-show-note');
                     if (qeEl) cfg.quiz_enabled = qeEl.checked;
                     if (qoEl) cfg.quiz_options_count = Number(qoEl.value) || 4;
+                    if (qnEl) cfg.show_no_quiz_note = qnEl.checked;
 
                     var fpEl = wrap.querySelector('#tc-fname-pattern');
                     var smEl = wrap.querySelector('#tc-sm');
@@ -748,6 +750,12 @@
                                             '<option value="4"' + (cfg.quiz_options_count !== 3 ? ' selected' : '') + '>' + bidi('4 خيارات (1 صحيحة + 3 مموهات عشوائية)') + '</option>' +
                                             '<option value="3"' + (cfg.quiz_options_count === 3 ? ' selected' : '') + '>' + bidi('3 خيارات (1 صحيحة + 2 مموهان عشوائيان)') + '</option>' +
                                         '</select>' +
+                                    '</label>' +
+                                '</div>' +
+                                '<div style="margin-bottom:10px;">' +
+                                    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;">' +
+                                        '<input type="checkbox" id="tc-quiz-show-note" ' + (cfg.show_no_quiz_note !== false ? 'checked' : '') + '> ' +
+                                        '<span>' + bidi('إظهار ملاحظة «تقييم بدون أسئلة» في التقرير النهائي عند تعطيل الأسئلة') + '</span>' +
                                     '</label>' +
                                 '</div>' +
                                 '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:8px 12px;font-size:12px;color:#475569;line-height:1.5;">' +
@@ -1273,6 +1281,13 @@
                     if (qoEl) {
                         qoEl.onchange = function () {
                             cfg.quiz_options_count = Number(this.value) || 4;
+                            isDirty = true;
+                        };
+                    }
+                    var qnEl = wrap.querySelector('#tc-quiz-show-note');
+                    if (qnEl) {
+                        qnEl.onchange = function () {
+                            cfg.show_no_quiz_note = this.checked;
                             isDirty = true;
                         };
                     }

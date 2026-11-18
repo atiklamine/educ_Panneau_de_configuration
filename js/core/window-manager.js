@@ -37,15 +37,19 @@
 
     function getWorkArea() {
         var layer = getLayer();
+        var root = (typeof document !== 'undefined') ? document.getElementById('windows-layer') : null;
+        var w = 0, h = 0;
         if (layer) {
-            return {
-                width: Math.max(360, layer.clientWidth || global.innerWidth),
-                height: Math.max(260, layer.clientHeight || (global.innerHeight - 48))
-            };
+            w = layer.clientWidth;
+            h = layer.clientHeight;
         }
+        if (!w && root) w = root.clientWidth;
+        if (!h && root) h = root.clientHeight;
+        if (!w) w = (global.innerWidth || 1024);
+        if (!h) h = ((global.innerHeight || 768) - 48);
         return {
-            width: Math.max(360, global.innerWidth),
-            height: Math.max(260, global.innerHeight - 48)
+            width: Math.max(360, w),
+            height: Math.max(260, h)
         };
     }
 
@@ -82,10 +86,12 @@
             win.el.classList.add('is-snapped');
         } else {
             win.el.classList.remove('is-maximized', 'is-snapped');
-            var w = global.Win11Compat.clamp(win.rect.w, win.minW, area.width);
-            var h = global.Win11Compat.clamp(win.rect.h, win.minH, area.height);
-            var x = global.Win11Compat.clamp(win.rect.x, -w + 120, area.width - 120);
-            var y = global.Win11Compat.clamp(win.rect.y, 0, Math.max(0, area.height - 40));
+            var effMinW = Math.min(win.minW, Math.max(280, area.width - 24));
+            var effMinH = Math.min(win.minH, Math.max(200, area.height - 24));
+            var w = global.Win11Compat.clamp(win.rect.w, effMinW, area.width);
+            var h = global.Win11Compat.clamp(win.rect.h, effMinH, area.height);
+            var x = global.Win11Compat.clamp(win.rect.x, 0, Math.max(0, area.width - w));
+            var y = global.Win11Compat.clamp(win.rect.y, 0, Math.max(0, area.height - h));
             win.rect.w = w;
             win.rect.h = h;
             win.rect.x = x;
@@ -151,6 +157,8 @@
         el.className = 'win-window win-mica';
         el.setAttribute('data-win-id', win.id);
         el.setAttribute('role', 'dialog');
+        el.style.display = 'flex';
+        el.style.visibility = 'visible';
 
         // Title Bar (32px)
         var titleBar = document.createElement('div');
@@ -430,7 +438,13 @@
         applyRect(win);
 
         if (typeof cfg.render === 'function') {
-            cfg.render(win.bodyEl, win);
+            try {
+                cfg.render(win.bodyEl, win);
+            } catch (errRender) {
+                if (global.console && global.console.error) {
+                    global.console.error('[openWindow.render] Error rendering window ' + id, errRender);
+                }
+            }
         }
 
         focusWindow(id);

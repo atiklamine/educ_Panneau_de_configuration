@@ -962,6 +962,7 @@ namespace Win11SimHost
             sb.AppendFormat("Content-Type: {0}\r\n", contentType);
             sb.AppendFormat("Content-Length: {0}\r\n", data != null ? data.Length : 0);
             sb.Append("Cache-Control: no-store, no-cache, must-revalidate\r\n");
+            sb.Append("X-UA-Compatible: IE=edge\r\n");
             sb.Append("Connection: close\r\n");
             if (cors)
             {
@@ -989,6 +990,31 @@ namespace Win11SimHost
 
         internal static string FindChromiumBrowser()
         {
+            try
+            {
+                string[] regKeys = new string[] { "msedge.exe", "chrome.exe", "brave.exe", "opera.exe" };
+                for (int r = 0; r < regKeys.Length; r++)
+                {
+                    object val = Microsoft.Win32.Registry.GetValue(
+                        @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" + regKeys[r],
+                        "", null);
+                    if (val != null)
+                    {
+                        string p = val.ToString().Trim('"', ' ');
+                        if (File.Exists(p)) return p;
+                    }
+                    val = Microsoft.Win32.Registry.GetValue(
+                        @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\" + regKeys[r],
+                        "", null);
+                    if (val != null)
+                    {
+                        string p = val.ToString().Trim('"', ' ');
+                        if (File.Exists(p)) return p;
+                    }
+                }
+            }
+            catch { }
+
             string pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? "";
             string pf64 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) ?? "";
             string pfW64 = Environment.GetEnvironmentVariable("ProgramW6432") ?? "";
@@ -1030,6 +1056,27 @@ namespace Win11SimHost
 
         private static string FindFirefoxBrowser()
         {
+            try
+            {
+                object val = Microsoft.Win32.Registry.GetValue(
+                    @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe",
+                    "", null);
+                if (val != null)
+                {
+                    string p = val.ToString().Trim('"', ' ');
+                    if (File.Exists(p)) return p;
+                }
+                val = Microsoft.Win32.Registry.GetValue(
+                    @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe",
+                    "", null);
+                if (val != null)
+                {
+                    string p = val.ToString().Trim('"', ' ');
+                    if (File.Exists(p)) return p;
+                }
+            }
+            catch { }
+
             string pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? "";
             string pf64 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) ?? "";
 

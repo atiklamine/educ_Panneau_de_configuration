@@ -124,16 +124,21 @@
 
         var win = global.Win11WM.getWindow(WIN_ID);
         if (!win) {
+            var area = (global.Win11WM && typeof global.Win11WM.getWorkArea === 'function')
+                ? global.Win11WM.getWorkArea()
+                : { width: 980, height: 660 };
+            var defW = Math.min(980, Math.max(460, (area.width || 980) - 32));
+            var defH = Math.min(660, Math.max(340, (area.height || 660) - 32));
             global.Win11WM.open({
                 id: WIN_ID,
                 appId: 'settings',
                 title: global.Win11I18N.t('settings.windowTitle'),
                 icon: 'settings',
                 hasBack: true,
-                width: 980,
-                height: 660,
-                minWidth: 540,
-                minHeight: 420,
+                width: defW,
+                height: defH,
+                minWidth: 420,
+                minHeight: 320,
                 onBack: goBack,
                 onClose: function () {
                     var hb = getHostBody();
@@ -201,9 +206,12 @@
         html += '</div>';
         sidebarEl.innerHTML = html;
 
-        sidebarEl.querySelector('#set-user-profile').onclick = function () {
-            openTo('accounts', 'main');
-        };
+        var userProfBtn = sidebarEl.querySelector('#set-user-profile');
+        if (userProfBtn) {
+            userProfBtn.onclick = function () {
+                openTo('accounts', 'main');
+            };
+        }
 
         var navBtns = sidebarEl.querySelectorAll('[data-set-nav]');
         for (var j = 0; j < navBtns.length; j++) {
@@ -215,40 +223,42 @@
         // Settings live search
         var sInput = sidebarEl.querySelector('#set-search-input');
         var sDrop = sidebarEl.querySelector('#set-search-drop');
-        sInput.oninput = function () {
-            var q = this.value.trim();
-            if (!q) {
-                sDrop.classList.remove('is-open');
-                sDrop.innerHTML = '';
-                return;
-            }
-            var matches = global.Win11Registry.search(q).slice(0, 8);
-            if (matches.length === 0) {
-                sDrop.innerHTML = '<div style="padding:10px;font-size:12.5px;color:var(--win-text-secondary)">' + bidi(t('search.noResults')) + '</div>';
-            } else {
-                var dh = '';
-                for (var m = 0; m < matches.length; m++) {
-                    dh +=
-                        '<button type="button" class="search-result-row" data-drop-id="' + matches[m].entry.id + '">' +
-                            global.Win11Icons.get(matches[m].entry.icon || 'settings', 16) +
-                            '<div class="search-result-meta">' +
-                                '<span class="search-result-title">' + bidi(matches[m].title) + '</span>' +
-                                '<span class="search-result-path">' + bidi(matches[m].breadcrumb) + '</span>' +
-                            '</div>' +
-                        '</button>';
+        if (sInput && sDrop) {
+            sInput.oninput = function () {
+                var q = this.value.trim();
+                if (!q) {
+                    sDrop.classList.remove('is-open');
+                    sDrop.innerHTML = '';
+                    return;
                 }
-                sDrop.innerHTML = dh;
-                var dBtns = sDrop.querySelectorAll('[data-drop-id]');
-                for (var x = 0; x < dBtns.length; x++) {
-                    dBtns[x].onclick = function () {
-                        sDrop.classList.remove('is-open');
-                        sInput.value = '';
-                        global.Win11Registry.open(this.getAttribute('data-drop-id'));
-                    };
+                var matches = global.Win11Registry.search(q).slice(0, 8);
+                if (matches.length === 0) {
+                    sDrop.innerHTML = '<div style="padding:10px;font-size:12.5px;color:var(--win-text-secondary)">' + bidi(t('search.noResults')) + '</div>';
+                } else {
+                    var dh = '';
+                    for (var m = 0; m < matches.length; m++) {
+                        dh +=
+                            '<button type="button" class="search-result-row" data-drop-id="' + matches[m].entry.id + '">' +
+                                global.Win11Icons.get(matches[m].entry.icon || 'settings', 16) +
+                                '<div class="search-result-meta">' +
+                                    '<span class="search-result-title">' + bidi(matches[m].title) + '</span>' +
+                                    '<span class="search-result-path">' + bidi(matches[m].breadcrumb) + '</span>' +
+                                '</div>' +
+                            '</button>';
+                    }
+                    sDrop.innerHTML = dh;
+                    var dBtns = sDrop.querySelectorAll('[data-drop-id]');
+                    for (var x = 0; x < dBtns.length; x++) {
+                        dBtns[x].onclick = function () {
+                            sDrop.classList.remove('is-open');
+                            sInput.value = '';
+                            global.Win11Registry.open(this.getAttribute('data-drop-id'));
+                        };
+                    }
                 }
-            }
-            sDrop.classList.add('is-open');
-        };
+                sDrop.classList.add('is-open');
+            };
+        }
     }
 
     function renderMainContent(mainEl) {
@@ -336,8 +346,10 @@
                 '</div>';
             shell = hostBody.querySelector('.settings-shell');
         }
-        renderSidebar(shell.querySelector('.settings-sidebar'));
-        renderMainContent(shell.querySelector('.settings-main'));
+        var sideEl = shell ? shell.querySelector('.settings-sidebar') : null;
+        var mainEl = shell ? shell.querySelector('.settings-main') : null;
+        if (sideEl) renderSidebar(sideEl);
+        if (mainEl) renderMainContent(mainEl);
     }
 
     // Shared UI Builders for Settings Pages
