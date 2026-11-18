@@ -138,7 +138,7 @@
                             try { global.external.OpenFile(targetPath); } catch (e) {}
                         }
                     } else {
-                        downloadTextFile(filename, 'text/html', buildStandaloneHtmlDoc());
+                        var pBlob = generateReportPdfBlob(); if (pBlob) { downloadPdfFile(filename, pBlob); } else { window.print(); }
                     }
                     closeDlg(true);
                 }
@@ -251,8 +251,23 @@
                     printEl.innerHTML = buildA4Html();
                 }
                 hasExportedPdfFlag = true;
-                downloadTextFile(cleanName, 'text/html', htmlContent);
-                handleSuccess(cleanName, null);
+
+                // STRICT GUARANTEE: NEVER DOWNLOAD HTML! ALWAYS DOWNLOAD PDF!
+                var pdfBlob = generateReportPdfBlob();
+                if (pdfBlob) {
+                    var finalPdfName = cleanName.replace(/\.(html?|txt)$/i, '') + '.pdf';
+                    downloadPdfFile(finalPdfName, pdfBlob);
+                    handleSuccess(finalPdfName, null);
+                } else {
+                    // Fallback to window print if canvas completely blocked
+                    var prevTitle = document.title;
+                    document.title = cleanName.replace(/\.(pdf|html?)$/i, '');
+                    setTimeout(function () {
+                        window.print();
+                        setTimeout(function () { document.title = prevTitle; }, 3000);
+                        handleSuccess(cleanName, null);
+                    }, 150);
+                }
             } catch (pErr) {
                 handleFailure('تعذر تصدير ملف التقرير: ' + (pErr && pErr.message ? pErr.message : pErr));
             }
@@ -1313,7 +1328,261 @@
             '</style>\n</head>\n<body>\n' + a4Inner + '\n</body>\n</html>';
     }
 
-    function downloadTextFile(filename, mimeType, content) {
+    
+    function buildPdfFromJpegBytes(jpegBytes, width, height) {
+        var a4W = 595.28;
+        var a4H = 841.89;
+
+        function strToBytes(str) {
+            var arr = new Uint8Array(str.length);
+            for (var i = 0; i < str.length; i++) arr[i] = str.charCodeAt(i) & 0xFF;
+            return arr;
+        }
+
+        function concatBuffers(bufs) {
+            var total = 0;
+            for (var i = 0; i < bufs.length; i++) total += bufs[i].length;
+            var res = new Uint8Array(total);
+            var offset = 0;
+            for (var j = 0; j < bufs.length; j++) {
+                res.set(bufs[j], offset);
+                offset += bufs[j].length;
+            }
+            return res;
+        }
+
+        var header = strToBytes('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+        var offsets = [];
+        var currentOffset = header.length;
+
+        function makeObj(num, bodyBytes) {
+            offsets[num] = currentOffset;
+            var oHead = strToBytes(num + ' 0 obj\n');
+            var oFoot = strToBytes('\nendobj\n');
+            currentOffset += oHead.length + bodyBytes.length + oFoot.length;
+            return concatBuffers([oHead, bodyBytes, oFoot]);
+        }
+
+        var o1 = makeObj(1, strToBytes('<< /Type /Catalog /Pages 2 0 R >>'));
+        var o2 = makeObj(2, strToBytes('<< /Type /Pages /Kids [3 0 R] /Count 1 >>'));
+        var o3 = makeObj(3, strToBytes('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + a4W + ' ' + a4H + '] /Resources << /XObject << /Im1 4 0 R >> /ProcSet [/PDF /ImageC] >> /Contents 5 0 R >>'));
+
+        var imgDict = strToBytes('<< /Type /XObject /Subtype /Image /Width ' + width + ' /Height ' + height + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpegBytes.length + ' >>\nstream\n');
+        var imgFoot = strToBytes('\nendstream');
+        var o4 = makeObj(4, concatBuffers([imgDict, jpegBytes, imgFoot]));
+
+        var streamStr = 'q\n' + a4W + ' 0 0 ' + a4H + ' 0 0 cm\n/Im1 Do\nQ\n';
+        var o5 = makeObj(5, strToBytes('<< /Length ' + streamStr.length + ' >>\nstream\n' + streamStr + 'endstream'));
+
+        var xrefOffset = currentOffset;
+        var xref = 'xref\n0 6\n0000000000 65535 f \n';
+        for (var k = 1; k <= 5; k++) {
+            var offStr = String(offsets[k]);
+            while (offStr.length < 10) offStr = '0' + offStr;
+            xref += offStr + ' 00000 n \n';
+        }
+        var trailer = 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF\n';
+        var trailBytes = strToBytes(xref + trailer);
+
+        return concatBuffers([header, o1, o2, o3, o4, o5, trailBytes]);
+    }
+
+    function generateReportPdfBlob() {
+        try {
+            var canvas = document.createElement('canvas');
+            canvas.width = 1240;
+            canvas.height = 1754;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) return null;
+
+            // Background
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, 1240, 1754);
+
+            // Double border
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#1E3A8A';
+            ctx.strokeRect(40, 40, 1160, 1674);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#94A3B8';
+            ctx.strokeRect(46, 46, 1148, 1662);
+
+            // Header text
+            ctx.direction = 'rtl';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#0F172A';
+            ctx.font = 'bold 22px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية', 620, 90);
+
+            var cfg = (global.Win11Assessment && global.Win11Assessment.getConfig) ? global.Win11Assessment.getConfig() : {};
+            var stu = (global.Win11Assessment && global.Win11Assessment.getStudent) ? global.Win11Assessment.getStudent() : {};
+            var scores = (global.Win11Assessment && global.Win11Assessment.getScores) ? global.Win11Assessment.getScores() : {};
+
+            ctx.font = 'bold 15px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#475569';
+            ctx.fillText('المؤسسة: ' + (cfg.institution_name || 'ثانوية') + '   |   الأستاذ المشرف: ' + (cfg.teacher_name || 'الأستاذ'), 620, 120);
+
+            // Banner
+            ctx.fillStyle = '#F8FAFC';
+            ctx.fillRect(80, 135, 1080, 80);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#E2E8F0';
+            ctx.strokeRect(80, 135, 1080, 80);
+
+            ctx.fillStyle = '#1E3A8A';
+            ctx.font = 'bold 24px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي', 620, 172);
+
+            ctx.fillStyle = '#475569';
+            ctx.font = '16px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)', 620, 202);
+
+            // Student Info Box
+            ctx.fillStyle = '#F1F5F9';
+            ctx.fillRect(80, 230, 1080, 90);
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.strokeRect(80, 230, 1080, 90);
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#0F172A';
+            ctx.font = 'bold 17px "Segoe UI", Tahoma, sans-serif';
+            var sName = (stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || 'تلميذ');
+            ctx.fillText('اسم التلميذ(ة): ' + sName + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      الجهاز: ' + (stu.pcNumber || '01'), 1130, 268);
+            ctx.fillText('المستوى: السنة الأولى ثانوي (1AS) — الوحدة 3: لوحة التحكم وإعدادات النظام', 1130, 302);
+
+            // Final Score Card
+            ctx.fillStyle = '#F0FDF4';
+            ctx.fillRect(80, 335, 1080, 130);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#16A34A';
+            ctx.strokeRect(80, 335, 1080, 130);
+
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#15803D';
+            ctx.font = 'bold 18px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('العلامة النهائية المستحقة (وفق القاعدة الثلاثية الرسمية):', 620, 375);
+
+            var finalScore = (scores.finalScore !== undefined) ? scores.finalScore : (scores.net || 0);
+            var scoreStr = Number(finalScore).toFixed(2) + ' / 20.00';
+            ctx.fillStyle = '#16A34A';
+            ctx.font = 'bold 44px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText(scoreStr, 620, 435);
+
+            // Tasks Table
+            var tasks = [
+                '1. تغيير لغة عرض Windows',
+                '2. ضبط خصائص الفأرة ومؤشرها',
+                '3. إضافة لغة الإدخال وضبط المنطقة الزمنية (GMT+1)',
+                '4. تخصيص المظهر والخلفية وألوان التمييز',
+                '5. تثبيت وإلغاء تثبيت البرامج والميزات الاختيارية',
+                '6. إدارة حسابات المستخدمين وكلمات المرور والصلاحيات'
+            ];
+
+            var y = 485;
+            ctx.fillStyle = '#1E3A8A';
+            ctx.fillRect(80, y, 1080, 45);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 17px "Segoe UI", Tahoma, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('المهمة التطبيقية المقررة في المنهاج', 1130, y + 28);
+            ctx.textAlign = 'center';
+            ctx.fillText('حالة الإنجاز والتقييم', 220, y + 28);
+            y += 45;
+
+            var assessedTasks = (global.Win11Assessment && global.Win11Assessment.getTasks) ? global.Win11Assessment.getTasks() : [];
+            for (var tIdx = 0; tIdx < tasks.length; tIdx++) {
+                ctx.fillStyle = (tIdx % 2 === 0) ? '#FFFFFF' : '#F8FAFC';
+                ctx.fillRect(80, y, 1080, 42);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#CBD5E1';
+                ctx.strokeRect(80, y, 1080, 42);
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#0F172A';
+                ctx.font = '16px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText(tasks[tIdx], 1130, y + 26);
+
+                var tkObj = (tIdx < assessedTasks.length) ? assessedTasks[tIdx] : null;
+                var isDone = tkObj ? tkObj.completed : true;
+                ctx.textAlign = 'center';
+                if (isDone) {
+                    ctx.fillStyle = '#15803D';
+                    ctx.font = 'bold 15px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillText('مكتملة ومستوفاة ✔', 220, y + 26);
+                } else {
+                    ctx.fillStyle = '#B45309';
+                    ctx.font = 'bold 15px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillText('قيد الإنجاز ◐', 220, y + 26);
+                }
+                y += 42;
+            }
+
+            // Math breakdown banner
+            ctx.fillStyle = '#F0F9FF';
+            ctx.fillRect(80, y + 20, 1080, 75);
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#BAE6FD';
+            ctx.strokeRect(80, y + 20, 1080, 75);
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#0369A1';
+            ctx.font = 'bold 15.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('التفكيك الحسابي للعلامة: تطبيق القاعدة الثلاثية الرسمية (العلامة القاعدية = النقاط المكتسبة / المعاملات × 20)', 1130, y + 48);
+            ctx.fillText('النتيجة الرسمية: استيفاء الكفاءات المقررة بنجاح وتحكم تام في بيئة إعدادات Windows 11', 1130, y + 76);
+
+            // Signature & Seal
+            var ySig = 1500;
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#64748B';
+            ctx.setLineDash([6, 6]);
+            ctx.strokeRect(120, ySig, 350, 130);
+            ctx.setLineDash([]);
+
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#475569';
+            ctx.font = 'bold 16px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('توقيع وختم الأستاذ(ة)', 295, ySig + 35);
+
+            var dNow = new Date();
+            var dStr = dNow.getFullYear() + '/' + (dNow.getMonth() + 1) + '/' + dNow.getDate();
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#64748B';
+            ctx.font = '15px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('حرر بتاريخ: ' + dStr, 1130, ySig + 35);
+            ctx.fillText('وثيقة تقييم رسمية غير قابلة للتعديل صالحة لتقويم الأعمال التطبيقية', 1130, ySig + 70);
+
+            // Convert to JPEG bytes and build PDF
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            var b64Data = dataUrl.split(',')[1];
+            var binStr = atob(b64Data);
+            var jpegBytes = new Uint8Array(binStr.length);
+            for (var bIdx = 0; bIdx < binStr.length; bIdx++) {
+                jpegBytes[bIdx] = binStr.charCodeAt(bIdx) & 0xFF;
+            }
+
+            var pdfUint8 = buildPdfFromJpegBytes(jpegBytes, 1240, 1754);
+            return new Blob([pdfUint8], { type: 'application/pdf' });
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function downloadPdfFile(filename, blob) {
+        var cleanPdfName = filename.replace(/\.(html?|txt)$/i, '') + '.pdf';
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = cleanPdfName;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () {
+            if (a.parentNode) a.parentNode.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 1200);
+    }
+function downloadTextFile(filename, mimeType, content) {
         var blob = new Blob(['\uFEFF' + content], { type: mimeType + ';charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');

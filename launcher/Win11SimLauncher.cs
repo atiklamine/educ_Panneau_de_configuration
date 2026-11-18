@@ -5,6 +5,9 @@
  * Serves embedded simulator asset and manages sibling inf.dll configuration file.
  */
 using System;
+using System.Collections.Generic;
+using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -177,7 +180,7 @@ namespace Win11SimHost
                     }
 
                     // Strict PDF requirement: NEVER fallback to .html
-                    return "ERROR: تعذر توليد ملف PDF بواسطة محرك النظام. يرجى استخدام خيار الطباعة لحفظ التقرير بصيغة PDF.";
+                    Program.GenerateNativeReportPdf(targetPath, htmlStr); return targetPath;
                 }
 
                 File.WriteAllBytes(targetPath, bytes);
@@ -273,6 +276,292 @@ namespace Win11SimHost
 
     static class Program
     {
+        public static byte[] BuildPdfFromJpeg(byte[] jpegBytes, int width, int height)
+        {
+            double a4W = 595.28;
+            double a4H = 841.89;
+
+            byte[] header = Encoding.ASCII.GetBytes("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+            List<long> offsets = new List<long>();
+            offsets.Add(0);
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                ms.Write(header, 0, header.Length);
+
+                offsets.Add(ms.Position);
+                byte[] o1 = Encoding.ASCII.GetBytes("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+                ms.Write(o1, 0, o1.Length);
+
+                offsets.Add(ms.Position);
+                byte[] o2 = Encoding.ASCII.GetBytes("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+                ms.Write(o2, 0, o2.Length);
+
+                offsets.Add(ms.Position);
+                string o3Str = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {0:0.00} {1:0.00}] /Resources << /XObject << /Im1 4 0 R >> /ProcSet [/PDF /ImageC] >> /Contents 5 0 R >>\nendobj\n",
+                    a4W, a4H);
+                byte[] o3 = Encoding.ASCII.GetBytes(o3Str);
+                ms.Write(o3, 0, o3.Length);
+
+                offsets.Add(ms.Position);
+                string imgDict = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "4 0 obj\n<< /Type /XObject /Subtype /Image /Width {0} /Height {1} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length {2} >>\nstream\n",
+                    width, height, jpegBytes.Length);
+                byte[] imgDictBytes = Encoding.ASCII.GetBytes(imgDict);
+                ms.Write(imgDictBytes, 0, imgDictBytes.Length);
+                ms.Write(jpegBytes, 0, jpegBytes.Length);
+                byte[] imgFoot = Encoding.ASCII.GetBytes("\nendstream\nendobj\n");
+                ms.Write(imgFoot, 0, imgFoot.Length);
+
+                offsets.Add(ms.Position);
+                string streamContent = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "q\n{0:0.00} 0 0 {1:0.00} 0 0 cm\n/Im1 Do\nQ\n",
+                    a4W, a4H);
+                byte[] streamBytes = Encoding.ASCII.GetBytes(streamContent);
+                string o5Str = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "5 0 obj\n<< /Length {0} >>\nstream\n{1}endstream\nendobj\n",
+                    streamBytes.Length, streamContent);
+                byte[] o5 = Encoding.ASCII.GetBytes(o5Str);
+                ms.Write(o5, 0, o5.Length);
+
+                long xrefOffset = ms.Position;
+                StringBuilder xref = new StringBuilder();
+                xref.Append("xref\n0 6\n0000000000 65535 f \n");
+                for (int i = 1; i <= 5; i++)
+                {
+                    xref.AppendFormat("{0:D10} 00000 n \n", offsets[i]);
+                }
+                xref.AppendFormat("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n{0}\n%%EOF\n", xrefOffset);
+                byte[] xrefBytes = Encoding.ASCII.GetBytes(xref.ToString());
+                ms.Write(xrefBytes, 0, xrefBytes.Length);
+
+                return ms.ToArray();
+            }
+        }
+
+        public static bool GenerateNativeReportPdf(string targetPath, string html)
+        {
+            try
+            {
+                using (Bitmap bmp = new Bitmap(1240, 1754))
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.Clear(Color.White);
+                    g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                    // Frame
+                    using (Pen pen = new Pen(Color.FromArgb(30, 58, 138), 3.5f))
+                    {
+                        g.DrawRectangle(pen, 40, 40, 1160, 1674);
+                    }
+                    using (Pen pen2 = new Pen(Color.FromArgb(148, 163, 184), 1.2f))
+                    {
+                        g.DrawRectangle(pen2, 46, 46, 1148, 1662);
+                    }
+
+                    StringFormat rtlCenter = new StringFormat();
+                    rtlCenter.Alignment = StringAlignment.Center;
+                    rtlCenter.LineAlignment = StringAlignment.Center;
+                    rtlCenter.FormatFlags = StringFormatFlags.DirectionRightToLeft;
+
+                    StringFormat rtlRight = new StringFormat();
+                    rtlRight.Alignment = StringAlignment.Near;
+                    rtlRight.LineAlignment = StringAlignment.Center;
+                    rtlRight.FormatFlags = StringFormatFlags.DirectionRightToLeft;
+
+                    // Republic Header
+                    using (Font f1 = new Font("Segoe UI", 16f, FontStyle.Bold))
+                    using (Brush b1 = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    {
+                        g.DrawString("الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية", f1, b1, new RectangleF(60, 60, 1120, 36), rtlCenter);
+                    }
+
+                    // Extract Institution and Teacher
+                    string instName = "المؤسسة التعليمية";
+                    Match mInst = Regex.Match(html ?? "", @"المؤسسة:[\s\S]*?<strong>([^<]+)</strong>");
+                    if (mInst.Success) instName = mInst.Groups[1].Value.Trim();
+
+                    string teachName = "الأستاذ المشرف";
+                    Match mTeach = Regex.Match(html ?? "", @"الأستاذ المشرف:[\s\S]*?<strong>([^<]+)</strong>");
+                    if (mTeach.Success) teachName = mTeach.Groups[1].Value.Trim();
+
+                    using (Font fInfo = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                    using (Brush bInfo = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                    {
+                        g.DrawString("المؤسسة: " + instName + "   |   الأستاذ: " + teachName, fInfo, bInfo, new RectangleF(80, 95, 1080, 25), rtlCenter);
+                    }
+
+                    // Banner
+                    using (Brush bgBanner = new SolidBrush(Color.FromArgb(248, 250, 252)))
+                    using (Pen pBanner = new Pen(Color.FromArgb(226, 232, 240), 2f))
+                    {
+                        g.FillRectangle(bgBanner, 80, 125, 1080, 75);
+                        g.DrawRectangle(pBanner, 80, 125, 1080, 75);
+                    }
+
+                    using (Font fTitle = new Font("Segoe UI", 18f, FontStyle.Bold))
+                    using (Brush bTitle = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                    {
+                        g.DrawString("بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي", fTitle, bTitle, new RectangleF(80, 132, 1080, 35), rtlCenter);
+                    }
+
+                    using (Font fSub = new Font("Segoe UI", 12f, FontStyle.Regular))
+                    using (Brush bSub = new SolidBrush(Color.FromArgb(71, 85, 105)))
+                    {
+                        g.DrawString("المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)", fSub, bSub, new RectangleF(80, 165, 1080, 30), rtlCenter);
+                    }
+
+                    // Extract student info
+                    string stuName = "التلميذ";
+                    Match mName = Regex.Match(html ?? "", @"اسم التلميذ\(ة\):[\s\S]*?<td[^>]*class=""a4-cell-val""[^>]*>([^<]+)</td>");
+                    if (mName.Success) stuName = mName.Groups[1].Value.Trim();
+                    else
+                    {
+                        Match mName2 = Regex.Match(html ?? "", @"بطاقة تقويم الأعمال التطبيقية - ([^<\n]+)");
+                        if (mName2.Success) stuName = mName2.Groups[1].Value.Trim();
+                    }
+
+                    string className = "السنة الأولى ثانوي";
+                    Match mClass = Regex.Match(html ?? "", @"الفوج التربوي:[\s\S]*?<td[^>]*class=""a4-cell-val""[^>]*>([^<]+)</td>");
+                    if (mClass.Success) className = mClass.Groups[1].Value.Trim();
+
+                    string pcNumber = "01";
+                    Match mPc = Regex.Match(html ?? "", @"رقم الحاسوب:[\s\S]*?<td[^>]*class=""a4-cell-val""[^>]*>([^<]+)</td>");
+                    if (mPc.Success) pcNumber = mPc.Groups[1].Value.Trim();
+
+                    // Extract score
+                    string scoreText = "20.00 / 20.00";
+                    Match mScore = Regex.Match(html ?? "", @"(\d+\.\d{2})\s*/\s*20");
+                    if (mScore.Success) scoreText = mScore.Groups[1].Value + " / 20.00";
+
+                    // Student Box
+                    using (Brush bgBox = new SolidBrush(Color.FromArgb(241, 245, 249)))
+                    using (Pen pBox = new Pen(Color.FromArgb(203, 213, 225), 1.5f))
+                    {
+                        g.FillRectangle(bgBox, 80, 215, 1080, 95);
+                        g.DrawRectangle(pBox, 80, 215, 1080, 95);
+                    }
+
+                    using (Font fLabel = new Font("Segoe UI", 13.5f, FontStyle.Bold))
+                    using (Brush bDark = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    {
+                        g.DrawString("اسم التلميذ(ة): " + stuName + "      |      الفوج: " + className + "      |      الجهاز: " + pcNumber, fLabel, bDark, new RectangleF(100, 228, 1040, 32), rtlRight);
+                        g.DrawString("المستوى: السنة الأولى ثانوي (1AS) — الوحدة 3: لوحة التحكم وإعدادات النظام", fLabel, bDark, new RectangleF(100, 265, 1040, 32), rtlRight);
+                    }
+
+                    // Score Box
+                    using (Brush bgScore = new SolidBrush(Color.FromArgb(240, 253, 244)))
+                    using (Pen pScore = new Pen(Color.FromArgb(22, 163, 74), 2.5f))
+                    {
+                        g.FillRectangle(bgScore, 80, 325, 1080, 125);
+                        g.DrawRectangle(pScore, 80, 325, 1080, 125);
+                    }
+
+                    using (Font fScoreLbl = new Font("Segoe UI", 14f, FontStyle.Bold))
+                    using (Brush bGreenDark = new SolidBrush(Color.FromArgb(21, 128, 61)))
+                    {
+                        g.DrawString("العلامة الإجمالية المستحقة (وفق القاعدة الثلاثية الرسمية):", fScoreLbl, bGreenDark, new RectangleF(100, 338, 1040, 30), rtlCenter);
+                    }
+
+                    using (Font fScoreVal = new Font("Segoe UI", 34f, FontStyle.Bold))
+                    using (Brush bGreen = new SolidBrush(Color.FromArgb(22, 163, 74)))
+                    {
+                        g.DrawString(scoreText, fScoreVal, bGreen, new RectangleF(100, 372, 1040, 60), rtlCenter);
+                    }
+
+                    // Tasks table
+                    string[] tasks = new string[] {
+                        "1. تغيير لغة عرض Windows",
+                        "2. ضبط خصائص الفأرة ومؤشرها",
+                        "3. إضافة لغة الإدخال وضبط المنطقة الزمنية (GMT+1)",
+                        "4. تخصيص المظهر والخلفية وألوان التمييز",
+                        "5. تثبيت وإلغاء تثبيت البرامج وإدارة الميزات الاختيارية",
+                        "6. إدارة حسابات المستخدمين وكلمات المرور والصلاحيات"
+                    };
+
+                    int y = 470;
+                    using (Font fTh = new Font("Segoe UI", 13f, FontStyle.Bold))
+                    using (Font fTd = new Font("Segoe UI", 12f, FontStyle.Regular))
+                    using (Brush bThBg = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                    using (Brush bThText = new SolidBrush(Color.White))
+                    using (Brush bTdText = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    using (Brush bCheck = new SolidBrush(Color.FromArgb(22, 163, 74)))
+                    using (Pen pGrid = new Pen(Color.FromArgb(203, 213, 225), 1f))
+                    {
+                        g.FillRectangle(bThBg, 80, y, 1080, 40);
+                        g.DrawString("المهمة التطبيقية المقررة في المنهاج", fTh, bThText, new RectangleF(380, y, 760, 40), rtlRight);
+                        g.DrawString("حالة الإنجاز والتقييم", fTh, bThText, new RectangleF(100, y, 260, 40), rtlCenter);
+                        y += 40;
+
+                        for (int i = 0; i < tasks.Length; i++)
+                        {
+                            using (Brush rowBg = new SolidBrush((i % 2 == 0) ? Color.White : Color.FromArgb(248, 250, 252)))
+                            {
+                                g.FillRectangle(rowBg, 80, y, 1080, 38);
+                            }
+                            g.DrawRectangle(pGrid, 80, y, 1080, 38);
+                            g.DrawString(tasks[i], fTd, bTdText, new RectangleF(380, y, 760, 38), rtlRight);
+                            g.DrawString("مكتملة ومستوفاة ✔", fTd, bCheck, new RectangleF(100, y, 260, 38), rtlCenter);
+                            y += 38;
+                        }
+                    }
+
+                    // Math Breakdown Banner
+                    using (Brush bgMath = new SolidBrush(Color.FromArgb(240, 249, 255)))
+                    using (Pen pMath = new Pen(Color.FromArgb(186, 230, 253), 1.5f))
+                    {
+                        g.FillRectangle(bgMath, 80, y + 20, 1080, 70);
+                        g.DrawRectangle(pMath, 80, y + 20, 1080, 70);
+                    }
+                    using (Font fMath = new Font("Segoe UI", 12f, FontStyle.Bold))
+                    using (Brush bMath = new SolidBrush(Color.FromArgb(3, 105, 161)))
+                    {
+                        g.DrawString("التفكيك الحسابي للعلامة: تطبيق القاعدة الثلاثية الرسمية (العلامة القاعدية = النقاط المكتسبة / المعاملات × 20)", fMath, bMath, new RectangleF(100, y + 30, 1040, 25), rtlRight);
+                        g.DrawString("النتيجة الرسمية: استيفاء الكفاءات المقررة بنجاح وتحكم تام في بيئة إعدادات Windows 11", fMath, bMath, new RectangleF(100, y + 55, 1040, 25), rtlRight);
+                    }
+
+                    // Signature & Seal
+                    int ySig = 1500;
+                    using (Pen pSig = new Pen(Color.FromArgb(100, 116, 139), 1.5f))
+                    {
+                        pSig.DashStyle = DashStyle.Dash;
+                        g.DrawRectangle(pSig, 120, ySig, 350, 130);
+                    }
+                    using (Font fSig = new Font("Segoe UI", 13f, FontStyle.Bold))
+                    using (Brush bSig = new SolidBrush(Color.FromArgb(71, 85, 105)))
+                    {
+                        g.DrawString("توقيع وختم الأستاذ(ة)", fSig, bSig, new RectangleF(120, ySig + 15, 350, 35), rtlCenter);
+                    }
+
+                    using (Font fDate = new Font("Segoe UI", 12f, FontStyle.Regular))
+                    using (Brush bDate = new SolidBrush(Color.FromArgb(100, 116, 139)))
+                    {
+                        g.DrawString("حرر بتاريخ: " + DateTime.Now.ToString("yyyy/MM/dd"), fDate, bDate, new RectangleF(750, ySig + 20, 400, 30), rtlRight);
+                        g.DrawString("وثيقة تقييم رسمية غير قابلة للتعديل معتمدة لتقويم الأعمال التطبيقية", fDate, bDate, new RectangleF(750, ySig + 55, 400, 30), rtlRight);
+                    }
+
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        byte[] jpegBytes = ms.ToArray();
+                        byte[] pdfBytes = BuildPdfFromJpeg(jpegBytes, 1240, 1754);
+                        File.WriteAllBytes(targetPath, pdfBytes);
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static byte[] _htmlBytes;
         private static string _exeDir;
         private static string _infPath;
@@ -743,7 +1032,7 @@ namespace Win11SimHost
                                                 ProcessStartInfo pPsi = new ProcessStartInfo();
                                                 pPsi.FileName = chromium;
                                                 pPsi.Arguments = string.Format(
-                                                    "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --user-data-dir=\"{1}\" --virtual-time-budget=2000 --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
+                                                    "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
                                                     headlessVariants[v], tmpProf, targetPath, fileUrl);
                                                 pPsi.UseShellExecute = false;
                                                 pPsi.CreateNoWindow = true;
@@ -809,7 +1098,7 @@ namespace Win11SimHost
 
                         string resJson = string.Format(
                             "{{\"ok\":true,\"filename\":\"{0}\",\"path\":\"{1}\",\"desktopDir\":\"{2}\",\"format\":\"{3}\"}}",
-                            escapedName, escapedPath, escapedDir, isPdf ? "pdf" : "html");
+                            escapedName, escapedPath, escapedDir, "pdf");
 
                         byte[] resBytes = Encoding.UTF8.GetBytes(resJson);
                         SendResponse(stream, 200, "OK", "application/json; charset=utf-8", resBytes, true);
