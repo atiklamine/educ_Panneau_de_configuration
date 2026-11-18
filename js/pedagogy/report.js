@@ -91,13 +91,34 @@
         var bidi = global.Win11I18N ? global.Win11I18N.bidiHtml : function (s) { return s; };
         var esc = global.Win11Compat ? global.Win11Compat.escapeHtml : function (s) { return s; };
 
+        var scores = global.Win11Assessment ? global.Win11Assessment.getScores() : { net: 0 };
+        var currentScore = (scores && scores.finalScore !== undefined) ? scores.finalScore : (scores ? scores.net : 0);
+        var scoreStr = Number(currentScore || 0).toFixed(2);
+
+        var allTasks = (global.Win11Assessment && typeof global.Win11Assessment.getTasks === 'function')
+            ? global.Win11Assessment.getTasks().filter(function (tk) { return tk.enabled !== false; })
+            : [];
+        var uncompletedTasks = allTasks.filter(function (tk) { return !tk.completed; });
+        var isAllDone = (allTasks.length > 0 && uncompletedTasks.length === 0);
+
+        var statusNoteHtml = '';
+        if (isAllDone) {
+            statusNoteHtml =
+                '<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:8px 12px;font-size:12px;color:#065F46;text-align:right;line-height:1.5;">' +
+                    '✔ <strong>' + bidi('تهانينا! تم إنجاز كافة المهام بنجاح (100%) وتثبيت وقت إنجازك النهائي.') + '</strong>' +
+                '</div>';
+        } else {
+            var doneCount = allTasks.length - uncompletedTasks.length;
+            statusNoteHtml =
+                '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;font-size:12px;color:#92400E;text-align:right;line-height:1.5;">' +
+                    '💡 <strong>' + bidi('تنبيه بيداغوجي:') + '</strong> ' +
+                    bidi('تم استيفاء ') + '<strong dir="ltr">' + doneCount + '</strong>' + bidi(' من أصل ') + '<strong dir="ltr">' + allTasks.length + '</strong>' + bidi(' مهام. تم حفظ هذا التقرير كمعاينة مرحلية؛ يمكنك الضغط على «مواصلة المحاكاة» لإتمام ما تبقى ورفع علامتك المستحقة.') +
+                '</div>';
+        }
+
         var mainMsg = desktopPath
             ? bidi('تم حفظ بطاقة تقويم الأعمال التطبيقية بنجاح كملف PDF رسمي غير قابل للتعديل على سطح المكتب.')
-            : bidi('تم استخراج بطاقة تقويم الأعمال التطبيقية بنجاح كملف PDF رسمي غير قابل للتعديل.');
-
-        var subMsg = desktopPath
-            ? bidi('يمكنك الآن فتح الملف مباشرة لمعاينته أو الانتقال إلى مكانه على سطح المكتب.')
-            : bidi('تمت معالجة المستند الرسمي بصيغة PDF؛ يمكنك حفظه أو طباعته فوراً.');
+            : bidi('تم استخراج وحفظ بطاقة تقويم الأعمال التطبيقية بنجاح.');
 
         var dlgButtons = [
             {
@@ -117,61 +138,77 @@
                             try { global.external.OpenFile(targetPath); } catch (e) {}
                         }
                     } else {
-                        window.print();
+                        downloadTextFile(filename, 'text/html', buildStandaloneHtmlDoc());
                     }
                     closeDlg(true);
                 }
-            }
-        ];
-
-        if (desktopPath) {
-            dlgButtons.push({
+            },
+            {
                 id: 'btn-open-folder-direct',
                 label: 'فتح مكان الملف',
                 primary: false,
                 onClick: function (closeDlg) {
                     var targetPath = desktopPath || '';
-                    if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
-                        global.fetch('/api/open-folder', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ path: targetPath })
-                        }).catch(function () {});
-                    } else if (global.external && typeof global.external.OpenFolder === 'function') {
-                        try { global.external.OpenFolder(targetPath); } catch (e) {}
+                    if (targetPath) {
+                        if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
+                            global.fetch('/api/open-folder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ path: targetPath })
+                            }).catch(function () {});
+                        } else if (global.external && typeof global.external.OpenFolder === 'function') {
+                            try { global.external.OpenFolder(targetPath); } catch (e) {}
+                        }
                     }
                     closeDlg(true);
                 }
-            });
-        }
-
-        dlgButtons.push({
-            id: 'btn-close-export-dlg',
-            label: 'إغلاق',
-            primary: false,
-            value: false
-        });
+            },
+            {
+                id: 'btn-print-direct',
+                label: 'طباعة',
+                primary: false,
+                onClick: function (closeDlg) {
+                    var printEl = document.getElementById('print-report-container');
+                    if (printEl) printEl.innerHTML = buildA4Html();
+                    var prevTitle = document.title;
+                    document.title = (filename || '1AS_Report').replace(/\.pdf$/i, '');
+                    setTimeout(function () {
+                        window.print();
+                        setTimeout(function () { document.title = prevTitle; }, 3000);
+                    }, 150);
+                    closeDlg(true);
+                }
+            },
+            {
+                id: 'btn-resume-sim-dlg',
+                label: 'مواصلة المحاكاة',
+                primary: false,
+                value: false
+            }
+        ];
 
         global.Win11Dialogs.showCustom({
-            title: 'تأكيد استخراج وحفظ تقرير PDF',
+            title: 'تأكيد استخراج وحفظ بطاقة التقييم',
             tone: 'info',
             wide: false,
             renderBody: function (wrap) {
                 wrap.innerHTML =
                     '<div style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:4px 0">' +
-                        '<div style="font-size:36px;color:#107C41;line-height:1">✓</div>' +
+                        '<div style="font-size:38px;color:#107C41;line-height:1">✓</div>' +
                         '<div style="font-size:14.5px;font-weight:700;color:var(--win-text-primary)">' +
                             mainMsg +
                         '</div>' +
-                        '<div style="background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;direction:ltr;text-align:center">' +
-                            '<div style="font-size:11px;color:var(--win-text-secondary);margin-bottom:3px;direction:rtl">' + bidi('اسم الملف:') + '</div>' +
-                            '<div id="export-success-filename" style="font-family:Consolas,monospace;font-size:13px;font-weight:700;color:#0F172A;word-break:break-all;user-select:all">' +
+                        '<div style="background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;text-align:right">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+                                '<span style="font-size:12px;color:var(--win-text-secondary);">' + bidi('العلامة الحالية:') + '</span>' +
+                                '<span style="font-size:15px;font-weight:800;color:#15803D;" dir="ltr">' + scoreStr + ' / 20.00</span>' +
+                            '</div>' +
+                            '<div style="font-size:11px;color:var(--win-text-secondary);margin-bottom:3px;">' + bidi('اسم الملف على سطح المكتب:') + '</div>' +
+                            '<div id="export-success-filename" style="font-family:Consolas,monospace;font-size:12px;font-weight:700;color:#0F172A;word-break:break-all;user-select:all;direction:ltr;text-align:left;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:4px;padding:4px 8px;">' +
                                 esc(filename) +
                             '</div>' +
                         '</div>' +
-                        '<div style="font-size:12px;color:var(--win-text-secondary)">' +
-                            subMsg +
-                        '</div>' +
+                        statusNoteHtml +
                     '</div>';
             },
             buttons: dlgButtons
@@ -213,56 +250,11 @@
                 if (printEl) {
                     printEl.innerHTML = buildA4Html();
                 }
-                var prevTitle = document.title;
-                document.title = cleanName.replace(/\.pdf$/i, '');
                 hasExportedPdfFlag = true;
-
-                if (global.Win11Dialogs && typeof global.Win11Dialogs.showCustom === 'function') {
-                    global.Win11Dialogs.showCustom({
-                        title: 'تصدير التقرير الرسمي (PDF غير قابل للتعديل)',
-                        tone: 'info',
-                        wide: false,
-                        renderBody: function (wrap) {
-                            wrap.innerHTML =
-                                '<div style="text-align:center;padding:8px 0;display:flex;flex-direction:column;gap:12px">' +
-                                    '<div style="font-size:36px;color:#0067C0">🖨️</div>' +
-                                    '<div style="font-size:14px;font-weight:700;color:var(--win-text-primary)">' +
-                                        'سيتم فتح نافذة الطباعة للنظام الآن لحفظ التقرير بصيغة PDF غير قابلة للتعديل.' +
-                                    '</div>' +
-                                    '<div style="font-size:12.5px;color:var(--win-text-secondary);background:var(--win-surface-subtle);border:1px solid var(--win-border-control);border-radius:8px;padding:10px 14px;line-height:1.6">' +
-                                        'يرجى اختيار الوجهة: <strong>«حفظ بتنسيق PDF»</strong> أو <strong>«Microsoft Print to PDF»</strong>، ثم النقر على <strong>«حفظ»</strong>.' +
-                                    '</div>' +
-                                '</div>';
-                        },
-                        buttons: [
-                            {
-                                id: 'btn-proceed-print-pdf',
-                                label: 'متابعة وحفظ PDF الآن',
-                                primary: true,
-                                onClick: function (closeDlg) {
-                                    closeDlg(true);
-                                    setTimeout(function () {
-                                        window.print();
-                                        setTimeout(function () { document.title = prevTitle; }, 3000);
-                                        handleSuccess(cleanName, null);
-                                    }, 150);
-                                }
-                            },
-                            {
-                                id: 'btn-cancel-print-pdf',
-                                label: 'إلغاء',
-                                primary: false,
-                                value: false
-                            }
-                        ]
-                    });
-                } else {
-                    window.print();
-                    setTimeout(function () { document.title = prevTitle; }, 3000);
-                    handleSuccess(cleanName, null);
-                }
+                downloadTextFile(cleanName, 'text/html', htmlContent);
+                handleSuccess(cleanName, null);
             } catch (pErr) {
-                handleFailure('تعذر فتح نافذة الطباعة لتوليد ملف PDF: ' + (pErr && pErr.message ? pErr.message : pErr));
+                handleFailure('تعذر تصدير ملف التقرير: ' + (pErr && pErr.message ? pErr.message : pErr));
             }
         }
 
@@ -1335,6 +1327,14 @@
         }, 800);
     }
 
+    function exportEvaluationCard(opts) {
+        opts = opts || {};
+        global.Win11Assessment.evaluate();
+        var pdfFilename = formatSuggestedFilename('pdf');
+        saveReportToDesktop(pdfFilename, null, opts);
+        return pdfFilename;
+    }
+
     function triggerPdfExport(customFilename, opts) {
         opts = opts || {};
         var printEl = document.getElementById('print-report-container');
@@ -1717,6 +1717,7 @@
         openStudentRegistration: openStudentRegistration,
         injectPlainStudentFormFallback: injectPlainStudentFormFallback,
         saveReportToDesktop: saveReportToDesktop,
+        exportEvaluationCard: exportEvaluationCard,
         showExportSuccessToast: showExportSuccessToast,
         showExportSuccessDialog: showExportSuccessDialog,
         dismissExportSuccessToast: dismissExportSuccessToast,

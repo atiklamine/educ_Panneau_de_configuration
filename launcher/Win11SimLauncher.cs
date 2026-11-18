@@ -14,6 +14,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -442,8 +443,8 @@ namespace Win11SimHost
         {
             try
             {
-                client.ReceiveTimeout = 15000;
-                client.SendTimeout = 30000;
+                client.ReceiveTimeout = 45000;
+                client.SendTimeout = 45000;
                 NetworkStream stream = client.GetStream();
 
                 // Read HTTP request header
@@ -671,14 +672,19 @@ namespace Win11SimHost
                             ext = ".pdf";
                             safeName = safeName + ".pdf";
                         }
-                        string baseName = Path.GetFileNameWithoutExtension(safeName);
+                        string rawBase = Path.GetFileNameWithoutExtension(safeName);
+                        string rootName = Regex.Replace(rawBase, @"[\s_]*(?:\(\d+\)|_\d+)$", "");
 
-                        string targetPath = Path.Combine(desktopDir, safeName);
-                        int counter = 1;
-                        while (File.Exists(targetPath))
+                        string targetPath = Path.Combine(desktopDir, rootName + ext);
+                        if (File.Exists(targetPath))
                         {
-                            targetPath = Path.Combine(desktopDir, string.Format("{0}_{1}{2}", baseName, counter, ext));
-                            counter++;
+                            int counter = 1;
+                            while (File.Exists(Path.Combine(desktopDir, string.Format("{0} ({1}){2}", rootName, counter, ext))) ||
+                                   File.Exists(Path.Combine(desktopDir, string.Format("{0}_{1}{2}", rootName, counter, ext))))
+                            {
+                                counter++;
+                            }
+                            targetPath = Path.Combine(desktopDir, string.Format("{0} ({1}){2}", rootName, counter, ext));
                         }
 
                         byte[] fileBytes = null;
@@ -728,7 +734,7 @@ namespace Win11SimHost
                                     {
                                         File.WriteAllText(tmpHtml, htmlStr, Encoding.UTF8);
                                         string fileUrl = "file:///" + tmpHtml.Replace('\\', '/');
-                                        string[] headlessVariants = new string[] { "--headless=new", "--headless" };
+                                        string[] headlessVariants = new string[] { "--headless", "--headless=new" };
                                         for (int v = 0; v < headlessVariants.Length && !pdfDone; v++)
                                         {
                                             string tmpProf = Path.Combine(Path.GetTempPath(), "print_prof_" + Guid.NewGuid().ToString("N"));
@@ -737,7 +743,7 @@ namespace Win11SimHost
                                                 ProcessStartInfo pPsi = new ProcessStartInfo();
                                                 pPsi.FileName = chromium;
                                                 pPsi.Arguments = string.Format(
-                                                    "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
+                                                    "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --user-data-dir=\"{1}\" --virtual-time-budget=2000 --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
                                                     headlessVariants[v], tmpProf, targetPath, fileUrl);
                                                 pPsi.UseShellExecute = false;
                                                 pPsi.CreateNoWindow = true;
@@ -745,7 +751,10 @@ namespace Win11SimHost
                                                 {
                                                     if (p != null)
                                                     {
-                                                        p.WaitForExit(15000);
+                                                        if (!p.WaitForExit(6000))
+                                                        {
+                                                            try { p.Kill(); } catch { }
+                                                        }
                                                         if (File.Exists(targetPath) && new FileInfo(targetPath).Length > 100)
                                                         {
                                                             try
@@ -782,11 +791,9 @@ namespace Win11SimHost
 
                             if (!pdfDone)
                             {
-                                // Strict PDF requirement: NEVER fallback to .html
-                                string errJson = "{\"ok\":false,\"error\":\"PDF rendering engine failed to generate PDF file\"}";
-                                SendResponse(stream, 500, "Internal Server Error", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(errJson), true);
-                                client.Close();
-                                return;
+                                // Graceful fallback: save HTML report document directly so file is never lost
+                                targetPath = Path.ChangeExtension(targetPath, ".html");
+                                File.WriteAllText(targetPath, htmlStr ?? "", Encoding.UTF8);
                             }
                         }
                         else

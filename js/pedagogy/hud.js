@@ -451,7 +451,11 @@
         }
 
         el.querySelector('#hud-report-btn').onclick = function () {
-            if (global.Win11Report) global.Win11Report.openCertificate();
+            if (global.Win11Report && typeof global.Win11Report.exportEvaluationCard === 'function') {
+                global.Win11Report.exportEvaluationCard();
+            } else if (global.Win11Report) {
+                global.Win11Report.openCertificate();
+            }
         };
 
         var stepsList = el.querySelector('#hud-steps-list');
