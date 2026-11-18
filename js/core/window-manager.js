@@ -110,10 +110,12 @@
         if (win.isMinimized) {
             win.isMinimized = false;
             win.el.classList.remove('is-minimized');
+            win.el.style.display = 'flex';
+            applyRect(win);
         }
         s.topZ += 1;
-        if (s.topZ > 900) {
-            // Re-normalize stack cleanly to avoid approaching flyout z-index layers
+        if (s.topZ > 800) {
+            // Re-normalize stack cleanly to avoid approaching flyout & HUD z-index layers
             var base = 310;
             for (var j = 0; j < s.windowOrder.length; j++) {
                 var wObj = s.windows[s.windowOrder[j]];
@@ -132,7 +134,7 @@
         var hud = document.getElementById('pedagogy-hud');
         if (hud) {
             hud.classList.remove('is-active');
-            hud.style.zIndex = '';
+            hud.style.zIndex = '850';
         }
 
         var idx = s.windowOrder.indexOf(id);

@@ -473,7 +473,7 @@
         // Bring HUD to front cleanly when clicked, but allow active windows to raise above when focused
         function bringToFront() {
             el.classList.add('is-active');
-            el.style.zIndex = '350';
+            el.style.zIndex = '890';
         }
         el.addEventListener('mousedown', bringToFront);
         if (window.PointerEvent) {
@@ -626,7 +626,30 @@
         initOnce();
         renderContent();
         var el = getEl();
-        if (el) el.classList.add('is-open');
+        if (el) {
+            el.classList.add('is-open');
+            el.classList.remove('is-collapsed');
+            el.style.display = 'flex';
+            el.classList.add('is-active');
+            el.style.zIndex = '890';
+
+            // Ensure HUD remains within visible viewport on any screen resolution
+            try {
+                var rect = el.getBoundingClientRect();
+                var maxL = Math.max(10, global.innerWidth - 100);
+                var maxT = Math.max(10, global.innerHeight - 80);
+                if (rect.right < 80 || rect.bottom < 80 || rect.left > maxL || rect.top > maxT) {
+                    el.style.top = '16px';
+                    if (global.Win11I18N && global.Win11I18N.isRtl()) {
+                        el.style.right = '24px';
+                        el.style.left = 'auto';
+                    } else {
+                        el.style.left = '24px';
+                        el.style.right = 'auto';
+                    }
+                }
+            } catch (posErr) { }
+        }
     }
 
     function toggle() {

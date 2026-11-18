@@ -1420,20 +1420,6 @@
             ]
         });
     }
-                {
-                    id: 'btn-cancel-export-save',
-                    label: cancelLabel,
-                    primary: false,
-                    onClick: function (closeDlg) {
-                        closeDlg(false);
-                        if (opts.fromCertificate) {
-                            setTimeout(function () { openCertificate(); }, 0);
-                        }
-                    }
-                }
-            ]
-        });
-    }
 
     function openCertificate() {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
