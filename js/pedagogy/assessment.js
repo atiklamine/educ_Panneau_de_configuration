@@ -1322,22 +1322,34 @@
         } catch (eBridge) { }
 
         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch && host.indexOf('github.io') === -1) {
+            var hasFinished = false;
+            var safeFinish = function () {
+                if (hasFinished) return;
+                hasFinished = true;
+                finish();
+            };
+            var fetchTimer = setTimeout(function () {
+                safeFinish();
+            }, 2000);
+
             global.fetch('/api/inf', { cache: 'no-store' }).then(function (resp) {
+                clearTimeout(fetchTimer);
                 if (resp.status === 204 || resp.status === 404) {
                     applyLoadedSidecar(new Uint8Array(0));
-                    finish();
+                    safeFinish();
                     return;
                 }
                 if (!resp.ok) {
-                    finish();
+                    safeFinish();
                     return;
                 }
                 return resp.arrayBuffer().then(function (buf) {
                     applyLoadedSidecar(new Uint8Array(buf));
-                    finish();
+                    safeFinish();
                 });
             }).catch(function () {
-                finish();
+                clearTimeout(fetchTimer);
+                safeFinish();
             });
             return;
         }

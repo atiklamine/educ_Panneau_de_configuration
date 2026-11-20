@@ -45,11 +45,16 @@
         }
         if (!w && root) w = root.clientWidth;
         if (!h && root) h = root.clientHeight;
-        if (!w) w = (global.innerWidth || 1024);
-        if (!h) h = ((global.innerHeight || 768) - 48);
+
+        var winW = (typeof window !== 'undefined') ? (window.innerWidth || (window.screen && window.screen.availWidth)) : 0;
+        var winH = (typeof window !== 'undefined') ? (window.innerHeight || (window.screen && window.screen.availHeight)) : 0;
+
+        if (!w || isNaN(w) || w < 640) w = Math.max(winW || 0, 1024);
+        if (!h || isNaN(h) || h < 400) h = Math.max((winH ? winH - 48 : 0), 720);
+
         return {
-            width: Math.max(360, w),
-            height: Math.max(260, h)
+            width: Math.max(800, Math.round(w)),
+            height: Math.max(500, Math.round(h))
         };
     }
 
@@ -70,32 +75,62 @@
     }
 
     function applyRect(win) {
+        if (!win || !win.el) return;
         var area = getWorkArea();
+        var minW = Math.max(380, Number(win.minW) || 380);
+        var minH = Math.max(260, Number(win.minH) || 280);
+
+        // Enforce inline CSS min-width/min-height to prevent 0x0 window dimensions
+        win.el.style.minWidth = minW + 'px';
+        win.el.style.minHeight = minH + 'px';
+        win.el.style.display = 'flex';
+        win.el.style.visibility = 'visible';
+
         if (win.isMaximized) {
+            var maxW = Math.max(minW, area.width);
+            var maxH = Math.max(minH, area.height);
             win.el.style.left = '0px';
             win.el.style.top = '0px';
-            win.el.style.width = area.width + 'px';
-            win.el.style.height = area.height + 'px';
+            win.el.style.width = maxW + 'px';
+            win.el.style.height = maxH + 'px';
             win.el.classList.add('is-maximized');
         } else if (win.snapRect) {
-            win.el.style.left = Math.round(win.snapRect.x * area.width) + 'px';
-            win.el.style.top = Math.round(win.snapRect.y * area.height) + 'px';
-            win.el.style.width = Math.round(win.snapRect.w * area.width) + 'px';
-            win.el.style.height = Math.round(win.snapRect.h * area.height) + 'px';
+            var snapW = Math.max(minW, Math.round(win.snapRect.w * area.width));
+            var snapH = Math.max(minH, Math.round(win.snapRect.h * area.height));
+            var snapX = Math.round(win.snapRect.x * area.width);
+            var snapY = Math.round(win.snapRect.y * area.height);
+            win.el.style.left = snapX + 'px';
+            win.el.style.top = snapY + 'px';
+            win.el.style.width = snapW + 'px';
+            win.el.style.height = snapH + 'px';
             win.el.classList.remove('is-maximized');
             win.el.classList.add('is-snapped');
         } else {
             win.el.classList.remove('is-maximized', 'is-snapped');
-            var effMinW = Math.min(win.minW, Math.max(280, area.width - 24));
-            var effMinH = Math.min(win.minH, Math.max(200, area.height - 24));
-            var w = global.Win11Compat.clamp(win.rect.w, effMinW, area.width);
-            var h = global.Win11Compat.clamp(win.rect.h, effMinH, area.height);
-            var x = global.Win11Compat.clamp(win.rect.x, 0, Math.max(0, area.width - w));
-            var y = global.Win11Compat.clamp(win.rect.y, 0, Math.max(0, area.height - h));
+            if (!win.rect || typeof win.rect !== 'object') {
+                win.rect = {};
+            }
+            var targetW = Number(win.rect.w);
+            if (!targetW || isNaN(targetW) || targetW < minW) {
+                targetW = Math.min(Math.max(minW, 880), area.width - 24);
+            }
+            var targetH = Number(win.rect.h);
+            if (!targetH || isNaN(targetH) || targetH < minH) {
+                targetH = Math.min(Math.max(minH, 600), area.height - 20);
+            }
+
+            var effMinW = Math.min(minW, Math.max(340, area.width - 24));
+            var effMinH = Math.min(minH, Math.max(240, area.height - 24));
+            var w = Math.max(minW, global.Win11Compat.clamp(targetW, effMinW, area.width));
+            var h = Math.max(minH, global.Win11Compat.clamp(targetH, effMinH, area.height));
+            var x = global.Win11Compat.clamp(Number(win.rect.x) || 0, 0, Math.max(0, area.width - w));
+            var y = global.Win11Compat.clamp(Number(win.rect.y) || 0, 0, Math.max(0, area.height - h));
+
             win.rect.w = w;
             win.rect.h = h;
             win.rect.x = x;
             win.rect.y = y;
+
             win.el.style.left = Math.round(x) + 'px';
             win.el.style.top = Math.round(y) + 'px';
             win.el.style.width = Math.round(w) + 'px';
@@ -399,15 +434,28 @@
         var s = S();
         var id = cfg.id;
         if (s.windows[id]) {
-            if (typeof cfg.onReuse === 'function') cfg.onReuse(s.windows[id]);
+            var existingWin = s.windows[id];
+            var targetLayer = getLayer();
+            if (existingWin.el && targetLayer && existingWin.el.parentNode !== targetLayer) {
+                targetLayer.appendChild(existingWin.el);
+            }
+            if (existingWin.isMinimized) {
+                existingWin.isMinimized = false;
+                existingWin.el.classList.remove('is-minimized');
+                existingWin.el.style.display = 'flex';
+            }
+            applyRect(existingWin);
+            if (typeof cfg.onReuse === 'function') cfg.onReuse(existingWin);
             focusWindow(id);
-            return s.windows[id];
+            return existingWin;
         }
 
         var area = getWorkArea();
         var count = s.windowOrder.length;
-        var defW = Math.min(cfg.width || 920, area.width - 24);
-        var defH = Math.min(cfg.height || 620, area.height - 20);
+        var minW = Math.max(380, cfg.minWidth || 380);
+        var minH = Math.max(260, cfg.minHeight || 280);
+        var defW = Math.max(minW, Math.min(cfg.width || 920, area.width - 24));
+        var defH = Math.max(minH, Math.min(cfg.height || 620, area.height - 20));
         var offset = (count % 5) * 26;
         var defX = Math.max(8, Math.round((area.width - defW) / 2) + offset);
         var defY = Math.max(8, Math.round((area.height - defH) / 2) + offset);
@@ -424,8 +472,8 @@
             onClose: cfg.onClose || null,
             desktopId: s.activeDesktop,
             rect: { x: defX, y: defY, w: defW, h: defH },
-            minW: cfg.minWidth || 380,
-            minH: cfg.minHeight || 280,
+            minW: minW,
+            minH: minH,
             isMaximized: !!cfg.maximized,
             isMinimized: false,
             snapRect: null
@@ -434,7 +482,13 @@
         win.el = createWindowElement(win);
         s.windows[id] = win;
         s.windowOrder.push(id);
-        getLayer().appendChild(win.el);
+        var curLayer = getLayer();
+        if (curLayer) {
+            curLayer.appendChild(win.el);
+        } else {
+            var rootEl = (typeof document !== 'undefined') ? (document.getElementById('windows-layer') || document.body) : null;
+            if (rootEl) rootEl.appendChild(win.el);
+        }
         applyRect(win);
 
         if (typeof cfg.render === 'function') {

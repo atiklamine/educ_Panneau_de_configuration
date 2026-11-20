@@ -268,3 +268,4 @@ console.log('[PASS] Student opted out: Section B shows zeroed/deducted rows, Sec
 console.log('\n=========================================');
 console.log('ALL REPORT REDESIGN TESTS PASSED 100%!');
 console.log('=========================================');
+process.exit(0);

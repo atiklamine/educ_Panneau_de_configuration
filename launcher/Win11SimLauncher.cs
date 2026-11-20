@@ -274,6 +274,158 @@ namespace Win11SimHost
         }
     }
 
+    public class SplashForm : Form
+    {
+        private ProgressBar _progressBar;
+        private Label _lblStatus;
+
+        public SplashForm()
+        {
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.Size = new Size(520, 240);
+            this.TopMost = true;
+            this.ShowInTaskbar = false;
+            this.BackColor = Color.FromArgb(15, 23, 42); // Windows 11 Dark Slate
+            this.RightToLeft = RightToLeft.Yes;
+            this.RightToLeftLayout = true;
+
+            Panel pnlHeader = new Panel();
+            pnlHeader.Dock = DockStyle.Top;
+            pnlHeader.Height = 110;
+            pnlHeader.BackColor = Color.FromArgb(0, 103, 192); // Win11 Accent Blue
+            pnlHeader.Padding = new Padding(18, 14, 18, 10);
+
+            Label lblApp = new Label();
+            lblApp.Text = "محاكي لوحة التحكم وإعدادات النظام — Windows 11";
+            lblApp.Font = new Font("Segoe UI", 13.5f, FontStyle.Bold);
+            lblApp.ForeColor = Color.White;
+            lblApp.Dock = DockStyle.Top;
+            lblApp.Height = 36;
+
+            Label lblSub = new Label();
+            lblSub.Text = "السنة الأولى ثانوي (1AS) — مادة الإعلام الآلي\nالمجال 1: بيئة التعامل مع الحاسوب | خادم محلي بدون أي صلاحيات إدارية";
+            lblSub.Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+            lblSub.ForeColor = Color.FromArgb(224, 242, 254);
+            lblSub.Dock = DockStyle.Fill;
+
+            pnlHeader.Controls.Add(lblSub);
+            pnlHeader.Controls.Add(lblApp);
+
+            Panel pnlBody = new Panel();
+            pnlBody.Dock = DockStyle.Fill;
+            pnlBody.BackColor = Color.FromArgb(15, 23, 42);
+            pnlBody.Padding = new Padding(24, 20, 24, 20);
+
+            _lblStatus = new Label();
+            _lblStatus.Text = "جاري تهيئة بيئة المحاكاة والتحقق من الموارد...";
+            _lblStatus.Font = new Font("Segoe UI", 10.5f, FontStyle.Regular);
+            _lblStatus.ForeColor = Color.FromArgb(241, 245, 249);
+            _lblStatus.Dock = DockStyle.Top;
+            _lblStatus.Height = 36;
+
+            _progressBar = new ProgressBar();
+            _progressBar.Dock = DockStyle.Bottom;
+            _progressBar.Height = 14;
+            _progressBar.Minimum = 0;
+            _progressBar.Maximum = 100;
+            _progressBar.Value = 15;
+            _progressBar.Style = ProgressBarStyle.Continuous;
+
+            pnlBody.Controls.Add(_lblStatus);
+            pnlBody.Controls.Add(_progressBar);
+
+            this.Controls.Add(pnlBody);
+            this.Controls.Add(pnlHeader);
+
+            this.Paint += delegate(object sender, PaintEventArgs e)
+            {
+                using (Pen p = new Pen(Color.FromArgb(0, 103, 192), 2))
+                {
+                    e.Graphics.DrawRectangle(p, 0, 0, this.Width - 1, this.Height - 1);
+                }
+            };
+        }
+
+        private delegate void ProgressInvoker(int val, string text);
+        public void SetProgress(int val, string text)
+        {
+            if (this.InvokeRequired)
+            {
+                try { this.BeginInvoke(new ProgressInvoker(SetProgress), val, text); } catch { }
+                return;
+            }
+            if (_progressBar != null)
+            {
+                _progressBar.Value = Math.Max(0, Math.Min(100, val));
+            }
+            if (_lblStatus != null && !string.IsNullOrEmpty(text))
+            {
+                _lblStatus.Text = text;
+            }
+        }
+
+        private delegate void CloseInvoker();
+        public void CloseForm()
+        {
+            if (this.InvokeRequired)
+            {
+                try { this.BeginInvoke(new CloseInvoker(CloseForm)); } catch { }
+                return;
+            }
+            this.Close();
+        }
+    }
+
+    public static class SplashScreen
+    {
+        private static SplashForm _form;
+        private static Thread _thread;
+        private static readonly object _lock = new object();
+
+        public static void Show()
+        {
+            lock (_lock)
+            {
+                if (_thread != null) return;
+                _thread = new Thread(Run);
+                _thread.IsBackground = true;
+                _thread.SetApartmentState(ApartmentState.STA);
+                _thread.Start();
+            }
+        }
+
+        private static void Run()
+        {
+            _form = new SplashForm();
+            Application.Run(_form);
+        }
+
+        public static void Update(int percent, string message)
+        {
+            try
+            {
+                if (_form != null && !_form.IsDisposed)
+                {
+                    _form.SetProgress(percent, message);
+                }
+            }
+            catch { }
+        }
+
+        public static void Close()
+        {
+            try
+            {
+                if (_form != null && !_form.IsDisposed)
+                {
+                    _form.CloseForm();
+                }
+            }
+            catch { }
+        }
+    }
+
     static class Program
     {
         public static byte[] BuildPdfFromJpeg(byte[] jpegBytes, int width, int height)
@@ -435,10 +587,19 @@ namespace Win11SimHost
                     Match mPc = Regex.Match(html ?? "", @"رقم الحاسوب:[\s\S]*?<td[^>]*class=""a4-cell-val""[^>]*>([^<]+)</td>");
                     if (mPc.Success) pcNumber = mPc.Groups[1].Value.Trim();
 
-                    // Extract score
+                    // Extract score & duration
                     string scoreText = "20.00 / 20.00";
                     Match mScore = Regex.Match(html ?? "", @"(\d+\.\d{2})\s*/\s*20");
                     if (mScore.Success) scoreText = mScore.Groups[1].Value + " / 20.00";
+
+                    string durText = "00:00:00";
+                    Match mDur = Regex.Match(html ?? "", @"الوقت الإجمالي المستغرق:[\s\S]*?<div[^>]*class=""a4-cell-val""[^>]*><bdi[^>]*>([^<]+)</bdi></div>");
+                    if (mDur.Success) durText = mDur.Groups[1].Value.Trim();
+                    else
+                    {
+                        Match mDur2 = Regex.Match(html ?? "", @"class=""a4-tsc-value""[^>]*><bdi[^>]*>([^<]+)</bdi>");
+                        if (mDur2.Success) durText = mDur2.Groups[1].Value.Trim();
+                    }
 
                     // Student Box
                     using (Brush bgBox = new SolidBrush(Color.FromArgb(241, 245, 249)))
@@ -455,24 +616,44 @@ namespace Win11SimHost
                         g.DrawString("المستوى: السنة الأولى ثانوي (1AS) — الوحدة 3: لوحة التحكم وإعدادات النظام", fLabel, bDark, new RectangleF(100, 265, 1040, 32), rtlRight);
                     }
 
-                    // Score Box
+                    // Top Highlights: Score Card (Right) & Duration Card (Left)
+                    // Score Box (Right)
                     using (Brush bgScore = new SolidBrush(Color.FromArgb(240, 253, 244)))
                     using (Pen pScore = new Pen(Color.FromArgb(22, 163, 74), 2.5f))
                     {
-                        g.FillRectangle(bgScore, 80, 325, 1080, 125);
-                        g.DrawRectangle(pScore, 80, 325, 1080, 125);
+                        g.FillRectangle(bgScore, 630, 325, 530, 125);
+                        g.DrawRectangle(pScore, 630, 325, 530, 125);
                     }
-
-                    using (Font fScoreLbl = new Font("Segoe UI", 14f, FontStyle.Bold))
+                    using (Font fScoreLbl = new Font("Segoe UI", 13f, FontStyle.Bold))
                     using (Brush bGreenDark = new SolidBrush(Color.FromArgb(21, 128, 61)))
                     {
-                        g.DrawString("العلامة الإجمالية المستحقة (وفق القاعدة الثلاثية الرسمية):", fScoreLbl, bGreenDark, new RectangleF(100, 338, 1040, 30), rtlCenter);
+                        g.DrawString("العلامة الإجمالية المستحقة:", fScoreLbl, bGreenDark, new RectangleF(640, 336, 510, 28), rtlCenter);
                     }
-
-                    using (Font fScoreVal = new Font("Segoe UI", 34f, FontStyle.Bold))
+                    using (Font fScoreVal = new Font("Segoe UI", 32f, FontStyle.Bold))
                     using (Brush bGreen = new SolidBrush(Color.FromArgb(22, 163, 74)))
                     {
-                        g.DrawString(scoreText, fScoreVal, bGreen, new RectangleF(100, 372, 1040, 60), rtlCenter);
+                        g.DrawString(scoreText, fScoreVal, bGreen, new RectangleF(640, 368, 510, 55), rtlCenter);
+                    }
+
+                    // Duration Box (Left)
+                    using (Brush bgDur = new SolidBrush(Color.FromArgb(239, 246, 255)))
+                    using (Pen pDur = new Pen(Color.FromArgb(37, 99, 235), 2.5f))
+                    {
+                        g.FillRectangle(bgDur, 80, 325, 530, 125);
+                        g.DrawRectangle(pDur, 80, 325, 530, 125);
+                    }
+                    using (Font fDurLbl = new Font("Segoe UI", 13f, FontStyle.Bold))
+                    using (Brush bBlueDark = new SolidBrush(Color.FromArgb(30, 64, 175)))
+                    {
+                        g.DrawString("الوقت الإجمالي المستغرق:", fDurLbl, bBlueDark, new RectangleF(90, 336, 510, 28), rtlCenter);
+                    }
+                    using (Font fDurVal = new Font("Consolas", 32f, FontStyle.Bold))
+                    using (Brush bBlue = new SolidBrush(Color.FromArgb(37, 99, 235)))
+                    {
+                        StringFormat ltrCenter = new StringFormat();
+                        ltrCenter.Alignment = StringAlignment.Center;
+                        ltrCenter.LineAlignment = StringAlignment.Center;
+                        g.DrawString(durText, fDurVal, bBlue, new RectangleF(90, 368, 510, 55), ltrCenter);
                     }
 
                     // Tasks table
@@ -572,6 +753,32 @@ namespace Win11SimHost
         private static DateTime _lastPingUtc = DateTime.UtcNow;
         private static volatile bool _hasReceivedPing = false;
 
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const int SW_RESTORE = 9;
+
+        private static void TryActivateExistingInstance()
+        {
+            try
+            {
+                Process current = Process.GetCurrentProcess();
+                Process[] procs = Process.GetProcessesByName(current.ProcessName);
+                for (int i = 0; i < procs.Length; i++)
+                {
+                    if (procs[i].Id != current.Id && procs[i].MainWindowHandle != IntPtr.Zero)
+                    {
+                        ShowWindow(procs[i].MainWindowHandle, SW_RESTORE);
+                        SetForegroundWindow(procs[i].MainWindowHandle);
+                        return;
+                    }
+                }
+            }
+            catch { }
+        }
+
         [STAThread]
         static int Main(string[] args)
         {
@@ -611,21 +818,33 @@ namespace Win11SimHost
             {
                 try
                 {
-                    singleInstanceMutex = new Mutex(true, "Local\\Win11SimHost_SingleInstance_1AS", out createdNew);
+                    singleInstanceMutex = new Mutex(true, "Global\\Win11SimHost_SingleInstance_1AS", out createdNew);
                     if (!createdNew)
                     {
+                        TryActivateExistingInstance();
                         return 0;
                     }
                 }
                 catch { }
             }
 
+            if (!noBrowser && !embeddedBrowser)
+            {
+                SplashScreen.Show();
+                SplashScreen.Update(15, "تهيئة بيئة المحاكاة والتحقق من الموارد التعليمية...");
+            }
+
             try
             {
+                if (!noBrowser && !embeddedBrowser)
+                {
+                    SplashScreen.Update(35, "فك ضغط الموارد التعليمية المضمنة...");
+                }
                 _htmlBytes = LoadEmbeddedHtmlBytes();
             }
             catch (Exception ex)
             {
+                SplashScreen.Close();
                 MessageBox.Show("Failed to load embedded simulator resources:\n" + ex.Message,
                     "Windows 11 Simulator", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
@@ -635,12 +854,17 @@ namespace Win11SimHost
             int port = requestedPort;
             try
             {
+                if (!noBrowser && !embeddedBrowser)
+                {
+                    SplashScreen.Update(65, "تشغيل خادم العرض المحلي (User-Space WinSock)...");
+                }
                 _tcpListener = new TcpListener(IPAddress.Loopback, port);
                 _tcpListener.Start();
                 port = ((IPEndPoint)_tcpListener.LocalEndpoint).Port;
             }
             catch (Exception ex)
             {
+                SplashScreen.Close();
                 MessageBox.Show("Unable to open local user-space port on 127.0.0.1:\n" + ex.Message,
                     "Windows 11 Simulator", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 2;
@@ -652,6 +876,11 @@ namespace Win11SimHost
             Thread serverThread = new Thread(ListenLoop);
             serverThread.IsBackground = true;
             serverThread.Start();
+
+            if (!noBrowser && !embeddedBrowser)
+            {
+                SplashScreen.Update(85, "جاري فتح نافذة Windows 11...");
+            }
 
             if (noBrowser)
             {
@@ -1080,9 +1309,8 @@ namespace Win11SimHost
 
                             if (!pdfDone)
                             {
-                                // Graceful fallback: save HTML report document directly so file is never lost
-                                targetPath = Path.ChangeExtension(targetPath, ".html");
-                                File.WriteAllText(targetPath, htmlStr ?? "", Encoding.UTF8);
+                                // STRICT GUARANTEE: NEVER SAVE HTML! ALWAYS SAVE VALID PDF!
+                                Program.GenerateNativeReportPdf(targetPath, htmlStr);
                             }
                         }
                         else
@@ -1221,6 +1449,11 @@ namespace Win11SimHost
                 }
 
                 // Root & HTML asset
+                if (path == "/" || path == "/index.html" || path == "/api/inf")
+                {
+                    SplashScreen.Close();
+                }
+
                 if (path == "/" || path == "/index.html")
                 {
                     SendResponse(stream, 200, "OK", "text/html; charset=utf-8", _htmlBytes, true);
@@ -1458,6 +1691,11 @@ namespace Win11SimHost
 
                     Process p = Process.Start(psi);
                     _browserProcess = p;
+                    ThreadPool.QueueUserWorkItem(delegate
+                    {
+                        Thread.Sleep(1500);
+                        SplashScreen.Close();
+                    });
 
                     DateTime launchTime = DateTime.UtcNow;
                     _lastPingUtc = DateTime.UtcNow;
@@ -1647,6 +1885,7 @@ namespace Win11SimHost
         private static void StopServer()
         {
             _running = false;
+            try { SplashScreen.Close(); } catch { }
             try
             {
                 if (_tcpListener != null)

@@ -1190,6 +1190,23 @@
             '</div>';
 
         // ==========================================
+        // TOP SCORE & DURATION HIGHLIGHT CARD
+        // ==========================================
+        var topSummaryCardHtml =
+            '<div class="a4-top-summary-card">' +
+                '<div class="a4-tsc-score ' + (isPassed ? 'is-pass' : 'is-fail') + '">' +
+                    '<div class="a4-tsc-title">' + bidi('العلامة النهائية المستحقة:') + '</div>' +
+                    '<div class="a4-tsc-grade"><bdi dir="ltr">' + finalScoreStr + '</bdi> <span class="a4-tsc-out">/ 20.00</span></div>' +
+                    '<div class="a4-tsc-badge"><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '">' + bidi(isPassed ? '✔ مستوفٍ لمعيار النجاح' : '✘ دون المعدل المطلوب') + ' — <strong>' + bidi(scores.appreciation || 'متوسط') + '</strong></span></div>' +
+                '</div>' +
+                '<div class="a4-tsc-time">' +
+                    '<div class="a4-tsc-title">' + bidi('الوقت الإجمالي المستغرق:') + '</div>' +
+                    '<div class="a4-tsc-grade"><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></div>' +
+                    '<div class="a4-tsc-badge"><span class="a4-badge is-done">' + bidi(stu.allCompleted ? 'تم تثبيت وقت الإنجاز النهائي ✔' : 'جلسة قيد الإنجاز ⏳') + '</span></div>' +
+                '</div>' +
+            '</div>';
+
+        // ==========================================
         // SECTION B: BREAKDOWN TABLE CONTAINER
         // ==========================================
         var sectionBHtml =
@@ -1201,15 +1218,15 @@
                 '<table class="a4-report-table">' +
                     '<thead>' +
                         '<tr>' +
-                            '<th style="width:30px;text-align:center;">#</th>' +
-                            '<th style="text-align:right;">المهمة التطبيقية أو السؤال التقويمي</th>' +
-                            '<th style="width:82px;text-align:center;">النوع</th>' +
-                            '<th style="width:92px;text-align:center;">الحالة</th>' +
-                            '<th style="width:72px;text-align:center;">المحاولات</th>' +
-                            '<th style="width:68px;text-align:center;">الوزن الأقصى</th>' +
-                            '<th style="width:72px;text-align:center;">الممنوحة</th>' +
-                            '<th style="width:65px;text-align:center;">الخصم</th>' +
-                            '<th style="text-align:right;">الملاحظات وتفاصيل الإنجاز</th>' +
+                            '<th style="width:4%;text-align:center;">#</th>' +
+                            '<th style="width:27%;text-align:right;">المهمة التطبيقية أو السؤال التقويمي</th>' +
+                            '<th style="width:9%;text-align:center;">النوع</th>' +
+                            '<th style="width:10%;text-align:center;">الحالة</th>' +
+                            '<th style="width:8%;text-align:center;">المحاولات</th>' +
+                            '<th style="width:7%;text-align:center;">الوزن الأقصى</th>' +
+                            '<th style="width:7%;text-align:center;">الممنوحة</th>' +
+                            '<th style="width:7%;text-align:center;">الخصم</th>' +
+                            '<th style="width:21%;text-align:right;">الملاحظات وتفاصيل الإنجاز</th>' +
                         '</tr>' +
                     '</thead>' +
                     '<tbody>' +
@@ -1245,6 +1262,7 @@
                 '</div>' +
 
                 sectionAHtml +
+                topSummaryCardHtml +
                 sectionBHtml +
                 mathBreakdownHtml +
 
@@ -1300,9 +1318,19 @@
             '.a4-pass-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;}\n' +
             '.a4-pass-badge.is-pass{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;}\n' +
             '.a4-pass-badge.is-fail{background:#FEE2E2;color:#B91C1C;border:1px solid #FCA5A5;}\n' +
-            '.a4-report-table{width:100%;border-collapse:collapse;margin:6px 0 8px 0;font-size:11px;}\n' +
-            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1;padding:5px 6px;text-align:right;vertical-align:middle;}\n' +
-            '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;white-space:nowrap;font-size:11px;}\n' +
+            '.a4-top-summary-card{display:flex;gap:10px;margin:8px 0 10px 0;align-items:stretch;box-sizing:border-box;}\n' +
+            '.a4-tsc-score{flex:1 1 50%;background:#F0FDF4;border:2px solid #16A34A;border-radius:6px;padding:8px 10px;text-align:center;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;}\n' +
+            '.a4-tsc-score.is-fail{background:#FFFBEB;border-color:#D97706;}\n' +
+            '.a4-tsc-time{flex:1 1 50%;background:#EFF6FF;border:2px solid #2563EB;border-radius:6px;padding:8px 10px;text-align:center;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;}\n' +
+            '.a4-tsc-title{font-size:11.5px;font-weight:700;color:#475569;margin-bottom:2px;}\n' +
+            '.a4-tsc-grade{font-size:26px;font-weight:900;color:#15803D;line-height:1.15;margin:2px 0;}\n' +
+            '.a4-tsc-score.is-fail .a4-tsc-grade{color:#B45309;}\n' +
+            '.a4-tsc-time .a4-tsc-grade{color:#1D4ED8;font-family:Consolas,monospace;}\n' +
+            '.a4-tsc-out{font-size:14px;color:#64748B;font-weight:700;}\n' +
+            '.a4-tsc-badge{margin-top:3px;}\n' +
+            '.a4-report-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse;margin:6px 0 8px 0;font-size:10.5px;box-sizing:border-box;}\n' +
+            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1;padding:5px 4px;text-align:right;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word;word-break:break-word;white-space:normal;box-sizing:border-box;}\n' +
+            '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;font-size:10px;line-height:1.35;}\n' +
             '.a4-quiz-disabled-notice{background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:6px;padding:6px 10px;margin:6px 0;color:#92400E;font-size:11px;line-height:1.5;}\n' +
             '.a4-math-grid{display:flex;gap:10px;margin-top:6px;align-items:stretch;}\n' +
             '.a4-math-steps{flex:1 1 65%;display:flex;flex-direction:column;gap:4px;}'+
@@ -1324,7 +1352,7 @@
             '.a4-fsc-appreciation{font-size:11.5px;margin-top:3px;color:#1E293B;}\n' +
             '.a4-fsc-level{font-size:10px;font-weight:600;color:#64748B;margin-top:2px;line-height:1.3;}\n' +
             '.a4-footer-sig{margin-top:8px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #CBD5E1;padding-top:6px;font-size:11px;}\n' +
-            '@media print{@page{size:A4 portrait;margin:8mm 10mm;}body{background:#FFFFFF;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.a4-report-sheet{border:none;box-shadow:none;padding:0;max-width:none;width:100%;}.a4-section-title{page-break-after:avoid;break-after:avoid;}.a4-report-table tr{page-break-inside:avoid;break-inside:avoid;}.a4-section-c,.a4-footer-sig{page-break-inside:avoid;break-inside:avoid;}}\n' +
+            '@media print{@page{size:A4 portrait;margin:6mm 6mm;}body{background:#FFFFFF;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.a4-report-sheet{border:none;box-shadow:none;padding:0;max-width:none;width:100%;}.a4-top-summary-card{page-break-inside:avoid;break-inside:avoid;}.a4-section-title{page-break-after:avoid;break-after:avoid;}.a4-report-table{width:100% !important;table-layout:fixed !important;}.a4-report-table tr{page-break-inside:avoid;break-inside:avoid;}.a4-section-c,.a4-footer-sig{page-break-inside:avoid;break-inside:avoid;}}\n' +
             '</style>\n</head>\n<body>\n' + a4Inner + '\n</body>\n</html>';
     }
 

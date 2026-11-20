@@ -36,15 +36,16 @@
                     if (global.Win11Report && typeof global.Win11Report.openStudentRegistration === 'function') {
                         global.Win11Report.openStudentRegistration({ mandatory: true });
                     }
-                    // Section 7.2: Fail-safe fallback if form fails to mount in DOM after 400ms
-                    setTimeout(function () {
+                    var ensureFormMounted = function () {
                         var stu = (global.Win11Assessment && global.Win11Assessment.getStudent) ? global.Win11Assessment.getStudent() : null;
                         if (stu && !stu.activeSession && !document.getElementById('stu-reg-lastname') && !document.getElementById('plain-student-fallback-form')) {
                             if (global.Win11Report && typeof global.Win11Report.injectPlainStudentFormFallback === 'function') {
                                 global.Win11Report.injectPlainStudentFormFallback();
                             }
                         }
-                    }, 400);
+                    };
+                    setTimeout(ensureFormMounted, 200);
+                    setTimeout(ensureFormMounted, 600);
                 };
 
                 if (isTeacherExplicit || (infSt && infSt.status === 'missing')) {
@@ -161,6 +162,13 @@
         }
     }
 
+    var didFinishBoot = false;
+    function safeFinishBoot() {
+        if (didFinishBoot) return;
+        didFinishBoot = true;
+        finishBoot();
+    }
+
     function boot() {
         suppressBrowserAutofillAndCredentialPrompts();
         startServerHeartbeat();
@@ -173,10 +181,20 @@
         }
         global.Win11State.init();
 
+        var bootWatchdog = setTimeout(function () {
+            if (!didFinishBoot) {
+                safeFinishBoot();
+            }
+        }, 2800);
+
         if (global.Win11Assessment && typeof global.Win11Assessment.fetchSidecarFromHost === 'function') {
-            global.Win11Assessment.fetchSidecarFromHost(finishBoot);
+            global.Win11Assessment.fetchSidecarFromHost(function () {
+                clearTimeout(bootWatchdog);
+                safeFinishBoot();
+            });
         } else {
-            finishBoot();
+            clearTimeout(bootWatchdog);
+            safeFinishBoot();
         }
     }
 
