@@ -444,6 +444,14 @@
                 existingWin.el.classList.remove('is-minimized');
                 existingWin.el.style.display = 'flex';
             }
+            if (cfg.rect && typeof cfg.rect === 'object') {
+                existingWin.rect = {
+                    x: (typeof cfg.rect.x === 'number') ? cfg.rect.x : existingWin.rect.x,
+                    y: (typeof cfg.rect.y === 'number') ? cfg.rect.y : existingWin.rect.y,
+                    w: (typeof cfg.rect.w === 'number') ? cfg.rect.w : existingWin.rect.w,
+                    h: (typeof cfg.rect.h === 'number') ? cfg.rect.h : existingWin.rect.h
+                };
+            }
             applyRect(existingWin);
             if (typeof cfg.onReuse === 'function') cfg.onReuse(existingWin);
             focusWindow(id);
@@ -454,11 +462,18 @@
         var count = s.windowOrder.length;
         var minW = Math.max(380, cfg.minWidth || 380);
         var minH = Math.max(260, cfg.minHeight || 280);
-        var defW = Math.max(minW, Math.min(cfg.width || 920, area.width - 24));
-        var defH = Math.max(minH, Math.min(cfg.height || 620, area.height - 20));
+        var defW = Math.max(minW, Math.min(cfg.width || 920, area.width));
+        var defH = Math.max(minH, Math.min(cfg.height || 620, area.height));
         var offset = (count % 5) * 26;
-        var defX = Math.max(8, Math.round((area.width - defW) / 2) + offset);
-        var defY = Math.max(8, Math.round((area.height - defH) / 2) + offset);
+        var defX = (typeof cfg.x === 'number') ? cfg.x : Math.max(0, Math.round((area.width - defW) / 2) + offset);
+        var defY = (typeof cfg.y === 'number') ? cfg.y : Math.max(0, Math.round((area.height - defH) / 2) + offset);
+
+        if (cfg.rect && typeof cfg.rect === 'object') {
+            if (typeof cfg.rect.x === 'number') defX = cfg.rect.x;
+            if (typeof cfg.rect.y === 'number') defY = cfg.rect.y;
+            if (typeof cfg.rect.w === 'number') defW = cfg.rect.w;
+            if (typeof cfg.rect.h === 'number') defH = cfg.rect.h;
+        }
 
         var win = {
             id: id,

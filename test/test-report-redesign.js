@@ -164,7 +164,7 @@ assert(reportHtml.includes('المهمة التطبيقية أو السؤال ا
 assert(reportHtml.includes('النوع'), 'Column 3 header');
 assert(reportHtml.includes('الحالة'), 'Column 4 header');
 assert(reportHtml.includes('المحاولات'), 'Column 5 header');
-assert(reportHtml.includes('الوزن الأقصى'), 'Column 6 header');
+assert(reportHtml.includes('المعامل الأقصى'), 'Column 6 header');
 assert(reportHtml.includes('الممنوحة'), 'Column 7 header');
 assert(reportHtml.includes('الخصم'), 'Column 8 header');
 assert(reportHtml.includes('الملاحظات وتفاصيل الإنجاز'), 'Column 9 header');
@@ -199,13 +199,13 @@ console.log('--- TEST 4: VERIFY SECTION C (MATH BREAKDOWN & RULE OF THREE) ---')
 assert(reportHtml.includes('القسم (ج): التفكيك الحسابي للعلامة (كيف تم احتساب المعدل خطوة بخطوة)'), 'Must contain Section C title');
 assert(reportHtml.includes('مجموع معاملات المهام العملية:'), 'Step 1 label');
 assert(reportHtml.includes('مجموع معاملات الأسئلة:'), 'Step 2 label');
-assert(reportHtml.includes('مجموع النقاط التي حصلت عليها (أوزان):'), 'Step 3 label');
+assert(reportHtml.includes('مجموع النقاط التي حصلت عليها (معاملات):'), 'Step 3 label');
 assert(reportHtml.includes('العلامة قبل الخصم') && reportHtml.includes('20'), 'Step 4 label');
 assert(reportHtml.includes('القاعدة الثلاثية:'), 'Step 4 Rule of Three mention');
 assert(reportHtml.includes('مجموع الخصومات:'), 'Step 5 label');
-assert(reportHtml.includes('العلامة النهائية:'), 'Step 6 label');
+assert(!reportHtml.includes('a4-final-score-card'), 'Must not duplicate score card at bottom');
+assert(reportHtml.includes('a4-top-summary-card'), 'Must display primary score card at top');
 assert(reportHtml.includes(scores.finalScore.toFixed(2)), 'Must display exact final score');
-assert(reportHtml.includes('a4-final-score-card'), 'Must display highlighted score card');
 console.log('[PASS] Section C step-by-step math breakdown verified.');
 
 console.log('--- TEST 5: VERIFY ZERO HTML ESCAPING BUGS (NO RAW TAGS VISIBLE) ---');
@@ -252,7 +252,8 @@ const reportOptOutHtml = global.Win11Report.buildA4Html(optOutScores);
 
 // Section B MUST show quiz rows because points were zeroed/deducted!
 assert(reportOptOutHtml.includes('a4-type-badge is-quiz'), 'Section B must show quiz rows when student opted out');
-assert(reportOptOutHtml.includes('معطّل بطلب التلميذ ✘'), 'Section B must show opted-out badge');
+assert(reportOptOutHtml.includes('معطّل ✘'), 'Section B must show opted-out badge');
+assert(reportOptOutHtml.includes('تم إلغاء تفعيل الأسئلة بطلب من التلميذ'), 'Section B notes must explain student opted out');
 assert(reportOptOutHtml.includes('معطّل'), 'Section B must show opted out status');
 assert(reportOptOutHtml.includes('0.00 (0%)'), 'Section B must show 0.00 earned');
 assert(reportOptOutHtml.includes('-1.00'), 'Section B must show deduction for opted out quiz');

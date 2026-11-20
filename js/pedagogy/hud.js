@@ -643,12 +643,12 @@
                 var maxL = Math.max(10, global.innerWidth - 100);
                 var maxT = Math.max(10, global.innerHeight - 80);
                 if (rect.right < 80 || rect.bottom < 80 || rect.left > maxL || rect.top > maxT) {
-                    el.style.top = '16px';
+                    el.style.top = '2px';
                     if (global.Win11I18N && global.Win11I18N.isRtl()) {
-                        el.style.right = '24px';
+                        el.style.right = '96px';
                         el.style.left = 'auto';
                     } else {
-                        el.style.left = '24px';
+                        el.style.left = '96px';
                         el.style.right = 'auto';
                     }
                 }

@@ -4,15 +4,16 @@
 
 #pedagogy-hud {
     position: fixed !important;
-    top: calc(16px + var(--netsupport-offset, 0px));
-    left: 112px;
-    right: auto;
-    width: 470px;
+    top: calc(2px + var(--netsupport-offset, 0px));
+    left: auto;
+    right: 96px;
+    width: 460px;
     max-width: calc(100vw - 24px);
-    max-height: calc(100vh - 58px - var(--netsupport-offset, 0px));
+    max-height: calc(100vh - 50px - var(--netsupport-offset, 0px));
+    height: calc(100vh - 50px - var(--netsupport-offset, 0px));
     min-width: 320px;
     min-height: 240px;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--win-border-window);
     box-shadow: var(--win-shadow-window);
     z-index: 850;
@@ -26,7 +27,7 @@
 }
 html[dir="rtl"] #pedagogy-hud {
     left: auto;
-    right: 112px;
+    right: 96px;
 }
 #pedagogy-hud.is-open {
     display: flex !important;

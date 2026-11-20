@@ -109,6 +109,33 @@
         SECTION_MODULES[sectionId] = handlerFn;
     }
 
+    function getOptimalSettingsRect(area) {
+        area = area || (global.Win11WM && typeof global.Win11WM.getWorkArea === 'function' ? global.Win11WM.getWorkArea() : { width: 1024, height: 680 });
+        var winW = area.width || 1024;
+        var winH = area.height || 680;
+
+        var hudEl = (typeof document !== 'undefined') ? document.getElementById('pedagogy-hud') : null;
+        if (hudEl && hudEl.classList.contains('is-open')) {
+            try {
+                var hudRect = hudEl.getBoundingClientRect();
+                if (hudRect && hudRect.width > 200 && hudRect.left > 300) {
+                    var availW = Math.max(520, Math.round(hudRect.left));
+                    return { x: 0, y: 0, w: Math.min(availW, winW), h: winH };
+                }
+            } catch (e) { }
+        }
+
+        // Classroom layout (Picture 2): HUD takes 460px on right, 96px margin for desktop icons
+        var hudTotalAlloc = (winW >= 1400) ? 566 : ((winW >= 1200) ? 540 : 490);
+        var targetW = Math.max(500, winW - hudTotalAlloc);
+        return {
+            x: 0,
+            y: 0,
+            w: targetW,
+            h: winH
+        };
+    }
+
     function openTo(section, subpage, anchor, pushHistory) {
         var ui = getUiState();
         var next = { section: section || 'home', subpage: subpage || 'main', anchor: anchor || null };
@@ -123,20 +150,21 @@
         }
 
         var win = global.Win11WM.getWindow(WIN_ID);
+        var area = (global.Win11WM && typeof global.Win11WM.getWorkArea === 'function')
+            ? global.Win11WM.getWorkArea()
+            : { width: 980, height: 660 };
+        var optimalRect = getOptimalSettingsRect(area);
+
         if (!win) {
-            var area = (global.Win11WM && typeof global.Win11WM.getWorkArea === 'function')
-                ? global.Win11WM.getWorkArea()
-                : { width: 980, height: 660 };
-            var defW = Math.min(980, Math.max(460, (area.width || 980) - 32));
-            var defH = Math.min(660, Math.max(340, (area.height || 660) - 32));
             global.Win11WM.open({
                 id: WIN_ID,
                 appId: 'settings',
                 title: global.Win11I18N.t('settings.windowTitle'),
                 icon: 'settings',
                 hasBack: true,
-                width: defW,
-                height: defH,
+                rect: optimalRect,
+                width: optimalRect.w,
+                height: optimalRect.h,
                 minWidth: 420,
                 minHeight: 320,
                 onBack: goBack,
@@ -152,6 +180,14 @@
                 }
             });
         } else {
+            // Keep Settings docked to the left as in Picture 2 if it was previously floating
+            if (win.rect && (win.rect.x !== 0 || win.rect.y !== 0 || win.rect.h < (area.height - 40))) {
+                win.rect.x = optimalRect.x;
+                win.rect.y = optimalRect.y;
+                win.rect.w = optimalRect.w;
+                win.rect.h = optimalRect.h;
+                if (typeof global.Win11WM.applyRect === 'function') global.Win11WM.applyRect(win);
+            }
             global.Win11WM.focus(WIN_ID);
             renderShellAndRoute();
         }
@@ -543,6 +579,22 @@
 
     if (global.Win11State && typeof global.Win11State.on === 'function') {
         global.Win11State.on('users:changed', function () {
+            var sWin = (global.Win11WM && typeof global.Win11WM.getWindow === 'function')
+                ? global.Win11WM.getWindow(WIN_ID)
+                : null;
+            if (sWin) {
+                var sArea = (global.Win11WM && typeof global.Win11WM.getWorkArea === 'function')
+                    ? global.Win11WM.getWorkArea()
+                    : { width: 980, height: 660 };
+                var optRect = getOptimalSettingsRect(sArea);
+                sWin.rect.x = optRect.x;
+                sWin.rect.y = optRect.y;
+                sWin.rect.w = optRect.w;
+                sWin.rect.h = optRect.h;
+                if (typeof global.Win11WM.applyRect === 'function') {
+                    global.Win11WM.applyRect(sWin);
+                }
+            }
             if (getHostBody() && global.Win11WM.getWindow(WIN_ID)) {
                 renderShellAndRoute();
             }
@@ -565,6 +617,7 @@
         register: registerSection,
         openTo: openTo,
         goBack: goBack,
+        getOptimalRect: getOptimalSettingsRect,
         refresh: function () {
             var hostBody = getHostBody();
             if (hostBody && global.Win11WM.getWindow(WIN_ID)) {

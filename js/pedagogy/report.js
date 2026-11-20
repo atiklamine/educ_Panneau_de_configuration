@@ -949,7 +949,7 @@
                     qDeduct = qMax;
                     totalDeductionsInTable += qDeduct;
                     qStatusCls = 'is-skipped';
-                    qStatusText = 'معطّل بطلب التلميذ ✘';
+                    qStatusText = 'معطّل ✘';
                     qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
                     qAttemptsLabel = '0 (معطّل)';
                     qEarnedDisplay = '0.00 (0%)';
@@ -1036,7 +1036,7 @@
         // Table Footer Row
         var tableFooterHtml =
             '<tr style="background:#F8FAFC;font-weight:700;border-top:2px solid #CBD5E1;">' +
-                '<td colspan="5" style="text-align:left;padding:6px 10px;font-size:11.5px;">' + bidi('المجموع الكلي لأوزان ونقاط المهام والأسئلة:') + '</td>' +
+                '<td colspan="5" style="text-align:left;padding:6px 10px;font-size:11.5px;">' + bidi('المجموع الكلي لمعاملات ونقاط المهام والأسئلة:') + '</td>' +
                 '<td style="text-align:center;"><bdi dir="ltr">' + grandTotalMax.toFixed(2) + '</bdi></td>' +
                 '<td style="text-align:center;color:#1E3A8A;font-size:12.5px;"><bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi></td>' +
                 '<td style="text-align:center;color:#DC2626;"><bdi dir="ltr">-' + totalDeductionsInTable.toFixed(2) + '</bdi></td>' +
@@ -1098,7 +1098,7 @@
 
                         '<div class="a4-math-step">' +
                             '<span class="a4-step-num">3</span>' +
-                            '<span class="a4-step-lbl">' + bidi('مجموع النقاط التي حصلت عليها (أوزان):') + '</span>' +
+                            '<span class="a4-step-lbl">' + bidi('مجموع النقاط التي حصلت عليها (معاملات):') + '</span>' +
                             '<span class="a4-step-val" style="color:#1E3A8A;"><bdi dir="ltr"><strong>' + grandTotalEarned.toFixed(2) + '</strong> / <strong>' + grandTotalMax.toFixed(2) + '</strong></bdi> ' + bidi('نقطة') + '</span>' +
                             '<span class="a4-step-sub">(' +
                                 (isQuizGloballyDisabled
@@ -1120,22 +1120,6 @@
                             '<span class="a4-step-val" style="color:' + (pen > 0 ? '#DC2626' : '#15803D') + ';"><bdi dir="ltr"><strong>' + (pen > 0 ? ('-' + pen.toFixed(2)) : '0.00') + '</strong></bdi> ' + bidi('نقطة') + '</span>' +
                             '<span class="a4-step-sub">' + (pen > 0 ? bidi('مخالفات تسلسل المهام النشطة') : bidi('أداء نظامي سليم بدون خصومات')) + '</span>' +
                         '</div>' +
-
-                        '<div class="a4-math-step final-formula">' +
-                            '<span class="a4-step-num">6</span>' +
-                            '<span class="a4-step-lbl">' + bidi('العلامة النهائية:') + '</span>' +
-                            '<span class="a4-step-val" style="color:#15803D;"><bdi dir="ltr"><strong>' + finalScoreStr + ' / 20</strong></bdi></span>' +
-                            '<span class="a4-step-sub"><bdi dir="ltr">' + baseScoreOutOf20.toFixed(2) + ' - ' + pen.toFixed(2) + ' = ' + finalScoreStr + '</bdi></span>' +
-                        '</div>' +
-                    '</div>' +
-
-                    // Highlighted Final Score Box (Green Box)
-                    '<div class="a4-final-score-card ' + (isPassed ? 'is-pass' : 'is-fail') + '">' +
-                        '<div class="a4-fsc-title">' + bidi('العلامة النهائية المستحقة') + '</div>' +
-                        '<div class="a4-fsc-grade"><bdi dir="ltr">' + finalScoreStr + '</bdi> <span class="a4-fsc-out">/ 20</span></div>' +
-                        '<div class="a4-fsc-badge"><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '">' + bidi(isPassed ? '✔ مستوفٍ لمعيار النجاح' : '✘ دون المعدل المطلوب') + '</span></div>' +
-                        '<div class="a4-fsc-appreciation">' + bidi('التقدير العام: ') + '<strong>' + bidi(scores.appreciation || 'متوسط') + '</strong></div>' +
-                        '<div class="a4-fsc-level">' + bidi(scores.performanceLevel || 'في طريق الاكتساب') + '</div>' +
                     '</div>' +
                 '</div>' +
             '</div>';
@@ -1213,20 +1197,20 @@
             '<div class="a4-section-b">' +
                 '<div class="a4-section-title">' +
                     '<span>' + bidi('القسم (ب): جدول التفصيل الدقيق للمهام العملية والأسئلة التقويمية') + '</span>' +
-                    '<span style="font-size:11px;color:#475569;font-weight:normal;">' + bidi('تفصيل النقاط والأوزان والمحاولات') + '</span>' +
+                    '<span style="font-size:11px;color:#475569;font-weight:normal;">' + bidi('تفصيل النقاط والمعاملات والمحاولات') + '</span>' +
                 '</div>' +
                 '<table class="a4-report-table">' +
                     '<thead>' +
                         '<tr>' +
-                            '<th style="width:4%;text-align:center;">#</th>' +
-                            '<th style="width:27%;text-align:right;">المهمة التطبيقية أو السؤال التقويمي</th>' +
-                            '<th style="width:9%;text-align:center;">النوع</th>' +
-                            '<th style="width:10%;text-align:center;">الحالة</th>' +
+                            '<th style="width:3.5%;text-align:center;">#</th>' +
+                            '<th style="width:26.5%;text-align:right;">المهمة التطبيقية أو السؤال التقويمي</th>' +
+                            '<th style="width:8.5%;text-align:center;">النوع</th>' +
+                            '<th style="width:11%;text-align:center;">الحالة</th>' +
                             '<th style="width:8%;text-align:center;">المحاولات</th>' +
-                            '<th style="width:7%;text-align:center;">الوزن الأقصى</th>' +
+                            '<th style="width:7%;text-align:center;">المعامل الأقصى</th>' +
                             '<th style="width:7%;text-align:center;">الممنوحة</th>' +
                             '<th style="width:7%;text-align:center;">الخصم</th>' +
-                            '<th style="width:21%;text-align:right;">الملاحظات وتفاصيل الإنجاز</th>' +
+                            '<th style="width:21.5%;text-align:right;">الملاحظات وتفاصيل الإنجاز</th>' +
                         '</tr>' +
                     '</thead>' +
                     '<tbody>' +
@@ -1310,7 +1294,7 @@
             '.a4-type-badge.is-quiz{background:#F5F3FF;color:#6D28D9;border:1px solid #DDD6FE;}\n' +
             '.a4-type-badge.is-penalty{background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA;}\n' +
             '.a4-crit-badge{color:#DC2626;font-size:10px;font-weight:700;}\n' +
-            '.a4-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap;}\n' +
+            '.a4-badge{display:inline-block;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:700;max-width:100%;box-sizing:border-box;text-align:center;white-space:normal;word-break:keep-all;}\n' +
             '.a4-badge.is-done{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;}\n' +
             '.a4-badge.is-partial{background:#FEF3C7;color:#D97706;border:1px solid #FDE68A;}\n' +
             '.a4-badge.is-fail{background:#FEE2E2;color:#B91C1C;border:1px solid #FCA5A5;}\n' +
@@ -1332,25 +1316,14 @@
             '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1;padding:5px 4px;text-align:right;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word;word-break:break-word;white-space:normal;box-sizing:border-box;}\n' +
             '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;font-size:10px;line-height:1.35;}\n' +
             '.a4-quiz-disabled-notice{background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:6px;padding:6px 10px;margin:6px 0;color:#92400E;font-size:11px;line-height:1.5;}\n' +
-            '.a4-math-grid{display:flex;gap:10px;margin-top:6px;align-items:stretch;}\n' +
-            '.a4-math-steps{flex:1 1 65%;display:flex;flex-direction:column;gap:4px;}'+
+            '.a4-math-grid{display:flex;gap:10px;margin-top:6px;align-items:stretch;width:100%;}\n' +
+            '.a4-math-steps{flex:1 1 100%;width:100%;display:flex;flex-direction:column;gap:4px;}\n' +
             '.a4-math-step{display:flex;align-items:center;gap:6px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:4px;padding:4px 8px;font-size:11px;color:#334155;}\n' +
             '.a4-math-step.highlight-rule3{background:#F0F9FF;border-color:#BAE6FD;}\n' +
-            '.a4-math-step.final-formula{background:#F0FDF4;border-color:#BBF7D0;font-weight:700;}\n' +
             '.a4-step-num{width:16px;height:16px;background:#1E3A8A;color:#FFFFFF;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;flex-shrink:0;}\n' +
             '.a4-step-lbl{font-weight:600;color:#1E293B;}\n' +
             '.a4-step-val{margin-right:auto;font-weight:700;color:#0F172A;}\n' +
             '.a4-step-sub{font-size:10px;color:#64748B;}\n' +
-            '.a4-final-score-card{flex:0 0 210px;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-sizing:border-box;}\n' +
-            '.a4-final-score-card.is-pass{background:#F0FDF4;border:2px solid #16A34A;box-shadow:0 2px 6px rgba(22,163,74,0.12);}\n' +
-            '.a4-final-score-card.is-fail{background:#FFFBEB;border:2px solid #D97706;box-shadow:0 2px 6px rgba(217,119,6,0.12);}\n' +
-            '.a4-fsc-title{font-size:11.5px;font-weight:700;color:#475569;margin-bottom:2px;}\n' +
-            '.a4-fsc-grade{font-size:28px;font-weight:900;color:#15803D;line-height:1.1;margin:3px 0;}\n' +
-            '.a4-final-score-card.is-fail .a4-fsc-grade{color:#B45309;}\n' +
-            '.a4-fsc-out{font-size:15px;color:#64748B;font-weight:700;}'+
-            '.a4-fsc-badge{margin:3px 0;}\n' +
-            '.a4-fsc-appreciation{font-size:11.5px;margin-top:3px;color:#1E293B;}\n' +
-            '.a4-fsc-level{font-size:10px;font-weight:600;color:#64748B;margin-top:2px;line-height:1.3;}\n' +
             '.a4-footer-sig{margin-top:8px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #CBD5E1;padding-top:6px;font-size:11px;}\n' +
             '@media print{@page{size:A4 portrait;margin:6mm 6mm;}body{background:#FFFFFF;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.a4-report-sheet{border:none;box-shadow:none;padding:0;max-width:none;width:100%;}.a4-top-summary-card{page-break-inside:avoid;break-inside:avoid;}.a4-section-title{page-break-after:avoid;break-after:avoid;}.a4-report-table{width:100% !important;table-layout:fixed !important;}.a4-report-table tr{page-break-inside:avoid;break-inside:avoid;}.a4-section-c,.a4-footer-sig{page-break-inside:avoid;break-inside:avoid;}}\n' +
             '</style>\n</head>\n<body>\n' + a4Inner + '\n</body>\n</html>';
@@ -1608,7 +1581,7 @@
             ctx.fillText('النوع', 717, curY + 20); // col 2: 670..765
             ctx.fillText('الحالة', 615, curY + 20); // col 3: 560..670
             ctx.fillText('المحاولات', 525, curY + 20); // col 4: 490..560
-            ctx.fillText('الوزن الأقصى', 450, curY + 20); // col 5: 410..490
+            ctx.fillText('المعامل الأقصى', 450, curY + 20); // col 5: 410..490
             ctx.fillText('الممنوحة', 370, curY + 20); // col 6: 330..410
             ctx.fillText('الخصم', 295, curY + 20); // col 7: 260..330
             ctx.textAlign = 'right';
@@ -1742,7 +1715,7 @@
                     // Quiz Status
                     if (isQuizOptedOut) {
                         ctx.fillStyle = '#DC2626';
-                        ctx.fillText('معطل بطلب التلميذ ✘', 615, curY + 18);
+                        ctx.fillText('معطل ✘', 615, curY + 18);
                     } else if (qRes && qRes.answeredCorrectly) {
                         ctx.fillStyle = '#15803D';
                         ctx.fillText('إجابة صحيحة ✔', 615, curY + 18);
@@ -1798,7 +1771,7 @@
             ctx.textAlign = 'right';
             ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#0F172A';
-            ctx.fillText('المجموع الكلي لأوزان ونقاط المهام والأسئلة:', 1100, curY + 21);
+            ctx.fillText('المجموع الكلي لمعاملات ونقاط المهام والأسئلة:', 1100, curY + 21);
 
             ctx.textAlign = 'center';
             ctx.fillText(grandTotalMax.toFixed(2), 450, curY + 21);
@@ -1829,8 +1802,7 @@
                 { num: '2', lbl: 'مجموع نقاط الأسئلة التقويمية:', val: (showQuizzes ? (quizEarned.toFixed(2) + ' / ' + quizMax.toFixed(2)) : 'معطلة من الأستاذ'), sub: (showQuizzes ? 'نقاط الأسئلة بحسب عدد المحاولات المستهلكة' : 'تم اعتماد تقييم المهام العملية فقط'), bg: '#F8FAFC' },
                 { num: '3', lbl: 'المجموع الإجمالي الخام المكتسب:', val: grandTotalEarned.toFixed(2) + ' / ' + grandTotalMax.toFixed(2), sub: 'مجموع النقاط العملية + نقاط الأسئلة التقويمية', bg: '#F8FAFC' },
                 { num: '4', lbl: 'تطبيق القاعدة الثلاثية الرسمية (على 20):', val: baseScoreOutOf20.toFixed(2) + ' / 20.00', sub: '(' + grandTotalEarned.toFixed(2) + ' ÷ ' + grandTotalMax.toFixed(2) + ') × 20', bg: '#F0F9FF' },
-                { num: '5', lbl: 'خصم استهلاك التلميحات المساعدة:', val: '-' + pen.toFixed(2) + ' نقطة', sub: 'خصم بيداغوجي وفق معايير سلم التنقيط', bg: '#FEF2F2' },
-                { num: '6', lbl: 'العلامة الإجمالية الصافية المستحقة:', val: finalScoreStr + ' / 20.00', sub: 'العلامة النهائية الرسمية المعتمدة لبطاقة التقييم', bg: '#F0FDF4' }
+                { num: '5', lbl: 'خصم استهلاك التلميحات المساعدة:', val: '-' + pen.toFixed(2) + ' نقطة', sub: 'خصم بيداغوجي وفق معايير سلم التنقيط', bg: '#FEF2F2' }
             ];
 
             for (var mIdx = 0; mIdx < mathSteps.length; mIdx++) {

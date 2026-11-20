@@ -656,6 +656,20 @@
             if (global.Win11WM && typeof global.Win11WM.syncSession === 'function') {
                 global.Win11WM.syncSession();
             }
+            if (global.Win11SettingsApp && typeof global.Win11SettingsApp.getOptimalRect === 'function' && global.Win11WM) {
+                var setWin = global.Win11WM.getWindow('win-settings');
+                if (setWin) {
+                    var sArea = global.Win11WM.getWorkArea();
+                    var sOpt = global.Win11SettingsApp.getOptimalRect(sArea);
+                    setWin.rect.x = sOpt.x;
+                    setWin.rect.y = sOpt.y;
+                    setWin.rect.w = sOpt.w;
+                    setWin.rect.h = sOpt.h;
+                    if (typeof global.Win11WM.applyRect === 'function') {
+                        global.Win11WM.applyRect(setWin);
+                    }
+                }
+            }
             if (global.Win11I18N && data.numerals) {
                 global.Win11I18N.setNumerals(data.numerals);
             }
