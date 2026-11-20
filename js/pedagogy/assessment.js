@@ -39,10 +39,13 @@
         ],
         5: [
             { id: 0, labelAr: 'تشغيل ملف LabTools_Setup.exe وتثبيت البرنامج', labelFr: 'Exécuter LabTools_Setup.exe et installer' },
-            { id: 1, labelAr: 'التحقق من ظهور البرنامج في التطبيقات المثبتة', labelFr: 'Vérifier dans Applications installées' },
-            { id: 2, labelAr: 'إلغاء تثبيت البرنامج والتحقق من اختفائه', labelFr: 'Désinstaller l\'application' },
-            { id: 3, labelAr: 'إضافة ميزة اختيارية (Paint/Notepad/Games) والتحقق من ظهورها في ابدأ', labelFr: 'Ajouter une fonctionnalité facultative' },
-            { id: 4, labelAr: 'إزالة الميزة الاختيارية والتحقق من اختفائها من ابدأ', labelFr: 'Supprimer la fonctionnalité facultative' }
+            { id: 1, labelAr: 'فتح تطبيق LabTools من قائمة ابدأ لتجربته ثم إغلاقه', labelFr: 'Ouvrir LabTools depuis Démarrer et fermer' },
+            { id: 2, labelAr: 'إلغاء تثبيت التطبيق من الإعدادات ← التطبيقات المثبتة', labelFr: 'Désinstaller l\'application' },
+            { id: 3, labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء التطبيق بعد حذفه', labelFr: 'Vérifier la disparition de LabTools de Démarrer' },
+            { id: 4, labelAr: 'تفعيل ميزة اختيارية (Paint/Notepad/Games) من الميزات الاختيارية', labelFr: 'Activer une fonctionnalité facultative' },
+            { id: 5, labelAr: 'فتح الميزة المفعلة (كالرسام) من قائمة ابدأ لتجربتها ثم إغلاقها', labelFr: 'Ouvrir la fonctionnalité depuis Démarrer et fermer' },
+            { id: 6, labelAr: 'إزالة/تعطيل الميزة الاختيارية من الإعدادات', labelFr: 'Désactiver la fonctionnalité facultative' },
+            { id: 7, labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء الميزة بعد تعطيلها', labelFr: 'Vérifier la disparition de la fonctionnalité de Démarrer' }
         ],
         6: [
             { id: 0, labelAr: '(A) إنشاء حسابين قياسيين (Standard) ثم حذفهما', labelFr: 'A: Créer et supprimer 2 comptes standard' },
@@ -74,7 +77,7 @@
                 { id: 2, enabled: true, coefficient: 2, weight: 2, complexity: 'simple', critical: false, disabled_subtasks: [], subtasks_order: [0, 1] },
                 { id: 3, enabled: true, coefficient: 3, weight: 3, complexity: 'medium', critical: false, disabled_subtasks: [], subtasks_order: [0, 1] },
                 { id: 4, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [], subtasks_order: [0, 1, 2] },
-                { id: 5, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [], subtasks_order: [0, 1, 2, 3, 4] },
+                { id: 5, enabled: true, coefficient: 4, weight: 4, complexity: 'medium', critical: false, disabled_subtasks: [], subtasks_order: [0, 1, 2, 3, 4, 5, 6, 7] },
                 { id: 6, enabled: true, coefficient: 6, weight: 6, complexity: 'complex', critical: false, disabled_subtasks: [], subtasks_order: [0, 1, 2, 3, 4, 5, 6, 7] }
             ],
             ui_language_default: 'ar',
@@ -248,10 +251,10 @@
             titleAr: 'تثبيت وإزالة البرامج والميزات الاختيارية',
             titleFr: 'Installation, désinstallation et fonctionnalités facultatives',
             titleEn: 'App Setup, Uninstall & Optional Features',
-            instrAr: '1) شغّل ملف LabTools_Setup.exe من سطح المكتب وثبّت التطبيق. 2) تحقق من ظهوره في الإعدادات > التطبيقات المثبتة. 3) أزل تثبيته وتحقق من اختفائه. 4) ادخل إلى الميزات الاختيارية وفعّل ميزة (Paint أو Games) ثم تحقق من ظهورها في قائمة ابدأ، ثم عطّلها وتحقق من اختفائها.',
-            instrFr: '1) Exécutez LabTools_Setup.exe et installez. 2) Vérifiez dans Applications installées. 3) Désinstallez et vérifiez. 4) Activez Paint/Games dans Fonctionnalités facultatives, vérifiez dans Démarrer, puis désactivez et vérifiez.',
-            instrEn: '1) Run LabTools_Setup.exe on Desktop & install. 2) Verify in Installed Apps. 3) Uninstall & verify gone. 4) Enable Paint/Games in Optional Features & verify in Start Menu, then disable & verify removal.',
-            hintAr: 'استخدم أيقونة LabTools_Setup.exe على سطح المكتب، ثم افتح الإعدادات > التطبيقات > التطبيقات المثبتة، واختم بـ الميزات الاختيارية وقائمة ابدأ.',
+            instrAr: '1) شغّل ملف LabTools_Setup.exe من سطح المكتب وثبّت التطبيق، ثم افتحه من قائمة ابدأ لتجربته وأغلقه، ثم احذفه من الإعدادات وتأكد من اختفائه من قائمة ابدأ. 2) ادخل إلى الميزات الاختيارية وفعّل ميزة (Paint أو Notepad أو Games) ثم افتحها من قائمة ابدأ لتجربتها وأغلقها، ثم عطّلها من الإعدادات وتأكد من اختفائها من قائمة ابدأ.',
+            instrFr: '1) Exécutez LabTools_Setup.exe, ouvrez depuis Démarrer puis fermez, désinstallez et vérifiez dans Démarrer. 2) Activez Paint/Notepad/Games dans Fonctionnalités facultatives, ouvrez depuis Démarrer puis fermez, désactivez et vérifiez dans Démarrer.',
+            instrEn: '1) Run LabTools_Setup.exe, open from Start Menu then close, uninstall and verify gone from Start. 2) Enable Paint/Notepad/Games in Optional Features, open from Start then close, disable and verify gone from Start.',
+            hintAr: 'ثبّت وجرّب LabTools من ابدأ ثم احذفه، وفعّل ميزة (كالرسام) من الميزات الاختيارية وجرّبها من ابدأ ثم عطّلها، مع التحقق دائماً من قائمة ابدأ.',
             hintFr: 'Exécutez LabTools_Setup.exe puis allez dans Paramètres > Applications > Fonctionnalités facultatives et menu Démarrer.',
             hintEn: 'Run LabTools_Setup.exe, verify in Settings > Apps, then toggle Optional Features and inspect Start Menu.',
             earnedPoints: 0,
@@ -695,18 +698,21 @@
             ]);
             syncTaskTimer(tk, wpFromPreset || wpFromPictures || accChanged);
         } else if (tk.id === 5) {
-            // Task 5: Setup.exe Install/Verify/Uninstall + Optional Features Enable/Disable (Medium — 5 equal sub-stages, 20% each)
+            // Task 5: Setup.exe Install/Open/Uninstall/Verify + Optional Features Enable/Open/Disable/Verify (8 granular sub-stages)
             var allowApps = (!earlyTaintedMap[5] || activeTouchedMap[5]);
             var sf = st.setupFlow || {};
             var ff = st.featureFlow || {};
-            var step1Install = allowApps && !!sf.installed;
-            var step2VerifyInst = allowApps && !!sf.verifiedInstalled;
-            var step3UninstallVer = allowApps && !!sf.uninstalled && !!sf.verifiedUninstalled;
+            var step0Install = allowApps && !!sf.installed;
+            var step1OpenApp = allowApps && !!sf.openedApp;
+            var step2Uninstall = allowApps && !!sf.uninstalled;
+            var step3GoneStart = allowApps && !!sf.verifiedGoneInStart;
             var step4EnableFeat = allowApps && !!ff.enabledOnce;
-            var step5DisableFeat = allowApps && !!ff.disabledAfterEnable;
+            var step5OpenFeat = allowApps && !!ff.openedApp;
+            var step6DisableFeat = allowApps && !!ff.disabledAfterEnable;
+            var step7FeatGoneStart = allowApps && !!ff.verifiedGoneInStart;
             scoreTaskWithReasons(tk, [
                 {
-                    ok: step1Install,
+                    ok: step0Install,
                     weight: 1,
                     labelAr: 'تشغيل ملف LabTools_Setup.exe وتثبيت البرنامج',
                     labelFr: 'Exécuter LabTools_Setup.exe et installer',
@@ -714,39 +720,63 @@
                     reason: 'لم يُنفذ تثبيت البرنامج عبر ملف LabTools_Setup.exe على سطح المكتب'
                 },
                 {
-                    ok: step2VerifyInst,
+                    ok: step1OpenApp,
                     weight: 1,
-                    labelAr: 'التحقق من ظهور البرنامج في الإعدادات ← التطبيقات المثبتة',
-                    labelFr: 'Vérifier l\'application dans Applications installées',
-                    labelEn: 'Verify app appears in Installed Apps',
-                    reason: 'لم يتم التحقق من ظهور التطبيق في التطبيقات المثبتة'
+                    labelAr: 'فتح تطبيق LabTools من قائمة ابدأ لتجربته ثم إغلاقه',
+                    labelFr: 'Ouvrir LabTools depuis le menu Démarrer et fermer',
+                    labelEn: 'Open LabTools from Start Menu and close it',
+                    reason: 'لم يتم فتح تطبيق LabTools من قائمة ابدأ لتجربته'
                 },
                 {
-                    ok: step3UninstallVer,
+                    ok: step2Uninstall,
                     weight: 1,
-                    labelAr: 'إزالة تثبيت البرنامج والتحقق من اختفائه',
-                    labelFr: 'Désinstaller l\'application et vérifier sa suppression',
-                    labelEn: 'Uninstall app and verify removal',
-                    reason: 'لم يتم إلغاء تثبيت التطبيق والتحقق من اختفائه'
+                    labelAr: 'إلغاء تثبيت التطبيق من الإعدادات ← التطبيقات المثبتة',
+                    labelFr: 'Désinstaller l\'application depuis Paramètres',
+                    labelEn: 'Uninstall app from Settings > Installed apps',
+                    reason: 'لم يتم إلغاء تثبيت التطبيق من الإعدادات'
+                },
+                {
+                    ok: step3GoneStart,
+                    weight: 1,
+                    labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء التطبيق بعد حذفه',
+                    labelFr: 'Vérifier la disparition de l\'application du menu Démarrer',
+                    labelEn: 'Verify app is removed from Start Menu',
+                    reason: 'لم يتم فتح قائمة ابدأ للتأكد من اختفاء التطبيق المحذوف'
                 },
                 {
                     ok: step4EnableFeat,
                     weight: 1,
-                    labelAr: 'إضافة ميزة اختيارية (Paint/Notepad/Games) والتحقق من ظهورها في قائمة ابدأ',
-                    labelFr: 'Ajouter une fonctionnalité facultative et vérifier dans Démarrer',
-                    labelEn: 'Add Optional Feature and verify in Start Menu',
-                    reason: 'لم تُفعّل ميزة اختيارية (Paint/Notepad/Games) والتحقق من ظهورها في قائمة ابدأ'
+                    labelAr: 'تفعيل ميزة اختيارية (Paint أو Notepad أو Games) من الميزات الاختيارية',
+                    labelFr: 'Activer une fonctionnalité facultative',
+                    labelEn: 'Enable an Optional Feature',
+                    reason: 'لم تُفعّل ميزة اختيارية من الإعدادات'
                 },
                 {
-                    ok: step5DisableFeat,
+                    ok: step5OpenFeat,
                     weight: 1,
-                    labelAr: 'إزالة الميزة الاختيارية والتحقق من اختفائها من قائمة ابدأ',
-                    labelFr: 'Supprimer la fonctionnalité et vérifier qu\'elle disparaît',
-                    labelEn: 'Remove Optional Feature and verify gone from Start Menu',
-                    reason: 'لم تُعطّل الميزة الاختيارية والتحقق من اختفائها من قائمة ابدأ'
+                    labelAr: 'فتح الميزة المفعلة (كالرسام) من قائمة ابدأ لتجربتها ثم إغلاقها',
+                    labelFr: 'Ouvrir la fonctionnalité depuis Démarrer et fermer',
+                    labelEn: 'Open the activated feature from Start Menu and close it',
+                    reason: 'لم يتم فتح الميزة المفعلة (مثل الرسام) من قائمة ابدأ وتجربتها'
+                },
+                {
+                    ok: step6DisableFeat,
+                    weight: 1,
+                    labelAr: 'إزالة/تعطيل الميزة الاختيارية من الإعدادات',
+                    labelFr: 'Désactiver la fonctionnalité facultative',
+                    labelEn: 'Disable Optional Feature from Settings',
+                    reason: 'لم يتم تعطيل الميزة الاختيارية بعد تجربتها'
+                },
+                {
+                    ok: step7FeatGoneStart,
+                    weight: 1,
+                    labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء الميزة بعد تعطيلها',
+                    labelFr: 'Vérifier la disparition de la fonctionnalité de Démarrer',
+                    labelEn: 'Verify Optional Feature is removed from Start Menu',
+                    reason: 'لم يتم فتح قائمة ابدأ للتأكد من اختفاء الميزة بعد تعطيلها'
                 }
             ]);
-            syncTaskTimer(tk, step1Install || step2VerifyInst || step3UninstallVer || step4EnableFeat || step5DisableFeat);
+            syncTaskTimer(tk, step0Install || step1OpenApp || step2Uninstall || step3GoneStart || step4EnableFeat || step5OpenFeat || step6DisableFeat || step7FeatGoneStart);
         } else if (tk.id === 6) {
             // Task 6: Comprehensive User Accounts A–G + Avatar (Complex — 8 equal sub-stages, 12.5% each)
             var allowAcc = (!earlyTaintedMap[6] || activeTouchedMap[6]);

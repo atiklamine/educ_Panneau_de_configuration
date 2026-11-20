@@ -327,6 +327,16 @@
     function openLabToolsApp() {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
         var bidi = global.Win11I18N.bidiHtml;
+        if (global.Win11State && global.Win11State.get) {
+            var curSt = global.Win11State.get();
+            if (curSt.setupFlow) {
+                curSt.setupFlow.openedApp = true;
+                global.Win11State.persist();
+            }
+        }
+        if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+            global.Win11Assessment.evaluate();
+        }
         showCustom({
             title: t('settings.apps.labToolsAppTitle') || 'LabTools 1AS Education Suite',
             tone: 'info',
@@ -345,13 +355,53 @@
                         '<div>• ' + bidi('بيئة تدريب مبسطة على صيانة الحاسوب وإدارة البرمجيات') + '</div>' +
                     '</div>';
             },
-            buttons: [{ label: t('app.close'), primary: true, value: true }]
+            buttons: [{
+                label: t('app.close'),
+                primary: true,
+                value: true,
+                onClick: function () {
+                    if (global.Win11State && global.Win11State.get) {
+                        var curSt = global.Win11State.get();
+                        if (curSt.setupFlow) {
+                            curSt.setupFlow.closedApp = true;
+                            global.Win11State.persist();
+                        }
+                    }
+                    if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+                        global.Win11Assessment.evaluate();
+                    }
+                }
+            }]
         });
     }
 
     function openOptionalFeatureApp(featId) {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
         var bidi = global.Win11I18N.bidiHtml;
+        if (global.Win11State && global.Win11State.get) {
+            var curSt = global.Win11State.get();
+            if (curSt.featureFlow) {
+                curSt.featureFlow.openedApp = true;
+                curSt.featureFlow.lastOpenedFeatId = featId;
+                global.Win11State.persist();
+            }
+        }
+        if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+            global.Win11Assessment.evaluate();
+        }
+        var onFeatureClose = function () {
+            if (global.Win11State && global.Win11State.get) {
+                var curSt = global.Win11State.get();
+                if (curSt.featureFlow) {
+                    curSt.featureFlow.closedApp = true;
+                    global.Win11State.persist();
+                }
+            }
+            if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+                global.Win11Assessment.evaluate();
+            }
+        };
+
         if (featId === 'paint') {
             showCustom({
                 title: t('settings.apps.paintAppTitle') || 'Paint',
@@ -415,7 +465,7 @@
                         canvas.onmouseleave = function () { drawing = false; };
                     }
                 },
-                buttons: [{ label: t('app.close'), primary: true, value: true }]
+                buttons: [{ label: t('app.close'), primary: true, value: true, onClick: onFeatureClose }]
             });
         } else if (featId === 'notepad') {
             showCustom({
@@ -456,7 +506,7 @@
                         };
                     }
                 },
-                buttons: [{ label: t('app.close'), primary: true, value: true }]
+                buttons: [{ label: t('app.close'), primary: true, value: true, onClick: onFeatureClose }]
             });
         } else {
             showCustom({
@@ -512,7 +562,7 @@
                         };
                     }
                 },
-                buttons: [{ label: t('app.close'), primary: true, value: true }]
+                buttons: [{ label: t('app.close'), primary: true, value: true, onClick: onFeatureClose }]
             });
         }
     }

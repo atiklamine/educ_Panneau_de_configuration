@@ -1435,154 +1435,476 @@
             ctx.strokeStyle = '#94A3B8';
             ctx.strokeRect(46, 46, 1148, 1662);
 
-            // Header text
-            ctx.direction = 'rtl';
-            ctx.textAlign = 'center';
-            ctx.fillStyle = '#0F172A';
-            ctx.font = 'bold 22px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية', 620, 90);
-
             var cfg = (global.Win11Assessment && global.Win11Assessment.getConfig) ? global.Win11Assessment.getConfig() : {};
             var stu = (global.Win11Assessment && global.Win11Assessment.getStudent) ? global.Win11Assessment.getStudent() : {};
             var scores = (global.Win11Assessment && global.Win11Assessment.getScores) ? global.Win11Assessment.getScores() : {};
+            var tasks = (global.Win11Assessment && global.Win11Assessment.getTasks) ? global.Win11Assessment.getTasks() : [];
 
-            ctx.font = 'bold 15px "Segoe UI", Tahoma, sans-serif';
+            var enabledTasks = [];
+            var doneTasksCount = 0;
+            var practicalMaxPoints = 0;
+            var practicalEarnedPoints = 0;
+
+            for (var t = 0; t < tasks.length; t++) {
+                if (tasks[t].enabled !== false) {
+                    enabledTasks.push(tasks[t]);
+                    var tMax = Math.floor(Math.max(1, Number(tasks[t].coefficient) || Number(tasks[t].maxPoints) || 1));
+                    tasks[t].coefficient = tMax;
+                    tasks[t].maxPoints = tMax;
+                    practicalMaxPoints += tMax;
+                    practicalEarnedPoints += Math.min(tMax, Math.max(0, Number(tasks[t].earnedPoints) || 0));
+                    if (tasks[t].completed) doneTasksCount++;
+                }
+            }
+
+            var completionPct = enabledTasks.length > 0 ? Math.round((doneTasksCount / enabledTasks.length) * 100) : 0;
+            var effectiveSec = (stu.allCompleted && stu.completionElapsedSeconds !== null && stu.completionElapsedSeconds !== undefined)
+                ? stu.completionElapsedSeconds
+                : (stu.elapsedSeconds || 0);
+            var totalDurationStr = formatArabicDuration(effectiveSec);
+            var dateFormatted = formatArabicDate();
+            var isExam = (stu.mode === 'exam');
+            var isPassed = (scores.passed !== false);
+            var finalScoreNum = (scores.finalScore !== undefined ? scores.finalScore : scores.net);
+            var finalScoreStr = Number(finalScoreNum || 0).toFixed(2);
+
+            var isQuizGloballyDisabled = (cfg.quiz_enabled === false);
+            var isQuizOptedOut = (stu.quizOptIn === false);
+            var showQuizzes = !isQuizGloballyDisabled;
+
+            var practicalMax = Number(scores.practicalMax || practicalMaxPoints || 0);
+            var practicalEarned = Number(scores.practicalEarned !== undefined ? scores.practicalEarned : practicalEarnedPoints);
+            var quizMax = Number(scores.quizMax !== undefined ? scores.quizMax : 0);
+            var quizEarned = Number(scores.quizEarned !== undefined ? scores.quizEarned : 0);
+            var grandTotalMax = Number(scores.grandTotalMax || (practicalMax + (showQuizzes ? quizMax : 0)));
+            var grandTotalEarned = Number(scores.grandTotalEarned !== undefined ? scores.grandTotalEarned : (practicalEarned + (showQuizzes ? quizEarned : 0)));
+            var baseScoreOutOf20 = Number(scores.baseScore !== undefined ? scores.baseScore : (grandTotalMax > 0 ? ((grandTotalEarned / grandTotalMax) * 20) : 0));
+            var pen = Number(scores.penalties || 0);
+
+            // 1. Republic Header text
+            ctx.direction = 'rtl';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#0F172A';
+            ctx.font = 'bold 16px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية', 620, 72);
+
+            ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#475569';
-            ctx.fillText('المؤسسة: ' + (cfg.institution_name || 'ثانوية') + '   |   الأستاذ المشرف: ' + (cfg.teacher_name || 'الأستاذ'), 620, 120);
+            var instStr = (cfg.institution_name || 'ثانوية الشهيد قورين محمد الأغواط');
+            var teachStr = (cfg.teacher_name || 'أستاذ مادة المعلوماتية');
+            ctx.fillText('المؤسسة: ' + instStr + '      |      الأستاذ المشرف: ' + teachStr, 620, 98);
 
-            // Banner
+            // Main Title Banner
             ctx.fillStyle = '#F8FAFC';
-            ctx.fillRect(80, 135, 1080, 80);
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#E2E8F0';
-            ctx.strokeRect(80, 135, 1080, 80);
-
-            ctx.fillStyle = '#1E3A8A';
-            ctx.font = 'bold 24px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي', 620, 172);
-
-            ctx.fillStyle = '#475569';
-            ctx.font = '16px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)', 620, 202);
-
-            // Student Info Box
-            ctx.fillStyle = '#F1F5F9';
-            ctx.fillRect(80, 230, 1080, 90);
+            ctx.fillRect(80, 114, 1080, 58);
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = '#CBD5E1';
-            ctx.strokeRect(80, 230, 1080, 90);
+            ctx.strokeRect(80, 114, 1080, 58);
 
-            ctx.textAlign = 'right';
-            ctx.fillStyle = '#0F172A';
-            ctx.font = 'bold 17px "Segoe UI", Tahoma, sans-serif';
-            var sName = (stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || 'تلميذ');
-            ctx.fillText('اسم التلميذ(ة): ' + sName + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      الجهاز: ' + (stu.pcNumber || '01'), 1130, 268);
-            ctx.fillText('المستوى: السنة الأولى ثانوي (1AS) — الوحدة 3: لوحة التحكم وإعدادات النظام', 1130, 302);
-
-            // Final Score Card
-            ctx.fillStyle = '#F0FDF4';
-            ctx.fillRect(80, 335, 1080, 130);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#16A34A';
-            ctx.strokeRect(80, 335, 1080, 130);
-
-            ctx.textAlign = 'center';
-            ctx.fillStyle = '#15803D';
-            ctx.font = 'bold 18px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('العلامة النهائية المستحقة (وفق القاعدة الثلاثية الرسمية):', 620, 375);
-
-            var finalScore = (scores.finalScore !== undefined) ? scores.finalScore : (scores.net || 0);
-            var scoreStr = Number(finalScore).toFixed(2) + ' / 20.00';
-            ctx.fillStyle = '#16A34A';
-            ctx.font = 'bold 44px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText(scoreStr, 620, 435);
-
-            // Tasks Table
-            var tasks = [
-                '1. تغيير لغة عرض Windows',
-                '2. ضبط خصائص الفأرة ومؤشرها',
-                '3. إضافة لغة الإدخال وضبط المنطقة الزمنية (GMT+1)',
-                '4. تخصيص المظهر والخلفية وألوان التمييز',
-                '5. تثبيت وإلغاء تثبيت البرامج والميزات الاختيارية',
-                '6. إدارة حسابات المستخدمين وكلمات المرور والصلاحيات'
-            ];
-
-            var y = 485;
             ctx.fillStyle = '#1E3A8A';
-            ctx.fillRect(80, y, 1080, 45);
+            ctx.font = 'bold 20px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي', 620, 142);
 
-            ctx.fillStyle = '#FFFFFF';
+            ctx.fillStyle = '#475569';
+            ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)', 620, 163);
+
+            // 2. Top Summary Cards (Y = 182..258)
+            // Card 1: Score Card (80, 182, 345, 76)
+            ctx.fillStyle = isPassed ? '#F0FDF4' : '#FEF2F2';
+            ctx.fillRect(80, 182, 345, 76);
+            ctx.strokeStyle = isPassed ? '#16A34A' : '#DC2626';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(80, 182, 345, 76);
+
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = isPassed ? '#166534' : '#991B1B';
+            ctx.fillText('العلامة الإجمالية المستحقة:', 252, 204);
+
+            // Draw Score strictly LTR
+            ctx.save();
+            ctx.direction = 'ltr';
+            ctx.font = 'bold 26px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = isPassed ? '#15803D' : '#DC2626';
+            ctx.fillText(finalScoreStr + ' / 20.00', 252, 240);
+            ctx.restore();
+
+            // Card 2: Duration Card (445, 182, 350, 76)
+            ctx.fillStyle = '#EFF6FF';
+            ctx.fillRect(445, 182, 350, 76);
+            ctx.strokeStyle = '#2563EB';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(445, 182, 350, 76);
+
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#1E40AF';
+            ctx.fillText('الوقت الإجمالي المستغرق:', 620, 204);
+
+            ctx.save();
+            ctx.direction = 'ltr';
+            ctx.font = 'bold 24px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#1D4ED8';
+            ctx.fillText(totalDurationStr, 620, 240);
+            ctx.restore();
+
+            // Card 3: Completion / Mode Card (815, 182, 345, 76)
+            ctx.fillStyle = '#F8FAFC';
+            ctx.fillRect(815, 182, 345, 76);
+            ctx.strokeStyle = '#64748B';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(815, 182, 345, 76);
+
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#334155';
+            ctx.fillText('التقدم الكلي والنمط:', 987, 204);
+
             ctx.font = 'bold 17px "Segoe UI", Tahoma, sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillText('المهمة التطبيقية المقررة في المنهاج', 1130, y + 28);
-            ctx.textAlign = 'center';
-            ctx.fillText('حالة الإنجاز والتقييم', 220, y + 28);
-            y += 45;
+            ctx.fillStyle = '#0F172A';
+            var modeLbl = isExam ? 'امتحان رسمي' : 'استطلاع وتدريب';
+            ctx.fillText(completionPct + '% (' + modeLbl + ')', 987, 238);
 
-            var assessedTasks = (global.Win11Assessment && global.Win11Assessment.getTasks) ? global.Win11Assessment.getTasks() : [];
-            for (var tIdx = 0; tIdx < tasks.length; tIdx++) {
-                ctx.fillStyle = (tIdx % 2 === 0) ? '#FFFFFF' : '#F8FAFC';
-                ctx.fillRect(80, y, 1080, 42);
+            // 3. Section A: Student Metadata Box (Y = 268..338)
+            ctx.fillStyle = '#F8FAFC';
+            ctx.fillRect(80, 268, 1080, 70);
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = '#E2E8F0';
+            ctx.strokeRect(80, 268, 1080, 70);
+
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            var sFullName = ((stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || 'تلميذ')).trim();
+            ctx.fillText('اسم التلميذ(ة): ' + sFullName + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      رقم الجهاز: ' + (stu.pcNumber || '01'), 1140, 296);
+
+            ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#475569';
+            ctx.fillText('المستوى: السنة الأولى ثانوي (1AS) — الوحدة 3: لوحة التحكم وإعدادات النظام      |      تاريخ الإنجاز: ' + dateFormatted, 1140, 323);
+
+            // 4. Section B: Table Header (Y = 348..378)
+            var curY = 348;
+            ctx.fillStyle = '#1E3A8A';
+            ctx.fillRect(80, curY, 1080, 30);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('القسم (ب): جدول التفصيل الدقيق للمهام العملية والأسئلة التقويمية', 1140, curY + 20);
+            curY += 30;
+
+            // Column Headers (Y = 378..408)
+            ctx.fillStyle = '#F1F5F9';
+            ctx.fillRect(80, curY, 1080, 30);
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(80, curY, 1080, 30);
+
+            ctx.fillStyle = '#334155';
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+
+            ctx.textAlign = 'center';
+            ctx.fillText('#', 1137, curY + 20); // col 0: 1115..1160
+            ctx.textAlign = 'right';
+            ctx.fillText('المهمة التطبيقية أو السؤال التقويمي', 1100, curY + 20); // col 1: 765..1115
+            ctx.textAlign = 'center';
+            ctx.fillText('النوع', 717, curY + 20); // col 2: 670..765
+            ctx.fillText('الحالة', 615, curY + 20); // col 3: 560..670
+            ctx.fillText('المحاولات', 525, curY + 20); // col 4: 490..560
+            ctx.fillText('الوزن الأقصى', 450, curY + 20); // col 5: 410..490
+            ctx.fillText('الممنوحة', 370, curY + 20); // col 6: 330..410
+            ctx.fillText('الخصم', 295, curY + 20); // col 7: 260..330
+            ctx.textAlign = 'right';
+            ctx.fillText('الملاحظات وتفاصيل التقييم', 250, curY + 20); // col 8: 80..260
+            curY += 30;
+
+            var totalDeductionsInTable = 0;
+
+            // Render Table Rows
+            for (var rIdx = 0; rIdx < enabledTasks.length; rIdx++) {
+                var tk = enabledTasks[rIdx];
+                var isDone = !!tk.completed;
+                var isSkip = !!tk.skipped;
+                var isPart = (!isDone && !isSkip && (Number(tk.earnedPoints) > 0));
+
+                var tkMax = Number(tk.maxPoints || tk.coefficient || 1);
+                var tkEarned = Number(tk.earnedPoints || 0);
+                var tkDeduct = Number((tkMax - tkEarned).toFixed(2));
+                if (tkDeduct > 0) totalDeductionsInTable += tkDeduct;
+
+                var rowBg = (rIdx % 2 === 0) ? '#FFFFFF' : '#F8FAFC';
+                ctx.fillStyle = rowBg;
+                ctx.fillRect(80, curY, 1080, 32);
+                ctx.strokeStyle = '#E2E8F0';
                 ctx.lineWidth = 1;
-                ctx.strokeStyle = '#CBD5E1';
-                ctx.strokeRect(80, y, 1080, 42);
+                ctx.strokeRect(80, curY, 1080, 32);
+
+                ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#64748B';
+                ctx.fillText(String(rIdx + 1), 1137, curY + 21);
 
                 ctx.textAlign = 'right';
                 ctx.fillStyle = '#0F172A';
-                ctx.font = '16px "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText(tasks[tIdx], 1130, y + 26);
+                ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+                var tkTitle = tk.titleAr || ('مهمة ' + (rIdx + 1));
+                if (tkTitle.length > 40) tkTitle = tkTitle.substring(0, 38) + '...';
+                ctx.fillText(tkTitle, 1100, curY + 21);
 
-                var tkObj = (tIdx < assessedTasks.length) ? assessedTasks[tIdx] : null;
-                var isDone = tkObj ? tkObj.completed : true;
+                // Type Badge: مهمة عملية
+                ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
                 ctx.textAlign = 'center';
+                ctx.fillStyle = '#0369A1';
+                ctx.fillText('مهمة عملية', 717, curY + 21);
+
+                // Status Badge
                 if (isDone) {
                     ctx.fillStyle = '#15803D';
-                    ctx.font = 'bold 15px "Segoe UI", Tahoma, sans-serif';
-                    ctx.fillText('مكتملة ومستوفاة ✔', 220, y + 26);
-                } else {
+                    ctx.fillText('مكتملة ✔', 615, curY + 21);
+                } else if (isPart) {
                     ctx.fillStyle = '#B45309';
-                    ctx.font = 'bold 15px "Segoe UI", Tahoma, sans-serif';
-                    ctx.fillText('قيد الإنجاز ◐', 220, y + 26);
+                    ctx.fillText('منجزة جزئياً ◐', 615, curY + 21);
+                } else if (isSkip) {
+                    ctx.fillStyle = '#64748B';
+                    ctx.fillText('تم تخطيها ⏭', 615, curY + 21);
+                } else {
+                    ctx.fillStyle = '#DC2626';
+                    ctx.fillText('غير منجزة ✘', 615, curY + 21);
                 }
-                y += 42;
+
+                // Attempts
+                ctx.fillStyle = '#334155';
+                ctx.fillText(isDone ? '1' : '-', 525, curY + 21);
+
+                // Max Weight
+                ctx.fillText(tkMax.toFixed(2), 450, curY + 21);
+
+                // Earned
+                ctx.fillStyle = '#1E3A8A';
+                ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillText(tkEarned.toFixed(2), 370, curY + 21);
+
+                // Deduct
+                ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+                if (tkDeduct > 0) {
+                    ctx.fillStyle = '#DC2626';
+                    ctx.fillText('-' + tkDeduct.toFixed(2), 295, curY + 21);
+                } else {
+                    ctx.fillStyle = '#64748B';
+                    ctx.fillText('0.00', 295, curY + 21);
+                }
+
+                // Notes
+                ctx.textAlign = 'right';
+                ctx.font = '10.5px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#475569';
+                var rNote = isDone ? 'تم إنجاز كافة خطوات المهمة بنجاح.' : (isSkip ? 'تم تخطي المهمة من قبل التلميذ.' : 'لم يتم استيفاء الخطوات العملية.');
+                ctx.fillText(rNote, 250, curY + 21);
+
+                curY += 32;
+
+                // Quiz Row (if applicable)
+                var isTaskQuizDisabled = Array.isArray(cfg.quiz_disabled_tasks) && cfg.quiz_disabled_tasks.indexOf(tk.id) !== -1;
+                if (showQuizzes && !isTaskQuizDisabled) {
+                    var qRes = tk.quizResult;
+                    var qMax = Number(qRes && qRes.maxPoints ? qRes.maxPoints : 1.0);
+                    var qEarned = Number(qRes && typeof qRes.earnedPoints === 'number' ? qRes.earnedPoints : 0);
+                    var qAttempts = (qRes && qRes.attempts) ? qRes.attempts : (isDone ? 1 : 0);
+                    var qDeduct = Number((qMax - qEarned).toFixed(2));
+
+                    if (isQuizOptedOut) {
+                        qEarned = 0;
+                        qAttempts = 0;
+                        qDeduct = qMax;
+                        totalDeductionsInTable += qDeduct;
+                    } else {
+                        if (qDeduct > 0) totalDeductionsInTable += qDeduct;
+                    }
+
+                    ctx.fillStyle = '#FAFAFA';
+                    ctx.fillRect(80, curY, 1080, 28);
+                    ctx.strokeStyle = '#E2E8F0';
+                    ctx.strokeRect(80, curY, 1080, 28);
+
+                    ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#7C3AED';
+                    ctx.fillText('س' + (rIdx + 1), 1137, curY + 18);
+
+                    ctx.textAlign = 'right';
+                    ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#334155';
+                    var qTitle = (qRes && qRes.questionTitle) ? qRes.questionTitle : ('سؤال تقويمي للمهمة ' + (rIdx + 1));
+                    if (qTitle.length > 42) qTitle = qTitle.substring(0, 40) + '...';
+                    ctx.fillText(qTitle, 1100, curY + 18);
+
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#6D28D9';
+                    ctx.fillText('سؤال تقويمي', 717, curY + 18);
+
+                    // Quiz Status
+                    if (isQuizOptedOut) {
+                        ctx.fillStyle = '#DC2626';
+                        ctx.fillText('معطل بطلب التلميذ ✘', 615, curY + 18);
+                    } else if (qRes && qRes.answeredCorrectly) {
+                        ctx.fillStyle = '#15803D';
+                        ctx.fillText('إجابة صحيحة ✔', 615, curY + 18);
+                    } else if (qRes && qRes.attempts >= 3) {
+                        ctx.fillStyle = '#DC2626';
+                        ctx.fillText('استنفاد محاولات ✘', 615, curY + 18);
+                    } else {
+                        ctx.fillStyle = '#B45309';
+                        ctx.fillText('قيد التقويم ◐', 615, curY + 18);
+                    }
+
+                    // Attempts
+                    ctx.fillStyle = '#475569';
+                    var attText = isQuizOptedOut ? '0 (معطل)' : ('محاولة ' + qAttempts);
+                    ctx.fillText(attText, 525, curY + 18);
+
+                    // Max
+                    ctx.fillText(qMax.toFixed(2), 450, curY + 18);
+
+                    // Earned
+                    ctx.fillStyle = '#6D28D9';
+                    ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillText(qEarned.toFixed(2), 370, curY + 18);
+
+                    // Deduct
+                    ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+                    if (qDeduct > 0) {
+                        ctx.fillStyle = '#DC2626';
+                        ctx.fillText('-' + qDeduct.toFixed(2), 295, curY + 18);
+                    } else {
+                        ctx.fillStyle = '#64748B';
+                        ctx.fillText('0.00', 295, curY + 18);
+                    }
+
+                    // Notes
+                    ctx.textAlign = 'right';
+                    ctx.font = '10px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#64748B';
+                    var qNote = isQuizOptedOut ? 'تم إلغاء تفعيل الأسئلة وتصفير علامتها.' : (qAttempts === 1 ? 'إجابة صحيحة من المحاولة الأولى (100%).' : (qAttempts === 2 ? 'إجابة صحيحة من المحاولة الثانية (50%).' : 'استنفاد المحاولات (0%).'));
+                    ctx.fillText(qNote, 250, curY + 18);
+
+                    curY += 28;
+                }
             }
 
-            // Math breakdown banner
-            ctx.fillStyle = '#F0F9FF';
-            ctx.fillRect(80, y + 20, 1080, 75);
+            // Totals Footer Row
+            ctx.fillStyle = '#F1F5F9';
+            ctx.fillRect(80, curY, 1080, 32);
+            ctx.strokeStyle = '#94A3B8';
             ctx.lineWidth = 1.5;
-            ctx.strokeStyle = '#BAE6FD';
-            ctx.strokeRect(80, y + 20, 1080, 75);
+            ctx.strokeRect(80, curY, 1080, 32);
 
             ctx.textAlign = 'right';
-            ctx.fillStyle = '#0369A1';
-            ctx.font = 'bold 15.5px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('التفكيك الحسابي للعلامة: تطبيق القاعدة الثلاثية الرسمية (العلامة القاعدية = النقاط المكتسبة / المعاملات × 20)', 1130, y + 48);
-            ctx.fillText('النتيجة الرسمية: استيفاء الكفاءات المقررة بنجاح وتحكم تام في بيئة إعدادات Windows 11', 1130, y + 76);
+            ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText('المجموع الكلي لأوزان ونقاط المهام والأسئلة:', 1100, curY + 21);
 
-            // Signature & Seal
-            var ySig = 1500;
+            ctx.textAlign = 'center';
+            ctx.fillText(grandTotalMax.toFixed(2), 450, curY + 21);
+
+            ctx.fillStyle = '#1E3A8A';
+            ctx.fillText(grandTotalEarned.toFixed(2), 370, curY + 21);
+
+            ctx.fillStyle = '#DC2626';
+            ctx.fillText('-' + totalDeductionsInTable.toFixed(2), 295, curY + 21);
+
+            ctx.textAlign = 'right';
+            ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#475569';
+            ctx.fillText('استيفاء ' + grandTotalEarned.toFixed(2) + ' من أصل ' + grandTotalMax.toFixed(2) + ' نقطة مطلوبة', 250, curY + 21);
+            curY += 40;
+
+            // 5. Section C: The Math Breakdown Steps
+            ctx.fillStyle = '#1E3A8A';
+            ctx.fillRect(80, curY, 1080, 28);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('القسم (ج): التفكيك الحسابي للعلامة (كيف تم احتساب المعدل خطوة بخطوة وفق المنهاج)', 1140, curY + 19);
+            curY += 32;
+
+            var mathSteps = [
+                { num: '1', lbl: 'مجموع النقاط العملية المستحقة:', val: practicalEarned.toFixed(2) + ' / ' + practicalMax.toFixed(2), sub: 'مجموع النقاط المكتسبة من الخطوات العملية المنجزة', bg: '#F8FAFC' },
+                { num: '2', lbl: 'مجموع نقاط الأسئلة التقويمية:', val: (showQuizzes ? (quizEarned.toFixed(2) + ' / ' + quizMax.toFixed(2)) : 'معطلة من الأستاذ'), sub: (showQuizzes ? 'نقاط الأسئلة بحسب عدد المحاولات المستهلكة' : 'تم اعتماد تقييم المهام العملية فقط'), bg: '#F8FAFC' },
+                { num: '3', lbl: 'المجموع الإجمالي الخام المكتسب:', val: grandTotalEarned.toFixed(2) + ' / ' + grandTotalMax.toFixed(2), sub: 'مجموع النقاط العملية + نقاط الأسئلة التقويمية', bg: '#F8FAFC' },
+                { num: '4', lbl: 'تطبيق القاعدة الثلاثية الرسمية (على 20):', val: baseScoreOutOf20.toFixed(2) + ' / 20.00', sub: '(' + grandTotalEarned.toFixed(2) + ' ÷ ' + grandTotalMax.toFixed(2) + ') × 20', bg: '#F0F9FF' },
+                { num: '5', lbl: 'خصم استهلاك التلميحات المساعدة:', val: '-' + pen.toFixed(2) + ' نقطة', sub: 'خصم بيداغوجي وفق معايير سلم التنقيط', bg: '#FEF2F2' },
+                { num: '6', lbl: 'العلامة الإجمالية الصافية المستحقة:', val: finalScoreStr + ' / 20.00', sub: 'العلامة النهائية الرسمية المعتمدة لبطاقة التقييم', bg: '#F0FDF4' }
+            ];
+
+            for (var mIdx = 0; mIdx < mathSteps.length; mIdx++) {
+                var ms = mathSteps[mIdx];
+                ctx.fillStyle = ms.bg;
+                ctx.fillRect(80, curY, 1080, 28);
+                ctx.strokeStyle = '#E2E8F0';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(80, curY, 1080, 28);
+
+                // Step circle
+                ctx.fillStyle = '#2563EB';
+                ctx.beginPath();
+                ctx.arc(1142, curY + 14, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(ms.num, 1142, curY + 18);
+
+                // Label
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#0F172A';
+                ctx.fillText(ms.lbl, 1120, curY + 19);
+
+                // Value
+                ctx.save();
+                ctx.direction = 'ltr';
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = (mIdx === 5) ? '#15803D' : ((mIdx === 4 && pen > 0) ? '#DC2626' : '#1E3A8A');
+                ctx.fillText(ms.val, 550, curY + 19);
+                ctx.restore();
+
+                // Subtext / Formula
+                ctx.textAlign = 'right';
+                ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#64748B';
+                ctx.fillText(ms.sub, 440, curY + 19);
+
+                curY += 32;
+            }
+
+            // 6. Signature & Seal + Teacher Observations (Anchored at Y = 1530)
+            var ySig = 1530;
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = '#64748B';
             ctx.setLineDash([6, 6]);
-            ctx.strokeRect(120, ySig, 350, 130);
+            ctx.strokeRect(100, ySig, 340, 120);
             ctx.setLineDash([]);
 
             ctx.textAlign = 'center';
             ctx.fillStyle = '#475569';
-            ctx.font = 'bold 16px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('توقيع وختم الأستاذ(ة)', 295, ySig + 35);
+            ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('توقيع وختم الأستاذ(ة)', 270, ySig + 35);
 
-            var dNow = new Date();
-            var dStr = dNow.getFullYear() + '/' + (dNow.getMonth() + 1) + '/' + dNow.getDate();
             ctx.textAlign = 'right';
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText('ملاحظات وتوجيهات الأستاذ(ة):', 1140, ySig + 20);
+
+            ctx.fillStyle = '#94A3B8';
+            ctx.fillText('............................................................................................................................................', 1140, ySig + 50);
+            ctx.fillText('............................................................................................................................................', 1140, ySig + 80);
+
+            ctx.font = '11.5px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#64748B';
-            ctx.font = '15px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('حرر بتاريخ: ' + dStr, 1130, ySig + 35);
-            ctx.fillText('وثيقة تقييم رسمية غير قابلة للتعديل صالحة لتقويم الأعمال التطبيقية', 1130, ySig + 70);
+            ctx.fillText('حرر في: ' + dateFormatted, 1140, ySig + 110);
+            ctx.fillText('وثيقة تقييم رسمية غير قابلة للتعديل صالحة لتقويم الأعمال التطبيقية', 1140, ySig + 128);
 
             // Convert to JPEG bytes and build PDF
-            var dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.94);
             var b64Data = dataUrl.split(',')[1];
             var binStr = atob(b64Data);
             var jpegBytes = new Uint8Array(binStr.length);

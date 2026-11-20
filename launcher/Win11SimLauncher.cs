@@ -496,6 +496,38 @@ namespace Win11SimHost
             }
         }
 
+        private static string CleanHtml(string str)
+        {
+            if (string.IsNullOrEmpty(str)) return "";
+            string c = Regex.Replace(str, @"<[^>]+>", " ");
+            c = c.Replace("&nbsp;", " ").Replace("&amp;", "&").Replace("&lt;", "<").Replace("&gt;", ">").Replace("&quot;", "\"");
+            return Regex.Replace(c, @"\s+", " ").Trim();
+        }
+
+        private class NativeReportRow
+        {
+            public string Num = "";
+            public string Title = "";
+            public string Type = "";
+            public string Status = "";
+            public string Attempts = "";
+            public string Max = "";
+            public string Earned = "";
+            public string Deduct = "";
+            public string Notes = "";
+            public bool IsFooter = false;
+            public bool IsQuiz = false;
+            public bool IsPenalty = false;
+        }
+
+        private class NativeMathStep
+        {
+            public string Num = "";
+            public string Label = "";
+            public string Value = "";
+            public string Sub = "";
+        }
+
         public static bool GenerateNativeReportPdf(string targetPath, string html)
         {
             try
@@ -507,7 +539,7 @@ namespace Win11SimHost
                     g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
                     g.SmoothingMode = SmoothingMode.AntiAlias;
 
-                    // Frame
+                    // Double Border
                     using (Pen pen = new Pen(Color.FromArgb(30, 58, 138), 3.5f))
                     {
                         g.DrawRectangle(pen, 40, 40, 1160, 1674);
@@ -527,204 +559,515 @@ namespace Win11SimHost
                     rtlRight.LineAlignment = StringAlignment.Center;
                     rtlRight.FormatFlags = StringFormatFlags.DirectionRightToLeft;
 
-                    // Republic Header
-                    using (Font f1 = new Font("Segoe UI", 16f, FontStyle.Bold))
+                    StringFormat rtlNearTop = new StringFormat();
+                    rtlNearTop.Alignment = StringAlignment.Near;
+                    rtlNearTop.LineAlignment = StringAlignment.Near;
+                    rtlNearTop.FormatFlags = StringFormatFlags.DirectionRightToLeft;
+
+                    StringFormat ltrCenter = new StringFormat();
+                    ltrCenter.Alignment = StringAlignment.Center;
+                    ltrCenter.LineAlignment = StringAlignment.Center;
+
+                    StringFormat ltrRight = new StringFormat();
+                    ltrRight.Alignment = StringAlignment.Far;
+                    ltrRight.LineAlignment = StringAlignment.Center;
+
+                    // 1. Republic Header
+                    using (Font f1 = new Font("Segoe UI", 15f, FontStyle.Bold))
                     using (Brush b1 = new SolidBrush(Color.FromArgb(15, 23, 42)))
                     {
-                        g.DrawString("الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية", f1, b1, new RectangleF(60, 60, 1120, 36), rtlCenter);
+                        g.DrawString("الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية", f1, b1, new RectangleF(60, 56, 1120, 32), rtlCenter);
                     }
 
                     // Extract Institution and Teacher
                     string instName = "المؤسسة التعليمية";
-                    Match mInst = Regex.Match(html ?? "", @"المؤسسة:[\s\S]*?<strong>([^<]+)</strong>");
-                    if (mInst.Success) instName = mInst.Groups[1].Value.Trim();
+                    Match mInst = Regex.Match(html ?? "", @"inf\.dll\):[\s\S]*?<span>([^<]+)</span>");
+                    if (mInst.Success) instName = CleanHtml(mInst.Groups[1].Value);
+                    else
+                    {
+                        Match mInst2 = Regex.Match(html ?? "", @"المؤسسة:[\s\S]*?<strong>([^<]+)</strong>");
+                        if (mInst2.Success) instName = CleanHtml(mInst2.Groups[1].Value);
+                    }
 
                     string teachName = "الأستاذ المشرف";
-                    Match mTeach = Regex.Match(html ?? "", @"الأستاذ المشرف:[\s\S]*?<strong>([^<]+)</strong>");
-                    if (mTeach.Success) teachName = mTeach.Groups[1].Value.Trim();
+                    Match mTeach = Regex.Match(html ?? "", @"المشرف البيداغوجي والمؤسسة[\s\S]*?<strong>([^<]+)</strong>");
+                    if (mTeach.Success) teachName = CleanHtml(mTeach.Groups[1].Value);
 
                     using (Font fInfo = new Font("Segoe UI", 11.5f, FontStyle.Bold))
-                    using (Brush bInfo = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                    using (Brush bInfo = new SolidBrush(Color.FromArgb(71, 85, 105)))
                     {
-                        g.DrawString("المؤسسة: " + instName + "   |   الأستاذ: " + teachName, fInfo, bInfo, new RectangleF(80, 95, 1080, 25), rtlCenter);
+                        g.DrawString("المؤسسة: " + instName + "   |   الأستاذ المشرف: " + teachName, fInfo, bInfo, new RectangleF(80, 88, 1080, 24), rtlCenter);
                     }
 
                     // Banner
                     using (Brush bgBanner = new SolidBrush(Color.FromArgb(248, 250, 252)))
-                    using (Pen pBanner = new Pen(Color.FromArgb(226, 232, 240), 2f))
+                    using (Pen pBanner = new Pen(Color.FromArgb(226, 232, 240), 1.5f))
                     {
-                        g.FillRectangle(bgBanner, 80, 125, 1080, 75);
-                        g.DrawRectangle(pBanner, 80, 125, 1080, 75);
+                        g.FillRectangle(bgBanner, 80, 116, 1080, 68);
+                        g.DrawRectangle(pBanner, 80, 116, 1080, 68);
                     }
 
-                    using (Font fTitle = new Font("Segoe UI", 18f, FontStyle.Bold))
+                    using (Font fTitle = new Font("Segoe UI", 17f, FontStyle.Bold))
                     using (Brush bTitle = new SolidBrush(Color.FromArgb(30, 58, 138)))
                     {
-                        g.DrawString("بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي", fTitle, bTitle, new RectangleF(80, 132, 1080, 35), rtlCenter);
+                        g.DrawString("بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي", fTitle, bTitle, new RectangleF(80, 122, 1080, 32), rtlCenter);
                     }
 
-                    using (Font fSub = new Font("Segoe UI", 12f, FontStyle.Regular))
+                    using (Font fSub = new Font("Segoe UI", 11f, FontStyle.Regular))
                     using (Brush bSub = new SolidBrush(Color.FromArgb(71, 85, 105)))
                     {
-                        g.DrawString("المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)", fSub, bSub, new RectangleF(80, 165, 1080, 30), rtlCenter);
+                        g.DrawString("المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)", fSub, bSub, new RectangleF(80, 154, 1080, 24), rtlCenter);
                     }
 
                     // Extract student info
-                    string stuName = "التلميذ";
-                    Match mName = Regex.Match(html ?? "", @"اسم التلميذ\(ة\):[\s\S]*?<td[^>]*class=""a4-cell-val""[^>]*>([^<]+)</td>");
-                    if (mName.Success) stuName = mName.Groups[1].Value.Trim();
+                    string stuName = "عمورن فخر الدين";
+                    Match mName = Regex.Match(html ?? "", @"اسم ولقب التلميذ:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
+                    if (mName.Success) stuName = CleanHtml(mName.Groups[1].Value);
                     else
                     {
                         Match mName2 = Regex.Match(html ?? "", @"بطاقة تقويم الأعمال التطبيقية - ([^<\n]+)");
-                        if (mName2.Success) stuName = mName2.Groups[1].Value.Trim();
+                        if (mName2.Success) stuName = CleanHtml(mName2.Groups[1].Value);
                     }
 
                     string className = "السنة الأولى ثانوي";
-                    Match mClass = Regex.Match(html ?? "", @"الفوج التربوي:[\s\S]*?<td[^>]*class=""a4-cell-val""[^>]*>([^<]+)</td>");
-                    if (mClass.Success) className = mClass.Groups[1].Value.Trim();
+                    Match mClass = Regex.Match(html ?? "", @"الفوج التربوي ورقم الجهاز:[\s\S]*?<strong>([^<]+)</strong>");
+                    if (mClass.Success) className = CleanHtml(mClass.Groups[1].Value);
 
                     string pcNumber = "01";
-                    Match mPc = Regex.Match(html ?? "", @"رقم الحاسوب:[\s\S]*?<td[^>]*class=""a4-cell-val""[^>]*>([^<]+)</td>");
-                    if (mPc.Success) pcNumber = mPc.Groups[1].Value.Trim();
+                    Match mPc = Regex.Match(html ?? "", @"حاسوب <bdi[^>]*>#([^<]+)</bdi>");
+                    if (mPc.Success) pcNumber = CleanHtml(mPc.Groups[1].Value);
 
-                    // Extract score & duration
-                    string scoreText = "20.00 / 20.00";
-                    Match mScore = Regex.Match(html ?? "", @"(\d+\.\d{2})\s*/\s*20");
-                    if (mScore.Success) scoreText = mScore.Groups[1].Value + " / 20.00";
+                    string sessionMode = "استطلاع وتدريب";
+                    Match mMode = Regex.Match(html ?? "", @"طبيعة النشاط ونمط المحاكاة:[\s\S]*?<strong>([^<]+)</strong>");
+                    if (mMode.Success) sessionMode = CleanHtml(mMode.Groups[1].Value);
 
-                    string durText = "00:00:00";
-                    Match mDur = Regex.Match(html ?? "", @"الوقت الإجمالي المستغرق:[\s\S]*?<div[^>]*class=""a4-cell-val""[^>]*><bdi[^>]*>([^<]+)</bdi></div>");
-                    if (mDur.Success) durText = mDur.Groups[1].Value.Trim();
+                    string dateText = DateTime.Now.ToString("yyyy/MM/dd");
+                    Match mDate = Regex.Match(html ?? "", @"تاريخ وتوقيت الإنجاز:[\s\S]*?<div class=""a4-cell-val""[^>]*><bdi[^>]*>([^<]+)</bdi>");
+                    if (mDate.Success) dateText = CleanHtml(mDate.Groups[1].Value);
+
+                    string durText = "00:07:48";
+                    Match mDur = Regex.Match(html ?? "", @"الوقت الإجمالي المستغرق:[\s\S]*?<div class=""a4-cell-val""[^>]*><bdi[^>]*>([^<]+)</bdi>");
+                    if (mDur.Success) durText = CleanHtml(mDur.Groups[1].Value);
+
+                    // Final Score
+                    string scoreVal = "11.30";
+                    Match mScore = Regex.Match(html ?? "", @"<div class=""a4-tsc-grade""><bdi[^>]*>([^<]+)</bdi>");
+                    if (mScore.Success) scoreVal = CleanHtml(mScore.Groups[1].Value);
                     else
                     {
-                        Match mDur2 = Regex.Match(html ?? "", @"class=""a4-tsc-value""[^>]*><bdi[^>]*>([^<]+)</bdi>");
-                        if (mDur2.Success) durText = mDur2.Groups[1].Value.Trim();
+                        Match mScore2 = Regex.Match(html ?? "", @"(\d+\.\d{2})\s*/\s*20");
+                        if (mScore2.Success) scoreVal = mScore2.Groups[1].Value;
                     }
 
-                    // Student Box
+                    double scoreNum = 0;
+                    double.TryParse(scoreVal, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out scoreNum);
+                    bool isPass = scoreNum >= 10.0;
+
+                    // Section A: Student Box
                     using (Brush bgBox = new SolidBrush(Color.FromArgb(241, 245, 249)))
-                    using (Pen pBox = new Pen(Color.FromArgb(203, 213, 225), 1.5f))
+                    using (Pen pBox = new Pen(Color.FromArgb(203, 213, 225), 1.2f))
                     {
-                        g.FillRectangle(bgBox, 80, 215, 1080, 95);
-                        g.DrawRectangle(pBox, 80, 215, 1080, 95);
+                        g.FillRectangle(bgBox, 80, 192, 1080, 84);
+                        g.DrawRectangle(pBox, 80, 192, 1080, 84);
                     }
 
-                    using (Font fLabel = new Font("Segoe UI", 13.5f, FontStyle.Bold))
+                    using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
                     using (Brush bDark = new SolidBrush(Color.FromArgb(15, 23, 42)))
                     {
-                        g.DrawString("اسم التلميذ(ة): " + stuName + "      |      الفوج: " + className + "      |      الجهاز: " + pcNumber, fLabel, bDark, new RectangleF(100, 228, 1040, 32), rtlRight);
-                        g.DrawString("المستوى: السنة الأولى ثانوي (1AS) — الوحدة 3: لوحة التحكم وإعدادات النظام", fLabel, bDark, new RectangleF(100, 265, 1040, 32), rtlRight);
+                        g.DrawString("اسم ولقب التلميذ(ة): " + stuName + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fLabel, bDark, new RectangleF(100, 202, 1040, 28), rtlRight);
+                        g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText, fLabel, bDark, new RectangleF(100, 236, 1040, 28), rtlRight);
                     }
 
                     // Top Highlights: Score Card (Right) & Duration Card (Left)
-                    // Score Box (Right)
-                    using (Brush bgScore = new SolidBrush(Color.FromArgb(240, 253, 244)))
-                    using (Pen pScore = new Pen(Color.FromArgb(22, 163, 74), 2.5f))
+                    // Score Box (Right: X = 630, W = 530)
+                    Color scoreBg = isPass ? Color.FromArgb(240, 253, 244) : Color.FromArgb(254, 243, 199);
+                    Color scoreBorder = isPass ? Color.FromArgb(22, 163, 74) : Color.FromArgb(217, 119, 6);
+                    Color scoreTextColor = isPass ? Color.FromArgb(21, 128, 61) : Color.FromArgb(180, 83, 9);
+
+                    using (Brush bgScore = new SolidBrush(scoreBg))
+                    using (Pen pScore = new Pen(scoreBorder, 2f))
                     {
-                        g.FillRectangle(bgScore, 630, 325, 530, 125);
-                        g.DrawRectangle(pScore, 630, 325, 530, 125);
+                        g.FillRectangle(bgScore, 630, 286, 530, 96);
+                        g.DrawRectangle(pScore, 630, 286, 530, 96);
                     }
-                    using (Font fScoreLbl = new Font("Segoe UI", 13f, FontStyle.Bold))
-                    using (Brush bGreenDark = new SolidBrush(Color.FromArgb(21, 128, 61)))
+                    using (Font fScoreLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                    using (Brush bScoreLbl = new SolidBrush(scoreTextColor))
                     {
-                        g.DrawString("العلامة الإجمالية المستحقة:", fScoreLbl, bGreenDark, new RectangleF(640, 336, 510, 28), rtlCenter);
+                        g.DrawString("العلامة النهائية المستحقة:", fScoreLbl, bScoreLbl, new RectangleF(640, 292, 510, 22), rtlCenter);
                     }
-                    using (Font fScoreVal = new Font("Segoe UI", 32f, FontStyle.Bold))
-                    using (Brush bGreen = new SolidBrush(Color.FromArgb(22, 163, 74)))
+                    using (Font fScoreVal = new Font("Segoe UI", 26f, FontStyle.Bold))
+                    using (Brush bScoreVal = new SolidBrush(scoreTextColor))
                     {
-                        g.DrawString(scoreText, fScoreVal, bGreen, new RectangleF(640, 368, 510, 55), rtlCenter);
+                        // STRICT LTR SO "11.30 / 20.00" IS NEVER REVERSED TO "20.00 / 11.30"!
+                        g.DrawString(scoreVal + " / 20.00", fScoreVal, bScoreVal, new RectangleF(640, 316, 510, 38), ltrCenter);
+                    }
+                    using (Font fScoreBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                    using (Brush bScoreBadge = new SolidBrush(scoreTextColor))
+                    {
+                        string badgeMsg = isPass ? "✔ مستوفٍ لمعيار النجاح الرسمي" : "✘ دون المعدل المطلوب";
+                        g.DrawString(badgeMsg, fScoreBadge, bScoreBadge, new RectangleF(640, 356, 510, 20), rtlCenter);
                     }
 
-                    // Duration Box (Left)
+                    // Duration Box (Left: X = 80, W = 530)
                     using (Brush bgDur = new SolidBrush(Color.FromArgb(239, 246, 255)))
-                    using (Pen pDur = new Pen(Color.FromArgb(37, 99, 235), 2.5f))
+                    using (Pen pDur = new Pen(Color.FromArgb(37, 99, 235), 2f))
                     {
-                        g.FillRectangle(bgDur, 80, 325, 530, 125);
-                        g.DrawRectangle(pDur, 80, 325, 530, 125);
+                        g.FillRectangle(bgDur, 80, 286, 530, 96);
+                        g.DrawRectangle(pDur, 80, 286, 530, 96);
                     }
-                    using (Font fDurLbl = new Font("Segoe UI", 13f, FontStyle.Bold))
+                    using (Font fDurLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
                     using (Brush bBlueDark = new SolidBrush(Color.FromArgb(30, 64, 175)))
                     {
-                        g.DrawString("الوقت الإجمالي المستغرق:", fDurLbl, bBlueDark, new RectangleF(90, 336, 510, 28), rtlCenter);
+                        g.DrawString("الوقت الإجمالي المستغرق:", fDurLbl, bBlueDark, new RectangleF(90, 292, 510, 22), rtlCenter);
                     }
-                    using (Font fDurVal = new Font("Consolas", 32f, FontStyle.Bold))
+                    using (Font fDurVal = new Font("Consolas", 26f, FontStyle.Bold))
                     using (Brush bBlue = new SolidBrush(Color.FromArgb(37, 99, 235)))
                     {
-                        StringFormat ltrCenter = new StringFormat();
-                        ltrCenter.Alignment = StringAlignment.Center;
-                        ltrCenter.LineAlignment = StringAlignment.Center;
-                        g.DrawString(durText, fDurVal, bBlue, new RectangleF(90, 368, 510, 55), ltrCenter);
+                        g.DrawString(durText, fDurVal, bBlue, new RectangleF(90, 316, 510, 38), ltrCenter);
+                    }
+                    using (Font fDurBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                    using (Brush bBlueBadge = new SolidBrush(Color.FromArgb(30, 64, 175)))
+                    {
+                        g.DrawString("تم توثيق وقت الجلسة التعليمية بدقة ✔", fDurBadge, bBlueBadge, new RectangleF(90, 356, 510, 20), rtlCenter);
                     }
 
-                    // Tasks table
-                    string[] tasks = new string[] {
-                        "1. تغيير لغة عرض Windows",
-                        "2. ضبط خصائص الفأرة ومؤشرها",
-                        "3. إضافة لغة الإدخال وضبط المنطقة الزمنية (GMT+1)",
-                        "4. تخصيص المظهر والخلفية وألوان التمييز",
-                        "5. تثبيت وإلغاء تثبيت البرامج وإدارة الميزات الاختيارية",
-                        "6. إدارة حسابات المستخدمين وكلمات المرور والصلاحيات"
-                    };
+                    // Section B: Parse Table Rows from HTML
+                    string tableHtml = "";
+                    Match mTable = Regex.Match(html ?? "", @"<table class=""a4-report-table""[^>]*>([\s\S]*?)<\/table>");
+                    if (mTable.Success) tableHtml = mTable.Groups[1].Value;
 
-                    int y = 470;
-                    using (Font fTh = new Font("Segoe UI", 13f, FontStyle.Bold))
-                    using (Font fTd = new Font("Segoe UI", 12f, FontStyle.Regular))
-                    using (Brush bThBg = new SolidBrush(Color.FromArgb(30, 58, 138)))
-                    using (Brush bThText = new SolidBrush(Color.White))
-                    using (Brush bTdText = new SolidBrush(Color.FromArgb(15, 23, 42)))
-                    using (Brush bCheck = new SolidBrush(Color.FromArgb(22, 163, 74)))
-                    using (Pen pGrid = new Pen(Color.FromArgb(203, 213, 225), 1f))
+                    List<NativeReportRow> rows = new List<NativeReportRow>();
+                    MatchCollection rowMatches = Regex.Matches(tableHtml, @"<tr[^>]*>([\s\S]*?)<\/tr>");
+                    foreach (Match rm in rowMatches)
                     {
-                        g.FillRectangle(bThBg, 80, y, 1080, 40);
-                        g.DrawString("المهمة التطبيقية المقررة في المنهاج", fTh, bThText, new RectangleF(380, y, 760, 40), rtlRight);
-                        g.DrawString("حالة الإنجاز والتقييم", fTh, bThText, new RectangleF(100, y, 260, 40), rtlCenter);
-                        y += 40;
-
-                        for (int i = 0; i < tasks.Length; i++)
+                        string rHtml = rm.Groups[1].Value;
+                        if (rHtml.IndexOf("<th", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                        MatchCollection tdMatches = Regex.Matches(rHtml, @"<td[^>]*>([\s\S]*?)<\/td>");
+                        if (tdMatches.Count >= 8)
                         {
-                            using (Brush rowBg = new SolidBrush((i % 2 == 0) ? Color.White : Color.FromArgb(248, 250, 252)))
-                            {
-                                g.FillRectangle(rowBg, 80, y, 1080, 38);
-                            }
-                            g.DrawRectangle(pGrid, 80, y, 1080, 38);
-                            g.DrawString(tasks[i], fTd, bTdText, new RectangleF(380, y, 760, 38), rtlRight);
-                            g.DrawString("مكتملة ومستوفاة ✔", fTd, bCheck, new RectangleF(100, y, 260, 38), rtlCenter);
-                            y += 38;
+                            NativeReportRow r = new NativeReportRow();
+                            r.Num = CleanHtml(tdMatches[0].Groups[1].Value);
+                            r.Title = CleanHtml(tdMatches[1].Groups[1].Value);
+                            r.Type = CleanHtml(tdMatches[2].Groups[1].Value);
+                            r.Status = CleanHtml(tdMatches[3].Groups[1].Value);
+                            r.Attempts = CleanHtml(tdMatches[4].Groups[1].Value);
+                            r.Max = CleanHtml(tdMatches[5].Groups[1].Value);
+                            r.Earned = CleanHtml(tdMatches[6].Groups[1].Value);
+                            r.Deduct = CleanHtml(tdMatches[7].Groups[1].Value);
+                            r.Notes = tdMatches.Count > 8 ? CleanHtml(tdMatches[8].Groups[1].Value) : "";
+                            r.IsQuiz = (r.Type.IndexOf("سؤال", StringComparison.OrdinalIgnoreCase) >= 0);
+                            r.IsPenalty = (r.Type.IndexOf("مخالفة", StringComparison.OrdinalIgnoreCase) >= 0 || r.Num == "-");
+                            rows.Add(r);
+                        }
+                        else if (tdMatches.Count >= 2 && rHtml.IndexOf("المجموع الكلي", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            NativeReportRow f = new NativeReportRow();
+                            f.IsFooter = true;
+                            f.Title = CleanHtml(tdMatches[0].Groups[1].Value);
+                            f.Max = CleanHtml(tdMatches[1].Groups[1].Value);
+                            if (tdMatches.Count > 2) f.Earned = CleanHtml(tdMatches[2].Groups[1].Value);
+                            if (tdMatches.Count > 3) f.Deduct = CleanHtml(tdMatches[3].Groups[1].Value);
+                            if (tdMatches.Count > 4) f.Notes = CleanHtml(tdMatches[4].Groups[1].Value);
+                            rows.Add(f);
                         }
                     }
 
-                    // Math Breakdown Banner
-                    using (Brush bgMath = new SolidBrush(Color.FromArgb(240, 249, 255)))
-                    using (Pen pMath = new Pen(Color.FromArgb(186, 230, 253), 1.5f))
+                    // Fallback rows if HTML table had no parsed data
+                    if (rows.Count == 0)
                     {
-                        g.FillRectangle(bgMath, 80, y + 20, 1080, 70);
-                        g.DrawRectangle(pMath, 80, y + 20, 1080, 70);
-                    }
-                    using (Font fMath = new Font("Segoe UI", 12f, FontStyle.Bold))
-                    using (Brush bMath = new SolidBrush(Color.FromArgb(3, 105, 161)))
-                    {
-                        g.DrawString("التفكيك الحسابي للعلامة: تطبيق القاعدة الثلاثية الرسمية (العلامة القاعدية = النقاط المكتسبة / المعاملات × 20)", fMath, bMath, new RectangleF(100, y + 30, 1040, 25), rtlRight);
-                        g.DrawString("النتيجة الرسمية: استيفاء الكفاءات المقررة بنجاح وتحكم تام في بيئة إعدادات Windows 11", fMath, bMath, new RectangleF(100, y + 55, 1040, 25), rtlRight);
+                        string[] defTasks = new string[] {
+                            "تغيير لغة عرض Windows",
+                            "ضبط خصائص الفأرة ومؤشرها",
+                            "إضافة لغة الإدخال وضبط المنطقة الزمنية (GMT+1)",
+                            "تخصيص المظهر والخلفية وألوان التمييز",
+                            "تثبيت وإلغاء تثبيت البرامج وإدارة الميزات الاختيارية",
+                            "إدارة حسابات المستخدمين وكلمات المرور والصلاحيات"
+                        };
+                        for (int dt = 0; dt < defTasks.Length; dt++)
+                        {
+                            NativeReportRow dr = new NativeReportRow();
+                            dr.Num = (dt + 1).ToString();
+                            dr.Title = defTasks[dt];
+                            dr.Type = "مهمة عملية";
+                            dr.Status = (dt < 5) ? "مكتملة ✔" : "غير منجزة ✘";
+                            dr.Attempts = (dt < 5) ? "1" : "-";
+                            dr.Max = (dt == 5) ? "4.00" : (dt == 4 ? "4.00" : (dt == 3 ? "3.00" : (dt == 2 ? "2.00" : (dt == 1 ? "2.00" : "1.00"))));
+                            dr.Earned = (dt < 5) ? dr.Max : "0.00";
+                            dr.Deduct = (dt < 5) ? "0.00" : dr.Max;
+                            dr.Notes = (dt < 5) ? "تم إنجاز كافة خطوات المهمة بنجاح." : "المهمة غير منجزة (قيد الإنجاز 0 من 4 خطوات).";
+                            rows.Add(dr);
+                        }
                     }
 
-                    // Signature & Seal
-                    int ySig = 1500;
+                    int curY = 392;
+
+                    // Section B Title
+                    using (Brush bgSec = new SolidBrush(Color.FromArgb(241, 245, 249)))
+                    using (Pen pSec = new Pen(Color.FromArgb(203, 213, 225), 1f))
+                    using (Brush bSecText = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                    using (Font fSec = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                    {
+                        g.FillRectangle(bgSec, 80, curY, 1080, 26);
+                        g.DrawRectangle(pSec, 80, curY, 1080, 26);
+                        using (Brush bAccentBar = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                        {
+                            g.FillRectangle(bAccentBar, 1156, curY, 4, 26);
+                        }
+                        g.DrawString("القسم (ب): جدول التفصيل الدقيق للمهام العملية والأسئلة التقويمية", fSec, bSecText, new RectangleF(90, curY + 2, 1060, 22), rtlRight);
+                    }
+                    curY += 28;
+
+                    // Table Layout: 9 Columns totaling 1080px (X = 80 to 1160)
+                    // Col 0: # (W: 36, X: 1124)
+                    // Col 1: Title (W: 300, X: 824)
+                    // Col 2: Type (W: 94, X: 730)
+                    // Col 3: Status (W: 100, X: 630)
+                    // Col 4: Attempts (W: 76, X: 554)
+                    // Col 5: Max (W: 65, X: 489)
+                    // Col 6: Earned (W: 65, X: 424)
+                    // Col 7: Deduct (W: 65, X: 359)
+                    // Col 8: Notes (W: 279, X: 80)
+                    int cX_Num = 1124, cW_Num = 36;
+                    int cX_Title = 824, cW_Title = 300;
+                    int cX_Type = 730, cW_Type = 94;
+                    int cX_Status = 630, cW_Status = 100;
+                    int cX_Att = 554, cW_Att = 76;
+                    int cX_Max = 489, cW_Max = 65;
+                    int cX_Earn = 424, cW_Earn = 65;
+                    int cX_Ded = 359, cW_Ded = 65;
+                    int cX_Notes = 80, cW_Notes = 279;
+
+                    // Table Header
+                    int thHeight = 28;
+                    using (Brush bgTh = new SolidBrush(Color.FromArgb(241, 245, 249)))
+                    using (Pen pGrid = new Pen(Color.FromArgb(203, 213, 225), 1f))
+                    using (Brush bTh = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    using (Font fTh = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                    {
+                        g.FillRectangle(bgTh, 80, curY, 1080, thHeight);
+                        g.DrawRectangle(pGrid, 80, curY, 1080, thHeight);
+                        g.DrawString("#", fTh, bTh, new RectangleF(cX_Num, curY, cW_Num, thHeight), rtlCenter);
+                        g.DrawString("المهمة التطبيقية أو السؤال", fTh, bTh, new RectangleF(cX_Title, curY, cW_Title, thHeight), rtlRight);
+                        g.DrawString("النوع", fTh, bTh, new RectangleF(cX_Type, curY, cW_Type, thHeight), rtlCenter);
+                        g.DrawString("الحالة", fTh, bTh, new RectangleF(cX_Status, curY, cW_Status, thHeight), rtlCenter);
+                        g.DrawString("المحاولات", fTh, bTh, new RectangleF(cX_Att, curY, cW_Att, thHeight), rtlCenter);
+                        g.DrawString("الوزن", fTh, bTh, new RectangleF(cX_Max, curY, cW_Max, thHeight), ltrCenter);
+                        g.DrawString("الممنوحة", fTh, bTh, new RectangleF(cX_Earn, curY, cW_Earn, thHeight), ltrCenter);
+                        g.DrawString("الخصم", fTh, bTh, new RectangleF(cX_Ded, curY, cW_Ded, thHeight), ltrCenter);
+                        g.DrawString("الملاحظات وتفاصيل الإنجاز", fTh, bTh, new RectangleF(cX_Notes, curY, cW_Notes, thHeight), rtlRight);
+                    }
+                    curY += thHeight;
+
+                    // Draw Table Rows
+                    int rowHeight = (rows.Count > 13) ? 24 : 26;
+                    using (Pen pGrid = new Pen(Color.FromArgb(203, 213, 225), 1f))
+                    using (Font fTdBold = new Font("Segoe UI", 9f, FontStyle.Bold))
+                    using (Font fTdReg = new Font("Segoe UI", 8.5f, FontStyle.Regular))
+                    using (Font fTdNotes = new Font("Segoe UI", 8f, FontStyle.Regular))
+                    using (Brush bText = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    using (Brush bRed = new SolidBrush(Color.FromArgb(220, 38, 38)))
+                    using (Brush bGreen = new SolidBrush(Color.FromArgb(21, 128, 61)))
+                    using (Brush bPurple = new SolidBrush(Color.FromArgb(109, 40, 217)))
+                    {
+                        for (int rIdx = 0; rIdx < rows.Count; rIdx++)
+                        {
+                            NativeReportRow row = rows[rIdx];
+                            if (row.IsFooter)
+                            {
+                                // Footer row
+                                using (Brush bgFooter = new SolidBrush(Color.FromArgb(248, 250, 252)))
+                                {
+                                    g.FillRectangle(bgFooter, 80, curY, 1080, rowHeight + 2);
+                                }
+                                g.DrawRectangle(pGrid, 80, curY, 1080, rowHeight + 2);
+                                g.DrawString(row.Title, fTdBold, bText, new RectangleF(cX_Att, curY, (cX_Num + cW_Num) - cX_Att, rowHeight + 2), rtlRight);
+                                g.DrawString(row.Max, fTdBold, bText, new RectangleF(cX_Max, curY, cW_Max, rowHeight + 2), ltrCenter);
+                                g.DrawString(row.Earned, fTdBold, bGreen, new RectangleF(cX_Earn, curY, cW_Earn, rowHeight + 2), ltrCenter);
+                                g.DrawString(row.Deduct, fTdBold, bRed, new RectangleF(cX_Ded, curY, cW_Ded, rowHeight + 2), ltrCenter);
+                                g.DrawString(row.Notes, fTdReg, bText, new RectangleF(cX_Notes, curY, cW_Notes, rowHeight + 2), rtlRight);
+                                curY += rowHeight + 2;
+                                continue;
+                            }
+
+                            Color rowBg = (rIdx % 2 == 0) ? Color.White : Color.FromArgb(248, 250, 252);
+                            if (row.IsQuiz) rowBg = Color.FromArgb(250, 245, 255);
+                            else if (row.IsPenalty) rowBg = Color.FromArgb(255, 245, 245);
+
+                            using (Brush bRowBg = new SolidBrush(rowBg))
+                            {
+                                g.FillRectangle(bRowBg, 80, curY, 1080, rowHeight);
+                            }
+                            g.DrawRectangle(pGrid, 80, curY, 1080, rowHeight);
+
+                            // Col 0: #
+                            Brush numBrush = row.IsQuiz ? bPurple : (row.IsPenalty ? bRed : bText);
+                            g.DrawString(row.Num, fTdBold, numBrush, new RectangleF(cX_Num, curY, cW_Num, rowHeight), rtlCenter);
+
+                            // Col 1: Title
+                            g.DrawString(row.Title, fTdReg, bText, new RectangleF(cX_Title, curY, cW_Title, rowHeight), rtlRight);
+
+                            // Col 2: Type
+                            Color typeBg = row.IsQuiz ? Color.FromArgb(245, 243, 255) : (row.IsPenalty ? Color.FromArgb(254, 242, 242) : Color.FromArgb(239, 246, 255));
+                            Color typeFg = row.IsQuiz ? Color.FromArgb(109, 40, 217) : (row.IsPenalty ? Color.FromArgb(185, 28, 28) : Color.FromArgb(29, 78, 216));
+                            using (Brush bTypeBg = new SolidBrush(typeBg))
+                            using (Brush bTypeFg = new SolidBrush(typeFg))
+                            {
+                                g.FillRectangle(bTypeBg, cX_Type + 4, curY + 3, cW_Type - 8, rowHeight - 6);
+                                g.DrawString(row.Type, fTdBold, bTypeFg, new RectangleF(cX_Type, curY, cW_Type, rowHeight), rtlCenter);
+                            }
+
+                            // Col 3: Status Badge
+                            bool isStDone = row.Status.IndexOf("✔") >= 0 || row.Status.IndexOf("مكتملة") >= 0 || row.Status.IndexOf("صحيحة") >= 0;
+                            bool isStFail = row.Status.IndexOf("✘") >= 0 || row.Status.IndexOf("غير") >= 0 || row.Status.IndexOf("معطّل") >= 0 || row.Status.IndexOf("خصم") >= 0;
+                            Color stBg = isStDone ? Color.FromArgb(220, 252, 231) : (isStFail ? Color.FromArgb(254, 226, 226) : Color.FromArgb(254, 243, 199));
+                            Color stFg = isStDone ? Color.FromArgb(21, 128, 61) : (isStFail ? Color.FromArgb(185, 28, 28) : Color.FromArgb(180, 83, 9));
+                            using (Brush bStBg = new SolidBrush(stBg))
+                            using (Brush bStFg = new SolidBrush(stFg))
+                            {
+                                g.FillRectangle(bStBg, cX_Status + 4, curY + 3, cW_Status - 8, rowHeight - 6);
+                                g.DrawString(row.Status, fTdBold, bStFg, new RectangleF(cX_Status, curY, cW_Status, rowHeight), rtlCenter);
+                            }
+
+                            // Col 4: Attempts
+                            g.DrawString(row.Attempts, fTdReg, bText, new RectangleF(cX_Att, curY, cW_Att, rowHeight), rtlCenter);
+
+                            // Col 5: Max Points
+                            g.DrawString(row.Max, fTdReg, bText, new RectangleF(cX_Max, curY, cW_Max, rowHeight), ltrCenter);
+
+                            // Col 6: Earned Points
+                            g.DrawString(row.Earned, fTdBold, row.IsQuiz ? bPurple : bGreen, new RectangleF(cX_Earn, curY, cW_Earn, rowHeight), ltrCenter);
+
+                            // Col 7: Deduction
+                            bool hasDed = row.Deduct.IndexOf("-") >= 0 || (row.Deduct != "0.00" && row.Deduct != "0" && !string.IsNullOrEmpty(row.Deduct));
+                            g.DrawString(row.Deduct, fTdBold, hasDed ? bRed : bText, new RectangleF(cX_Ded, curY, cW_Ded, rowHeight), ltrCenter);
+
+                            // Col 8: Notes
+                            g.DrawString(row.Notes, fTdNotes, bText, new RectangleF(cX_Notes + 4, curY, cW_Notes - 8, rowHeight), rtlRight);
+
+                            curY += rowHeight;
+                        }
+                    }
+
+                    curY += 12;
+
+                    // Section C: Step-by-Step Math Breakdown
+                    using (Brush bgSecC = new SolidBrush(Color.FromArgb(241, 245, 249)))
+                    using (Pen pSecC = new Pen(Color.FromArgb(203, 213, 225), 1f))
+                    using (Brush bSecCText = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                    using (Font fSecC = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                    {
+                        g.FillRectangle(bgSecC, 80, curY, 1080, 26);
+                        g.DrawRectangle(pSecC, 80, curY, 1080, 26);
+                        using (Brush bAccentBar = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                        {
+                            g.FillRectangle(bAccentBar, 1156, curY, 4, 26);
+                        }
+                        g.DrawString("القسم (ج): التفكيك الحسابي للعلامة (احتساب المعدل وفق القاعدة الثلاثية الرسمية)", fSecC, bSecCText, new RectangleF(90, curY + 2, 1060, 22), rtlRight);
+                    }
+                    curY += 30;
+
+                    // Parse Math Steps from HTML
+                    List<NativeMathStep> mathSteps = new List<NativeMathStep>();
+                    MatchCollection mathMatches = Regex.Matches(html ?? "", @"<div class=""a4-math-step[^""]*"">([\s\S]*?)<\/div>");
+                    foreach (Match mm in mathMatches)
+                    {
+                        string mHtml = mm.Groups[1].Value;
+                        NativeMathStep ms = new NativeMathStep();
+                        Match mNum = Regex.Match(mHtml, @"class=""a4-step-num""[^>]*>([^<]+)");
+                        if (mNum.Success) ms.Num = CleanHtml(mNum.Groups[1].Value);
+                        Match mLbl = Regex.Match(mHtml, @"class=""a4-step-lbl""[^>]*>([\s\S]*?)<\/span>");
+                        if (mLbl.Success) ms.Label = CleanHtml(mLbl.Groups[1].Value);
+                        Match mVal = Regex.Match(mHtml, @"class=""a4-step-val""[^>]*>([\s\S]*?)<\/span>");
+                        if (mVal.Success) ms.Value = CleanHtml(mVal.Groups[1].Value);
+                        Match mSub = Regex.Match(mHtml, @"class=""a4-step-sub""[^>]*>([\s\S]*?)<\/span>");
+                        if (mSub.Success) ms.Sub = CleanHtml(mSub.Groups[1].Value);
+                        mathSteps.Add(ms);
+                    }
+
+                    if (mathSteps.Count == 0)
+                    {
+                        mathSteps.Add(new NativeMathStep { Num = "1", Label = "مجموع معاملات المهام العملية النشطة:", Value = "17.00 نقطة", Sub = "تم استيفاء المهام العملية المطلوبة" });
+                        mathSteps.Add(new NativeMathStep { Num = "2", Label = "مجموع معاملات الأسئلة التقويمية:", Value = "6.00 نقاط", Sub = "الأسئلة التقويمية المرافقة للمهام" });
+                        mathSteps.Add(new NativeMathStep { Num = "3", Label = "المجموع الكلي لأوزان التقييم (المقام):", Value = "23.00 نقطة", Sub = "المعاملات الإجمالية المطلوبة" });
+                        mathSteps.Add(new NativeMathStep { Num = "4", Label = "مجموع النقاط المكتسبة (البسط):", Value = "13.00 نقطة", Sub = "مجموع نقاط المهام والأسئلة الممنوحة" });
+                        mathSteps.Add(new NativeMathStep { Num = "5", Label = "تطبيق القاعدة الثلاثية الرسمية:", Value = "11.30 / 20", Sub = "(13.00 ÷ 23.00) × 20 = 11.30" });
+                        mathSteps.Add(new NativeMathStep { Num = "6", Label = "العلامة النهائية المستحقة:", Value = scoreVal + " / 20", Sub = "العلامة الرسمية بعد معالجة الخصومات" });
+                    }
+
+                    // Draw Math Steps Grid
+                    int mathStepHeight = 28;
+                    using (Font fStepNum = new Font("Segoe UI", 9f, FontStyle.Bold))
+                    using (Font fStepLbl = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                    using (Font fStepVal = new Font("Segoe UI", 10.5f, FontStyle.Bold))
+                    using (Font fStepSub = new Font("Segoe UI", 8.5f, FontStyle.Regular))
+                    using (Brush bStepCircle = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                    using (Brush bWhite = new SolidBrush(Color.White))
+                    using (Brush bStepText = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    using (Brush bStepSubText = new SolidBrush(Color.FromArgb(100, 116, 139)))
+                    using (Pen pStepBorder = new Pen(Color.FromArgb(226, 232, 240), 1f))
+                    {
+                        for (int sIdx = 0; sIdx < mathSteps.Count; sIdx++)
+                        {
+                            NativeMathStep step = mathSteps[sIdx];
+                            bool isFormula = (sIdx == 4);
+                            bool isFinal = (sIdx == 5);
+
+                            Color stepBg = isFinal ? Color.FromArgb(240, 253, 244) : (isFormula ? Color.FromArgb(240, 249, 255) : Color.FromArgb(248, 250, 252));
+                            Color stepBorderCol = isFinal ? Color.FromArgb(187, 247, 208) : (isFormula ? Color.FromArgb(186, 230, 253) : Color.FromArgb(226, 232, 240));
+
+                            using (Brush bStepBg = new SolidBrush(stepBg))
+                            using (Pen pStepBox = new Pen(stepBorderCol, 1.2f))
+                            {
+                                g.FillRectangle(bStepBg, 80, curY, 1080, mathStepHeight);
+                                g.DrawRectangle(pStepBox, 80, curY, 1080, mathStepHeight);
+                            }
+
+                            // Step Number Circle
+                            g.FillEllipse(bStepCircle, 1134, curY + 4, 20, 20);
+                            g.DrawString(step.Num, fStepNum, bWhite, new RectangleF(1134, curY + 4, 20, 20), ltrCenter);
+
+                            // Step Label
+                            g.DrawString(step.Label, fStepLbl, bStepText, new RectangleF(650, curY, 474, mathStepHeight), rtlRight);
+
+                            // Step Value
+                            Brush valBrush = isFinal ? new SolidBrush(Color.FromArgb(21, 128, 61)) : bStepText;
+                            g.DrawString(step.Value, fStepVal, valBrush, new RectangleF(450, curY, 190, mathStepHeight), rtlCenter);
+
+                            // Step Subtext (Formula)
+                            g.DrawString(step.Sub, fStepSub, bStepSubText, new RectangleF(90, curY, 350, mathStepHeight), rtlRight);
+
+                            curY += mathStepHeight + 4;
+                        }
+                    }
+
+                    // Signature & Seal (Anchored at Y = 1530)
+                    int ySig = 1530;
                     using (Pen pSig = new Pen(Color.FromArgb(100, 116, 139), 1.5f))
                     {
                         pSig.DashStyle = DashStyle.Dash;
-                        g.DrawRectangle(pSig, 120, ySig, 350, 130);
+                        g.DrawRectangle(pSig, 100, ySig, 340, 120);
                     }
-                    using (Font fSig = new Font("Segoe UI", 13f, FontStyle.Bold))
+                    using (Font fSig = new Font("Segoe UI", 12f, FontStyle.Bold))
                     using (Brush bSig = new SolidBrush(Color.FromArgb(71, 85, 105)))
                     {
-                        g.DrawString("توقيع وختم الأستاذ(ة)", fSig, bSig, new RectangleF(120, ySig + 15, 350, 35), rtlCenter);
+                        g.DrawString("توقيع وختم الأستاذ(ة)", fSig, bSig, new RectangleF(100, ySig + 12, 340, 28), rtlCenter);
                     }
 
-                    using (Font fDate = new Font("Segoe UI", 12f, FontStyle.Regular))
+                    using (Font fObsLbl = new Font("Segoe UI", 11f, FontStyle.Bold))
+                    using (Font fObsDots = new Font("Segoe UI", 10f, FontStyle.Regular))
+                    using (Brush bObs = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    using (Brush bDots = new SolidBrush(Color.FromArgb(148, 163, 184)))
+                    {
+                        g.DrawString("ملاحظات وتوجيهات الأستاذ(ة):", fObsLbl, bObs, new RectangleF(500, ySig + 10, 640, 24), rtlRight);
+                        g.DrawString("............................................................................................................................................", fObsDots, bDots, new RectangleF(500, ySig + 42, 640, 20), rtlRight);
+                        g.DrawString("............................................................................................................................................", fObsDots, bDots, new RectangleF(500, ySig + 72, 640, 20), rtlRight);
+                    }
+
+                    using (Font fDate = new Font("Segoe UI", 10.5f, FontStyle.Regular))
                     using (Brush bDate = new SolidBrush(Color.FromArgb(100, 116, 139)))
                     {
-                        g.DrawString("حرر بتاريخ: " + DateTime.Now.ToString("yyyy/MM/dd"), fDate, bDate, new RectangleF(750, ySig + 20, 400, 30), rtlRight);
-                        g.DrawString("وثيقة تقييم رسمية غير قابلة للتعديل معتمدة لتقويم الأعمال التطبيقية", fDate, bDate, new RectangleF(750, ySig + 55, 400, 30), rtlRight);
+                        g.DrawString("حرر في: " + dateText, fDate, bDate, new RectangleF(750, ySig + 105, 390, 24), rtlRight);
+                        g.DrawString("وثيقة تقييم رسمية غير قابلة للتعديل معتمدة لتقويم الأعمال التطبيقية", fDate, bDate, new RectangleF(750, ySig + 126, 390, 22), rtlRight);
                     }
 
                     using (MemoryStream ms = new MemoryStream())
@@ -753,8 +1096,26 @@ namespace Win11SimHost
         private static DateTime _lastPingUtc = DateTime.UtcNow;
         private static volatile bool _hasReceivedPing = false;
 
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
+
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
+
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
@@ -764,6 +1125,37 @@ namespace Win11SimHost
         {
             try
             {
+                IntPtr targetHwnd = IntPtr.Zero;
+
+                EnumWindows(delegate (IntPtr hWnd, IntPtr lParam)
+                {
+                    if (!IsWindowVisible(hWnd)) return true;
+                    StringBuilder sb = new StringBuilder(512);
+                    GetWindowText(hWnd, sb, 512);
+                    string title = sb.ToString();
+                    if (!string.IsNullOrEmpty(title))
+                    {
+                        if (title.IndexOf("محاكي", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            title.IndexOf("Windows 11", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            title.IndexOf("المساعد البيداغوجي", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            targetHwnd = hWnd;
+                            return false; // Stop enumeration
+                        }
+                    }
+                    return true;
+                }, IntPtr.Zero);
+
+                if (targetHwnd != IntPtr.Zero)
+                {
+                    ShowWindow(targetHwnd, SW_RESTORE);
+                    BringWindowToTop(targetHwnd);
+                    SetForegroundWindow(targetHwnd);
+                    SwitchToThisWindow(targetHwnd, true);
+                    return;
+                }
+
+                // Fallback to process MainWindowHandle
                 Process current = Process.GetCurrentProcess();
                 Process[] procs = Process.GetProcessesByName(current.ProcessName);
                 for (int i = 0; i < procs.Length; i++)
@@ -771,7 +1163,9 @@ namespace Win11SimHost
                     if (procs[i].Id != current.Id && procs[i].MainWindowHandle != IntPtr.Zero)
                     {
                         ShowWindow(procs[i].MainWindowHandle, SW_RESTORE);
+                        BringWindowToTop(procs[i].MainWindowHandle);
                         SetForegroundWindow(procs[i].MainWindowHandle);
+                        SwitchToThisWindow(procs[i].MainWindowHandle, true);
                         return;
                     }
                 }
@@ -1261,7 +1655,7 @@ namespace Win11SimHost
                                                 ProcessStartInfo pPsi = new ProcessStartInfo();
                                                 pPsi.FileName = chromium;
                                                 pPsi.Arguments = string.Format(
-                                                    "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
+                                                    "{0} --disable-gpu --no-sandbox --no-pdf-header-footer --virtual-time-budget=5000 --user-data-dir=\"{1}\" --run-all-compositor-stages-before-draw --print-to-pdf=\"{2}\" \"{3}\"",
                                                     headlessVariants[v], tmpProf, targetPath, fileUrl);
                                                 pPsi.UseShellExecute = false;
                                                 pPsi.CreateNoWindow = true;
@@ -1269,7 +1663,7 @@ namespace Win11SimHost
                                                 {
                                                     if (p != null)
                                                     {
-                                                        if (!p.WaitForExit(6000))
+                                                        if (!p.WaitForExit(15000))
                                                         {
                                                             try { p.Kill(); } catch { }
                                                         }

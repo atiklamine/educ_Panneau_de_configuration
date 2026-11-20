@@ -159,12 +159,18 @@
             ],
             setupFlow: {
                 installed: false,
+                openedApp: false,
+                closedApp: false,
                 verifiedInstalled: false,
                 uninstalled: false,
-                verifiedUninstalled: false
+                verifiedUninstalled: false,
+                verifiedGoneInStart: false
             },
             featureFlow: {
                 enabledOnce: false,
+                openedApp: false,
+                closedApp: false,
+                lastOpenedFeatId: null,
                 verifiedInStart: false,
                 disabledAfterEnable: false,
                 verifiedGoneInStart: false
@@ -1077,18 +1083,27 @@
         },
 
         markStartMenuFeaturesViewed: function () {
-            if (!data.featureFlow) return;
-            var anyEnabled = (data.optionalFeatures || []).some(function (f) { return !!f.installed; });
             var changed = false;
-            if (data.featureFlow.enabledOnce && anyEnabled && !data.featureFlow.verifiedInStart) {
-                data.featureFlow.verifiedInStart = true;
-                changed = true;
+            if (data.featureFlow) {
+                var anyEnabled = (data.optionalFeatures || []).some(function (f) { return !!f.installed; });
+                if (data.featureFlow.enabledOnce && anyEnabled && !data.featureFlow.verifiedInStart) {
+                    data.featureFlow.verifiedInStart = true;
+                    changed = true;
+                }
+                if (data.featureFlow.disabledAfterEnable && !anyEnabled && !data.featureFlow.verifiedGoneInStart) {
+                    data.featureFlow.verifiedGoneInStart = true;
+                    changed = true;
+                }
             }
-            if (data.featureFlow.disabledAfterEnable && !anyEnabled && !data.featureFlow.verifiedGoneInStart) {
-                data.featureFlow.verifiedGoneInStart = true;
-                changed = true;
+            if (data.setupFlow) {
+                var hasLab = (data.installedPrograms || []).some(function (p) { return p.id === 'labtools_app'; });
+                if (data.setupFlow.uninstalled && !hasLab && !data.setupFlow.verifiedGoneInStart) {
+                    data.setupFlow.verifiedGoneInStart = true;
+                    changed = true;
+                }
             }
             if (changed) {
+                persist();
                 emit('features:changed', { startMenuVerified: true });
                 emit('state:changed', data);
             }
