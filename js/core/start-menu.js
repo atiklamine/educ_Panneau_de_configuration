@@ -23,7 +23,42 @@
 
     function getPinnedItems() {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
-        return [
+        var items = [];
+        var st = global.Win11State ? global.Win11State.get() : null;
+
+        // If LabTools is installed, place it prominently in Pinned items!
+        var hasLab = st && st.installedPrograms && st.installedPrograms.some(function (p) { return p.id === 'labtools_app'; });
+        if (hasLab) {
+            items.push({
+                icon: 'labtools',
+                label: 'LabTools 1AS',
+                action: function () {
+                    if (global.Win11Dialogs && typeof global.Win11Dialogs.openLabToolsApp === 'function') {
+                        global.Win11Dialogs.openLabToolsApp();
+                    }
+                }
+            });
+        }
+
+        // If Optional Features are enabled, place them in Pinned items too!
+        var feats = (st && st.optionalFeatures) || [];
+        for (var f = 0; f < feats.length; f++) {
+            if (feats[f].installed) {
+                (function (featItem) {
+                    items.push({
+                        icon: featItem.icon || 'paint',
+                        label: featItem.nameAr || featItem.name,
+                        action: function () {
+                            if (global.Win11Dialogs && typeof global.Win11Dialogs.openOptionalFeatureApp === 'function') {
+                                global.Win11Dialogs.openOptionalFeatureApp(featItem.id);
+                            }
+                        }
+                    });
+                })(feats[f]);
+            }
+        }
+
+        items.push(
             { icon: 'settings', label: t('desktop.settings'), action: function () { global.Win11Registry.open('home'); } },
             { icon: 'controlPanel', label: t('desktop.controlPanel'), action: function () { if (global.Win11ControlPanel) global.Win11ControlPanel.open(); } },
             { icon: 'fileExplorer', label: t('taskbar.fileExplorer'), action: function () { if (global.Win11Explorer) global.Win11Explorer.open(); } },
@@ -36,7 +71,9 @@
             { icon: 'mouse', label: t('settings.devices.mouseTitle'), action: function () { global.Win11Registry.open('devices.mouse'); } },
             { icon: 'graduation', label: t('pedagogy.freeModeBtn'), action: function () { if (global.Win11HUD) global.Win11HUD.open(); } },
             { icon: 'info', label: t('settings.system.aboutTitle'), action: function () { global.Win11Registry.open('system.about'); } }
-        ];
+        );
+
+        return items;
     }
 
     function render() {
@@ -46,6 +83,8 @@
         var bidi = global.Win11I18N.bidiHtml;
         var st = global.Win11State.get();
         var pinned = getPinnedItems();
+        var hasLab = st && st.installedPrograms && st.installedPrograms.some(function (p) { return p.id === 'labtools_app'; });
+        var feats = st.optionalFeatures || [];
 
         var html =
             '<div class="start-body">' +
@@ -79,7 +118,33 @@
                     '<div class="start-section-header">' +
                         '<span class="start-section-title">' + bidi(t('start.recommended')) + '</span>' +
                     '</div>' +
-                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+
+                if (hasLab) {
+                    html +=
+                        '<button type="button" class="start-all-row" data-launch-prog="labtools_app" style="background:rgba(0,120,212,0.08);border:1px solid rgba(0,120,212,0.25)">' +
+                            global.Win11Icons.get('labtools', 22) +
+                            '<div class="search-result-meta">' +
+                                '<span class="search-result-title" style="color:var(--win-accent);font-weight:700">LabTools 1AS</span>' +
+                                '<span class="search-result-path">' + bidi('مضاف حديثاً — انقر للفتح والتجربة') + '</span>' +
+                            '</div>' +
+                        '</button>';
+                }
+
+                for (var rft = 0; rft < feats.length; rft++) {
+                    if (feats[rft].installed) {
+                        html +=
+                            '<button type="button" class="start-all-row start-feat-row" data-feat-id="' + global.Win11Compat.escapeHtml(feats[rft].id) + '" style="background:rgba(0,120,212,0.08);border:1px solid rgba(0,120,212,0.25)">' +
+                                global.Win11Icons.get(feats[rft].icon || 'paint', 22) +
+                                '<div class="search-result-meta">' +
+                                    '<span class="search-result-title" style="color:var(--win-accent);font-weight:700">' + bidi(feats[rft].nameAr || feats[rft].name) + '</span>' +
+                                    '<span class="search-result-path">' + bidi('ميزة مفعلة حديثاً — انقر للفتح') + '</span>' +
+                                '</div>' +
+                            '</button>';
+                    }
+                }
+
+                html +=
                         '<button type="button" class="start-all-row" data-rec-target="apps.installed">' +
                             global.Win11Icons.get('navApps', 20) +
                             '<div class="search-result-meta"><span class="search-result-title">' + bidi(t('settings.apps.installedTitle')) + '</span><span class="search-result-path">' + bidi(t('start.recommendedSub')) + '</span></div>' +

@@ -522,6 +522,10 @@
             emit(eventTopic || 'state:changed', data);
         },
 
+        persist: function () {
+            persist();
+        },
+
         reset: function () {
             purgeLegacyStudentPersistence();
             data = createDefaultData();
@@ -1097,6 +1101,10 @@
             }
             if (data.setupFlow) {
                 var hasLab = (data.installedPrograms || []).some(function (p) { return p.id === 'labtools_app'; });
+                if (data.setupFlow.installed && hasLab && !data.setupFlow.verifiedInStart) {
+                    data.setupFlow.verifiedInStart = true;
+                    changed = true;
+                }
                 if (data.setupFlow.uninstalled && !hasLab && !data.setupFlow.verifiedGoneInStart) {
                     data.setupFlow.verifiedGoneInStart = true;
                     changed = true;

@@ -327,50 +327,124 @@
     function openLabToolsApp() {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
         var bidi = global.Win11I18N.bidiHtml;
-        if (global.Win11State && global.Win11State.get) {
-            var curSt = global.Win11State.get();
-            if (curSt.setupFlow) {
-                curSt.setupFlow.openedApp = true;
-                global.Win11State.persist();
-            }
+        if (global.Win11State && global.Win11State.update) {
+            global.Win11State.update(function (d) {
+                if (d.setupFlow) {
+                    d.setupFlow.openedApp = true;
+                }
+            });
         }
         if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
             global.Win11Assessment.evaluate();
         }
+
+        var onLabToolsClose = function () {
+            if (global.Win11State && global.Win11State.update) {
+                global.Win11State.update(function (d) {
+                    if (d.setupFlow) {
+                        d.setupFlow.closedApp = true;
+                    }
+                });
+            }
+            if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+                global.Win11Assessment.evaluate();
+            }
+        };
+
         showCustom({
             title: t('settings.apps.labToolsAppTitle') || 'LabTools 1AS Education Suite',
             tone: 'info',
             wide: true,
+            onClose: onLabToolsClose,
             renderBody: function (wrap) {
                 wrap.innerHTML =
-                    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
-                        global.Win11Icons.get('labtools', 40) +
-                        '<div>' +
-                            '<div style="font-weight:700;font-size:15px">' + bidi('LabTools 1AS v2.4 — حزمة مخبر الإعلام الآلي') + '</div>' +
-                            '<div style="font-size:12.5px;color:var(--win-text-secondary)">' + bidi('تم التثبيت بنجاح في: C:\\Program Files\\LabTools_1AS\\') + '</div>' +
+                    '<div style="display:flex;flex-direction:column;gap:12px">' +
+                        // Header info & status pill
+                        '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--win-border-card)">' +
+                            '<div style="display:flex;align-items:center;gap:12px">' +
+                                global.Win11Icons.get('labtools', 42) +
+                                '<div>' +
+                                    '<div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px">' +
+                                        '<span>LabTools 1AS Education Suite</span>' +
+                                        '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#E0F2FE;color:#0369A1;font-weight:600"><bdi dir="ltr">v2.4 (مخبر الإعلام الآلي)</bdi></span>' +
+                                    '</div>' +
+                                    '<div style="font-size:12px;color:var(--win-text-secondary);margin-top:2px">' +
+                                        bidi('مسار التثبيت:') + ' <bdi dir="ltr">C:\\Program Files\\LabTools_1AS\\LabTools.exe</bdi>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<span style="background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;font-weight:700;font-size:12px;padding:4px 10px;border-radius:14px;display:inline-flex;align-items:center;gap:6px">' +
+                                '<span style="width:8px;height:8px;border-radius:50%;background:#16A34A;display:inline-block"></span>' +
+                                bidi('يعمل بنجاح تام (Operational)') +
+                            '</span>' +
                         '</div>' +
-                    '</div>' +
-                    '<div class="win-card" style="background:var(--win-surface-subtle);font-size:13px;line-height:1.7">' +
-                        '<div>• ' + bidi('أدوات تهيئة الشبكة المحلية وتحليل التوصيل') + '</div>' +
-                        '<div>• ' + bidi('بيئة تدريب مبسطة على صيانة الحاسوب وإدارة البرمجيات') + '</div>' +
+
+                        // Active Task Guidance Box (Green Card)
+                        '<div style="background:#F0FDF4;border:1.5px solid #22C55E;border-radius:8px;padding:12px 14px">' +
+                            '<div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#15803D;font-size:13.5px;margin-bottom:4px">' +
+                                global.Win11Icons.get('check', 16) +
+                                '<span>' + bidi('البرنامج يعمل بنجاح! تم استيفاء خطوة تشغيل وتجربة التطبيق.') + '</span>' +
+                            '</div>' +
+                            '<div style="font-size:12.5px;color:#166534;line-height:1.6">' +
+                                '<strong>' + bidi('👉 الخطوة البيداغوجية التالية للتلميذ في المحاكاة:') + '</strong> ' +
+                                bidi('يمكنك الآن إغلاق هذه النافذة بالزر أدناه، والتوجه فوراً إلى: ') +
+                                '<span style="background:rgba(22,163,74,0.15);padding:1px 6px;border-radius:4px;font-weight:700">' + bidi('الإعدادات ← التطبيقات ← التطبيقات المثبتة') + '</span> ' +
+                                bidi('والنقر على زر خيارات البرنامج (...) ثم اختيار «إلغاء التثبيت» (Uninstall) لإزالته، ثم فتح قائمة ابدأ للتحقق من اختفائه.') +
+                            '</div>' +
+                        '</div>' +
+
+                        // Educational Help Cards (3 Cards)
+                        '<div style="display:flex;flex-direction:column;gap:8px">' +
+                            '<div style="font-size:12.5px;font-weight:700;color:var(--win-text-primary);display:flex;align-items:center;gap:6px">' +
+                                global.Win11Icons.get('info', 16) +
+                                '<span>' + bidi('مفاهيم وشروحات هامة للتلميذ (منهاج السنة الأولى ثانوي — إدارة البرمجيات):') + '</span>' +
+                            '</div>' +
+
+                            // Card 1: Meaning of installation
+                            '<div class="win-card" style="background:var(--win-surface-subtle);border-radius:6px;padding:10px 12px;border:1px solid var(--win-border-card)">' +
+                                '<div style="font-weight:700;font-size:12.5px;color:#0284C7;margin-bottom:4px">' +
+                                    bidi('📦 1. ما معنى "تنصيب/تثبيت برنامج" (Software Installation)؟') +
+                                '</div>' +
+                                '<div style="font-size:12px;color:var(--win-text-primary);line-height:1.6">' +
+                                    bidi('عملية التثبيت ليست مجرد وضع ملف على القرص، بل هي إدماج متكامل للبرنامج داخل نظام التشغيل عبر الخطوات الآلية الآتية:') +
+                                    '<ul style="margin:4px 18px 0 0;padding:0;line-height:1.6">' +
+                                        '<li>' + bidi('فك ضغط ونسخ الملفات والمكتبات المشتركة (Shared DLLs) إلى المسار المخصص (C:\\Program Files).') + '</li>' +
+                                        '<li>' + bidi('تسجيل مفاتيح وإعدادات البرنامج في سجل النظام (Windows Registry) ليتعرف عليه نظام التشغيل.') + '</li>' +
+                                        '<li>' + bidi('إنشاء اختصارات تشغيل في قائمة ابدأ (Start Menu) وسطح المكتب (Desktop) للوصول المباشر.') + '</li>' +
+                                        '<li>' + bidi('تسجيل البرنامج في لوحة التحكم وقائمة التطبيقات المثبتة لتسهيل صيانته أو حذفه الآمن مستقبلاً.') + '</li>' +
+                                    '</ul>' +
+                                '</div>' +
+                            '</div>' +
+
+                            // Card 2: Install vs Copy/Paste
+                            '<div class="win-card" style="background:var(--win-surface-subtle);border-radius:6px;padding:10px 12px;border:1px solid var(--win-border-card)">' +
+                                '<div style="font-weight:700;font-size:12.5px;color:#D97706;margin-bottom:4px">' +
+                                    bidi('⚖️ 2. ما الفرق الجوهري بين "تنصيب برنامج" ومجرد "النسخ واللصق" (Copy & Paste)؟') +
+                                '</div>' +
+                                '<div style="font-size:12px;color:var(--win-text-primary);line-height:1.6">' +
+                                    '<div style="margin-bottom:4px">• <strong>' + bidi('النسخ واللصق (Copy & Paste):') + '</strong> ' + bidi('ينقل فقط الملف التنفيذي المفرود؛ البرامج الكبيرة تفشل في الإقلاع وتظهر رسائل خطأ (Missing DLL / Registry keys) لغياب المكتبات التابعة ومدخلات السجل.') + '</div>' +
+                                    '<div>• <strong>' + bidi('التنصيب الرسمي (Setup):') + '</strong> ' + bidi('يقوم معالج التثبيت بتهيئة كامل البيئة البرمجية، ربط امتدادات الملفات بالبرنامج تلقائياً، وضمان التشغيل المستقر وإمكانية الحذف النظيف.') + '</div>' +
+                                '</div>' +
+                            '</div>' +
+
+                            // Card 3: Proper uninstall vs delete
+                            '<div class="win-card" style="background:var(--win-surface-subtle);border-radius:6px;padding:10px 12px;border:1px solid var(--win-border-card)">' +
+                                '<div style="font-weight:700;font-size:12.5px;color:#DC2626;margin-bottom:4px">' +
+                                    bidi('🛡️ 3. لماذا يجب إلغاء تثبيت البرامج من "الإعدادات" وتجنب الحذف اليدوي (Delete)؟') +
+                                '</div>' +
+                                '<div style="font-size:12px;color:var(--win-text-primary);line-height:1.6">' +
+                                    '• <strong>' + bidi('خطأ شائع:') + '</strong> ' + bidi('حذف مجلد البرنامج بزر Delete يزيل فقط الملفات الظاهرة، ويترك بقايا معطوبة في سجل النظام (Registry) واختصارات مكسورة تثقل إقلاع الحاسوب مع مرور الوقت.') + '<br>' +
+                                    '• <strong>' + bidi('الطريقة السليمة:') + '</strong> ' + bidi('دائماً من الإعدادات ← التطبيقات المثبتة ← إلغاء التثبيت (Uninstall)، حيث يستدعي النظام برنامج الإلغاء الرسمي لينظف كافة الملفات ومفاتيح السجل بأمان تام.') +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
                     '</div>';
             },
             buttons: [{
-                label: t('app.close'),
+                label: bidi('إغلاق التطبيق ومتابعة خطوات المحاكاة'),
                 primary: true,
                 value: true,
-                onClick: function () {
-                    if (global.Win11State && global.Win11State.get) {
-                        var curSt = global.Win11State.get();
-                        if (curSt.setupFlow) {
-                            curSt.setupFlow.closedApp = true;
-                            global.Win11State.persist();
-                        }
-                    }
-                    if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
-                        global.Win11Assessment.evaluate();
-                    }
-                }
+                onClick: onLabToolsClose
             }]
         });
     }
@@ -378,24 +452,24 @@
     function openOptionalFeatureApp(featId) {
         var t = global.Win11I18N.t.bind(global.Win11I18N);
         var bidi = global.Win11I18N.bidiHtml;
-        if (global.Win11State && global.Win11State.get) {
-            var curSt = global.Win11State.get();
-            if (curSt.featureFlow) {
-                curSt.featureFlow.openedApp = true;
-                curSt.featureFlow.lastOpenedFeatId = featId;
-                global.Win11State.persist();
-            }
+        if (global.Win11State && global.Win11State.update) {
+            global.Win11State.update(function (d) {
+                if (d.featureFlow) {
+                    d.featureFlow.openedApp = true;
+                    d.featureFlow.lastOpenedFeatId = featId;
+                }
+            });
         }
         if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
             global.Win11Assessment.evaluate();
         }
         var onFeatureClose = function () {
-            if (global.Win11State && global.Win11State.get) {
-                var curSt = global.Win11State.get();
-                if (curSt.featureFlow) {
-                    curSt.featureFlow.closedApp = true;
-                    global.Win11State.persist();
-                }
+            if (global.Win11State && global.Win11State.update) {
+                global.Win11State.update(function (d) {
+                    if (d.featureFlow) {
+                        d.featureFlow.closedApp = true;
+                    }
+                });
             }
             if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
                 global.Win11Assessment.evaluate();
@@ -407,6 +481,7 @@
                 title: t('settings.apps.paintAppTitle') || 'Paint',
                 tone: 'info',
                 wide: true,
+                onClose: onFeatureClose,
                 renderBody: function (wrap) {
                     wrap.innerHTML =
                         '<div id="win-paint-app" style="display:flex;flex-direction:column;gap:8px">' +
@@ -472,6 +547,7 @@
                 title: t('settings.apps.notepadAppTitle') || 'Notepad',
                 tone: 'info',
                 wide: true,
+                onClose: onFeatureClose,
                 renderBody: function (wrap) {
                     wrap.innerHTML =
                         '<div style="display:flex;flex-direction:column;gap:8px">' +
@@ -512,6 +588,7 @@
             showCustom({
                 title: t('settings.apps.gamesAppTitle') || 'Windows Games',
                 tone: 'info',
+                onClose: onFeatureClose,
                 renderBody: function (wrap) {
                     var symbols = ['★', '★', '◆', '◆', '▲', '▲', '●', '●'];
                     var deck = symbols.slice().sort(function () { return Math.random() - 0.5; });
