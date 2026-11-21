@@ -1848,6 +1848,33 @@ namespace Win11SimHost
                     SplashScreen.Close();
                 }
 
+                // Adjacent Logo support (fallback if logo placed in same directory as EXE)
+                if (path == "/logo.png" || path == "/logo.jpg" || path == "/logo.jpeg" || path == "/api/logo")
+                {
+                    string[] logoCandidates = new string[] {
+                        Path.Combine(_exeDir, "logo.png"),
+                        Path.Combine(_exeDir, "logo.jpg"),
+                        Path.Combine(_exeDir, "logo.jpeg")
+                    };
+                    string foundLogo = null;
+                    for (int l = 0; l < logoCandidates.Length; l++)
+                    {
+                        if (File.Exists(logoCandidates[l]))
+                        {
+                            foundLogo = logoCandidates[l];
+                            break;
+                        }
+                    }
+                    if (foundLogo != null)
+                    {
+                        string mime = foundLogo.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg";
+                        byte[] logoBytes = File.ReadAllBytes(foundLogo);
+                        SendResponse(stream, 200, "OK", mime, logoBytes, true);
+                        client.Close();
+                        return;
+                    }
+                }
+
                 if (path == "/" || path == "/index.html")
                 {
                     SendResponse(stream, 200, "OK", "text/html; charset=utf-8", _htmlBytes, true);

@@ -681,9 +681,14 @@
 
     function refreshAllLayouts() {
         var s = S();
+        var curLayer = getLayer();
         for (var k in s.windows) {
             if (Object.prototype.hasOwnProperty.call(s.windows, k)) {
-                applyRect(s.windows[k]);
+                var w = s.windows[k];
+                if (w && w.el && curLayer && w.el.parentNode !== curLayer) {
+                    try { curLayer.appendChild(w.el); } catch (eAtt) { }
+                }
+                applyRect(w);
             }
         }
     }

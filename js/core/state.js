@@ -566,7 +566,7 @@
         },
 
         getCurrentAccount: function () {
-            return this.getAccount(data.currentUser) || data.userAccounts[0];
+            return this.getAccount(data.currentUser) || data.userAccounts[0] || { name: 'MENIAI', type: 'Administrateur', enabled: true };
         },
 
         isCurrentGuest: function () {
@@ -656,18 +656,31 @@
             if (global.Win11WM && typeof global.Win11WM.syncSession === 'function') {
                 global.Win11WM.syncSession();
             }
-            if (global.Win11SettingsApp && typeof global.Win11SettingsApp.getOptimalRect === 'function' && global.Win11WM) {
-                var setWin = global.Win11WM.getWindow('win-settings');
-                if (setWin) {
-                    var sArea = global.Win11WM.getWorkArea();
-                    var sOpt = global.Win11SettingsApp.getOptimalRect(sArea);
-                    setWin.rect.x = sOpt.x;
-                    setWin.rect.y = sOpt.y;
-                    setWin.rect.w = sOpt.w;
-                    setWin.rect.h = sOpt.h;
-                    if (typeof global.Win11WM.applyRect === 'function') {
-                        global.Win11WM.applyRect(setWin);
+            try {
+                if (global.Win11SettingsApp && typeof global.Win11SettingsApp.getOptimalRect === 'function' && global.Win11WM) {
+                    var setWin = global.Win11WM.getWindow('win-settings');
+                    if (setWin) {
+                        if (!setWin.rect || typeof setWin.rect !== 'object') {
+                            setWin.rect = { x: 0, y: 0, w: 900, h: 600 };
+                        }
+                        var sArea = (typeof global.Win11WM.getWorkArea === 'function')
+                            ? global.Win11WM.getWorkArea()
+                            : { width: 1024, height: 680 };
+                        var sOpt = global.Win11SettingsApp.getOptimalRect(sArea);
+                        if (sOpt) {
+                            setWin.rect.x = (typeof sOpt.x === 'number') ? sOpt.x : 0;
+                            setWin.rect.y = (typeof sOpt.y === 'number') ? sOpt.y : 0;
+                            setWin.rect.w = (typeof sOpt.w === 'number') ? sOpt.w : 900;
+                            setWin.rect.h = (typeof sOpt.h === 'number') ? sOpt.h : 600;
+                        }
+                        if (typeof global.Win11WM.applyRect === 'function') {
+                            global.Win11WM.applyRect(setWin);
+                        }
                     }
+                }
+            } catch (errSetWin) {
+                if (global.console && typeof global.console.warn === 'function') {
+                    global.console.warn('[Win11State.switchUser] setWin positioning:', errSetWin);
                 }
             }
             if (global.Win11I18N && data.numerals) {

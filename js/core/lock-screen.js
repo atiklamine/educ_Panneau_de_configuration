@@ -18,7 +18,10 @@
 
     function close() {
         var el = getEl();
-        if (el) el.classList.remove('is-open');
+        if (el) {
+            el.classList.remove('is-open');
+            el.style.display = 'none';
+        }
         if (global.Win11Assessment && typeof global.Win11Assessment.resumeTimer === 'function') {
             global.Win11Assessment.resumeTimer();
         }
@@ -139,28 +142,47 @@
         el.innerHTML = html;
 
         function attemptSignIn() {
-            if (!selectedAcc) { close(); return; }
-            if (needsPassword) {
-                var inp = el.querySelector('#lock-pass-input');
-                var errEl = el.querySelector('#lock-error-msg');
-                var entered = inp ? inp.value : '';
-                if (entered !== selectedAcc.password) {
-                    if (errEl) errEl.innerHTML = bidi(t('lockScreen.wrongPassword'));
-                    if (global.Win11State && typeof global.Win11State.triggerElementShake === 'function') {
-                        global.Win11State.triggerElementShake(inp);
-                    }
-                    if (inp) { inp.value = ''; inp.focus(); }
-                    if (global.Win11Assessment && typeof global.Win11Assessment.recordMistake === 'function') {
-                        global.Win11Assessment.recordMistake(6, 'كلمة مرور خاطئة في شاشة تسجيل الدخول', 'إدخال كلمة مرور خاطئة للحساب: ' + selectedAcc.name, 0.25);
-                    }
-                    return;
+            try {
+                if (!selectedAcc) {
+                    selectedAcc = (selectedName && global.Win11State && typeof global.Win11State.getAccount === 'function')
+                        ? global.Win11State.getAccount(selectedName)
+                        : (global.Win11State && typeof global.Win11State.getCurrentAccount === 'function' ? global.Win11State.getCurrentAccount() : null);
                 }
+                if (!selectedAcc) { close(); return; }
+
+                if (needsPassword) {
+                    var inp = el.querySelector('#lock-pass-input');
+                    var errEl = el.querySelector('#lock-error-msg');
+                    var entered = inp ? inp.value : '';
+                    if (entered !== selectedAcc.password) {
+                        if (errEl) errEl.innerHTML = bidi(t('lockScreen.wrongPassword'));
+                        if (global.Win11State && typeof global.Win11State.triggerElementShake === 'function') {
+                            global.Win11State.triggerElementShake(inp);
+                        }
+                        if (inp) { inp.value = ''; inp.focus(); }
+                        if (global.Win11Assessment && typeof global.Win11Assessment.recordMistake === 'function') {
+                            global.Win11Assessment.recordMistake(6, 'كلمة مرور خاطئة في شاشة تسجيل الدخول', 'إدخال كلمة مرور خاطئة للحساب: ' + selectedAcc.name, 0.25);
+                        }
+                        return;
+                    }
+                }
+                if (global.Win11State && typeof global.Win11State.recordLoginSuccess === 'function') {
+                    try {
+                        global.Win11State.recordLoginSuccess(selectedAcc.name, needsPassword);
+                    } catch (eRec) {
+                        if (global.console && typeof global.console.warn === 'function') global.console.warn(eRec);
+                    }
+                }
+                if (global.Win11State && typeof global.Win11State.switchUser === 'function') {
+                    global.Win11State.switchUser(selectedAcc.name);
+                }
+            } catch (err) {
+                if (global.console && typeof global.console.error === 'function') {
+                    global.console.error('[LockScreen.attemptSignIn]', err);
+                }
+            } finally {
+                close();
             }
-            if (global.Win11State && typeof global.Win11State.recordLoginSuccess === 'function') {
-                global.Win11State.recordLoginSuccess(selectedAcc.name, needsPassword);
-            }
-            global.Win11State.switchUser(selectedAcc.name);
-            close();
         }
 
         el.querySelector('#lock-signin-btn').onclick = attemptSignIn;
@@ -191,7 +213,10 @@
         selectedName = preferredAccountName || null;
         render();
         var el = getEl();
-        if (el) el.classList.add('is-open');
+        if (el) {
+            el.style.display = 'flex';
+            el.classList.add('is-open');
+        }
     }
 
     global.Win11LockScreen = {

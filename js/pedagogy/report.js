@@ -1200,6 +1200,17 @@
                     '<span style="font-size:11px;color:#475569;font-weight:normal;">' + bidi('تفصيل النقاط والمعاملات والمحاولات') + '</span>' +
                 '</div>' +
                 '<table class="a4-report-table">' +
+                    '<colgroup>' +
+                        '<col style="width:3.5%;">' +
+                        '<col style="width:26.5%;">' +
+                        '<col style="width:8.5%;">' +
+                        '<col style="width:11%;">' +
+                        '<col style="width:8%;">' +
+                        '<col style="width:7%;">' +
+                        '<col style="width:7%;">' +
+                        '<col style="width:7%;">' +
+                        '<col style="width:21.5%;">' +
+                    '</colgroup>' +
                     '<thead>' +
                         '<tr>' +
                             '<th style="width:3.5%;text-align:center;">#</th>' +
@@ -1312,8 +1323,9 @@
             '.a4-tsc-time .a4-tsc-grade{color:#1D4ED8;font-family:Consolas,monospace;}\n' +
             '.a4-tsc-out{font-size:14px;color:#64748B;font-weight:700;}\n' +
             '.a4-tsc-badge{margin-top:3px;}\n' +
-            '.a4-report-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse;margin:6px 0 8px 0;font-size:10.5px;box-sizing:border-box;}\n' +
-            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1;padding:5px 4px;text-align:right;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word;word-break:break-word;white-space:normal;box-sizing:border-box;}\n' +
+            '.a4-report-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;border-spacing:0 !important;margin:6px 0 8px 0;font-size:10.5px;box-sizing:border-box !important;}\n' +
+            '.a4-report-table col{box-sizing:border-box !important;}\n' +
+            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1 !important;padding:5px 3px !important;text-align:right;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;word-break:break-word !important;white-space:normal !important;box-sizing:border-box !important;}\n' +
             '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;font-size:10px;line-height:1.35;}\n' +
             '.a4-quiz-disabled-notice{background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:6px;padding:6px 10px;margin:6px 0;color:#92400E;font-size:11px;line-height:1.5;}\n' +
             '.a4-math-grid{display:flex;gap:10px;margin-top:6px;align-items:stretch;width:100%;}\n' +
