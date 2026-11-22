@@ -116,7 +116,7 @@ var report = global.Win11Report;
 global.Win11Assessment.evaluate();
 var fullDoc = report.buildStandaloneHtmlDoc();
 assert(fullDoc.indexOf('<colgroup>') !== -1, 'Report must contain colgroup');
-assert(fullDoc.indexOf('width:25%') !== -1, 'Colgroup must contain refined width 25%');
+assert(fullDoc.indexOf('width:26%') !== -1, 'Colgroup must contain refined width 26%');
 assert(fullDoc.indexOf('width:8%') !== -1, 'Colgroup must contain earned width 8%');
 assert(fullDoc.indexOf('overflow:hidden !important;') !== -1, 'Table cells must have overflow hidden');
 console.log('✔ Report table formatting verified successfully.');

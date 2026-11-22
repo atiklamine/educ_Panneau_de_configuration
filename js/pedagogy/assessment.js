@@ -181,8 +181,8 @@
 
     function getDefaultConfig() {
         return {
-            institution_name: 'ثانوية الشهيد أحمد رضا حوحو',
-            teacher_name: 'الأستاذ حاج عيسى',
+            institution_name: 'مؤسسة أبي بكر الحاج عيسى (الأغواط)',
+            teacher_name: 'أستاذ مادة المعلوماتية',
             target_level: 'السنة أولى ثانوي (جذع مشترك علوم وتكنولوجيا / آداب)',
             academic_year: '2026 / 2027',
             wallpaper_source_folder: 'C:\\Users\\<user>\\Pictures\\',
@@ -222,12 +222,16 @@
             quiz_disabled_questions: [],
             quiz_disabled_distractors: {},
             class_groups: [
-                '1AS_ST_G1',
-                '1AS_ST_G2',
-                '1AS_ST_G3',
-                '1AS_ST_G4',
-                '1AS_L_G1',
-                '1AS_L_G2'
+                '01',
+                '02',
+                '03',
+                '04',
+                '05',
+                '06',
+                '07',
+                '08',
+                '09',
+                '10'
             ]
         };
     }

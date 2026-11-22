@@ -48,7 +48,7 @@
                     setTimeout(ensureFormMounted, 600);
                 };
 
-                if (isTeacherExplicit || (infSt && infSt.status === 'missing')) {
+                if (isTeacherExplicit) {
                     setTimeout(function () {
                         if (global.Win11Teacher && typeof global.Win11Teacher.openPanel === 'function') {
                             global.Win11Teacher.openPanel({

@@ -174,7 +174,7 @@
         var infStatus = global.Win11Assessment.getInfStatus ? global.Win11Assessment.getInfStatus() : { status: 'missing' };
 
         if (infStatus.status === 'missing') {
-            openTeacherPanel({ firstTimeSetup: true });
+            openTeacherPanel({ firstTimeSetup: false, isPasswordless: true });
             return;
         }
         if (infStatus.status === 'tampered') {

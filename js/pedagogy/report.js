@@ -951,7 +951,7 @@
                     qStatusCls = 'is-skipped';
                     qStatusText = 'معطّل ✘';
                     qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
-                    qAttemptsCellHtml = '<span style="color:#64748B;font-size:9.5px;">' + bidi('معطّل') + '</span>';
+                    qAttemptsCellHtml = '<span style="color:#64748B;">-</span>';
                     qEarnedCellHtml = '<bdi dir="ltr">0.00</bdi><div style="font-size:8.5px;color:#64748B;line-height:1;">(0%)</div>';
                     qNotes = 'تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (' + qMax.toFixed(2) + ' نقطة).';
                 } else {
@@ -968,9 +968,9 @@
                         qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
                     }
 
-                    var qAttLabel = qRes ? ('محاولة ' + qAttempts) : '-';
+                    var qAttLabel = qRes ? String(qAttempts) : '-';
                     var qEarnedPct = (qAttempts === 1) ? '(100%)' : ((qAttempts === 2) ? '(50%)' : '(0%)');
-                    qAttemptsCellHtml = '<span style="font-size:10px;">' + bidi(qAttLabel) + '</span>';
+                    qAttemptsCellHtml = '<span style="font-size:10px;"><bdi dir="ltr">' + qAttLabel + '</bdi></span>';
                     qEarnedCellHtml = qRes
                         ? ('<bdi dir="ltr">' + qEarned.toFixed(2) + '</bdi><div style="font-size:8.5px;color:#6D28D9;line-height:1;">' + qEarnedPct + '</div>')
                         : '<bdi dir="ltr">0.00</bdi>';
@@ -1183,7 +1183,7 @@
             '<div class="a4-top-summary-card">' +
                 '<div class="a4-tsc-score ' + (isPassed ? 'is-pass' : 'is-fail') + '">' +
                     '<div class="a4-tsc-title">' + bidi('العلامة النهائية المستحقة:') + '</div>' +
-                    '<div class="a4-tsc-grade"><bdi dir="ltr">' + finalScoreStr + '</bdi> <span class="a4-tsc-out">/ 20.00</span></div>' +
+                    '<div class="a4-tsc-grade" dir="ltr" style="direction:ltr !important;"><bdi dir="ltr">' + finalScoreStr + ' <span class="a4-tsc-out">/ 20.00</span></bdi></div>' +
                     '<div class="a4-tsc-badge"><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '">' + bidi(isPassed ? '✔ مستوفٍ لمعيار النجاح' : '✘ دون المعدل المطلوب') + ' — <strong>' + bidi(scores.appreciation || 'متوسط') + '</strong></span></div>' +
                 '</div>' +
                 '<div class="a4-tsc-time">' +
@@ -1205,26 +1205,26 @@
                 '<table class="a4-report-table">' +
                     '<colgroup>' +
                         '<col style="width:3.5%;">' +
-                        '<col style="width:25%;">' +
-                        '<col style="width:8.5%;">' +
-                        '<col style="width:11%;">' +
-                        '<col style="width:7.5%;">' +
-                        '<col style="width:7.5%;">' +
+                        '<col style="width:26%;">' +
+                        '<col style="width:8%;">' +
+                        '<col style="width:10%;">' +
+                        '<col style="width:6.5%;">' +
+                        '<col style="width:8%;">' +
                         '<col style="width:8%;">' +
                         '<col style="width:7%;">' +
-                        '<col style="width:22%;">' +
+                        '<col style="width:23%;">' +
                     '</colgroup>' +
                     '<thead>' +
                         '<tr>' +
                             '<th style="width:3.5%;text-align:center;">#</th>' +
-                            '<th style="width:25%;text-align:right;">' + bidi('المهمة التطبيقية أو السؤال التقويمي') + '</th>' +
-                            '<th style="width:8.5%;text-align:center;">' + bidi('النوع') + '</th>' +
-                            '<th style="width:11%;text-align:center;">' + bidi('الحالة') + '</th>' +
-                            '<th style="width:7.5%;text-align:center;">' + bidi('المحاولات') + '</th>' +
-                            '<th style="width:7.5%;text-align:center;">' + bidi('المعامل الأقصى') + '</th>' +
+                            '<th style="width:26%;text-align:right;">' + bidi('المهمة التطبيقية أو السؤال التقويمي') + '</th>' +
+                            '<th style="width:8%;text-align:center;">' + bidi('النوع') + '</th>' +
+                            '<th style="width:10%;text-align:center;">' + bidi('الحالة') + '</th>' +
+                            '<th style="width:6.5%;text-align:center;">' + bidi('المحاولات') + '</th>' +
+                            '<th style="width:8%;text-align:center;">' + bidi('المعامل الأقصى') + '</th>' +
                             '<th style="width:8%;text-align:center;">' + bidi('الممنوحة') + '</th>' +
                             '<th style="width:7%;text-align:center;">' + bidi('الخصم') + '</th>' +
-                            '<th style="width:22%;text-align:right;">' + bidi('الملاحظات وتفاصيل الإنجاز') + '</th>' +
+                            '<th style="width:23%;text-align:right;">' + bidi('الملاحظات وتفاصيل الإنجاز') + '</th>' +
                         '</tr>' +
                     '</thead>' +
                     '<tbody>' +
@@ -1730,7 +1730,7 @@
                     // Quiz Status
                     if (isQuizOptedOut) {
                         ctx.fillStyle = '#DC2626';
-                        ctx.fillText('معطل ✘', 615, curY + 18);
+                        ctx.fillText('معطّل ✘', 615, curY + 18);
                     } else if (qRes && qRes.answeredCorrectly) {
                         ctx.fillStyle = '#15803D';
                         ctx.fillText('إجابة صحيحة ✔', 615, curY + 18);
@@ -1744,7 +1744,7 @@
 
                     // Attempts
                     ctx.fillStyle = '#475569';
-                    var attText = isQuizOptedOut ? '0 (معطل)' : ('محاولة ' + qAttempts);
+                    var attText = isQuizOptedOut ? '-' : (qRes ? String(qAttempts) : '-');
                     ctx.fillText(attText, 525, curY + 18);
 
                     // Max

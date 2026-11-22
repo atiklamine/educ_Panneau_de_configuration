@@ -151,8 +151,8 @@ assert(reportHtml.includes('القسم (أ): بيانات التلميذ وال�
 assert(reportHtml.includes('بوزيان إكرام'), 'Must contain student full name');
 assert(reportHtml.includes('1AS_ST_G1'), 'Must contain class group');
 assert(reportHtml.includes('#04'), 'Must contain PC number');
-assert(reportHtml.includes('الأستاذ حاج عيسى'), 'Must contain teacher name from inf.dll');
-assert(reportHtml.includes('ثانوية الشهيد أحمد رضا حوحو'), 'Must contain institution name from inf.dll');
+assert(reportHtml.includes('أستاذ مادة المعلوماتية'), 'Must contain teacher name from inf.dll');
+assert(reportHtml.includes('مؤسسة أبي بكر الحاج عيسى (الأغواط)'), 'Must contain institution name from inf.dll');
 assert(reportHtml.includes('نشاط تطبيقي تدريبي'), 'Must contain simulation mode');
 console.log('[PASS] Section A headers and student metadata verified.');
 

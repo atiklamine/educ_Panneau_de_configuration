@@ -37,8 +37,14 @@ namespace Win11SimHost
         {
             try
             {
-                if (!File.Exists(_infPath)) return "";
-                byte[] bytes = File.ReadAllBytes(_infPath);
+                string target = _infPath;
+                if (!File.Exists(target))
+                {
+                    string p2 = Path.Combine(Environment.CurrentDirectory, "inf.dll");
+                    if (File.Exists(p2)) target = p2;
+                }
+                if (!File.Exists(target)) return "";
+                byte[] bytes = File.ReadAllBytes(target);
                 return Convert.ToBase64String(bytes);
             }
             catch
@@ -1448,13 +1454,33 @@ namespace Win11SimHost
                 {
                     if (method == "GET")
                     {
-                        if (!File.Exists(_infPath))
+                        string targetInf = _infPath;
+                        if (!File.Exists(targetInf))
+                        {
+                            string curDirInf = Path.Combine(Environment.CurrentDirectory, "inf.dll");
+                            if (File.Exists(curDirInf)) targetInf = curDirInf;
+                        }
+                        if (!File.Exists(targetInf))
+                        {
+                            try
+                            {
+                                string asmDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                                if (!string.IsNullOrEmpty(asmDir))
+                                {
+                                    string asmInf = Path.Combine(asmDir, "inf.dll");
+                                    if (File.Exists(asmInf)) targetInf = asmInf;
+                                }
+                            }
+                            catch { }
+                        }
+
+                        if (!File.Exists(targetInf))
                         {
                             SendResponse(stream, 204, "No Content", "application/octet-stream", new byte[0], true);
                         }
                         else
                         {
-                            byte[] infBytes = File.ReadAllBytes(_infPath);
+                            byte[] infBytes = File.ReadAllBytes(targetInf);
                             SendResponse(stream, 200, "OK", "application/octet-stream", infBytes, true);
                         }
                         client.Close();
