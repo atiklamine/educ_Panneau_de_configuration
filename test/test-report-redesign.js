@@ -255,7 +255,7 @@ assert(reportOptOutHtml.includes('a4-type-badge is-quiz'), 'Section B must show 
 assert(reportOptOutHtml.includes('معطّل ✘'), 'Section B must show opted-out badge');
 assert(reportOptOutHtml.includes('تم إلغاء تفعيل الأسئلة بطلب من التلميذ'), 'Section B notes must explain student opted out');
 assert(reportOptOutHtml.includes('معطّل'), 'Section B must show opted out status');
-assert(reportOptOutHtml.includes('0.00 (0%)'), 'Section B must show 0.00 earned');
+assert(reportOptOutHtml.includes('0.00') && reportOptOutHtml.includes('(0%)'), 'Section B must show 0.00 earned');
 assert(reportOptOutHtml.includes('-1.00'), 'Section B must show deduction for opted out quiz');
 // Section C must show pedagogical warning alert:
 assert(reportOptOutHtml.includes('تنبيه بيداغوجي:'), 'Section C must show warning alert when student opted out');

@@ -292,15 +292,36 @@
                 overallBarHtml +
                 '<div class="hud-task-tabs">' + tabsHtml + '</div>' +
                 bodyBoxHtml +
-                (showHintBox ? (
-                    '<div class="hud-hint-callout" id="hud-inline-hint">' +
+                (showHintBox ? (function () {
+                    var stepHintInfo = (global.Win11Assessment && typeof global.Win11Assessment.getActiveSubStepHint === 'function')
+                        ? global.Win11Assessment.getActiveSubStepHint(task.id)
+                        : null;
+                    if (stepHintInfo && stepHintInfo.hasSubStep) {
+                        return '<div class="hud-hint-callout" id="hud-inline-hint">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+                                '<span style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;color:#1D4ED8">' +
+                                    global.Win11Icons.get('bulb', 14) +
+                                    '<span>' + bidi('توجيه الخطوة المطلوبة حالياً') + '</span>' +
+                                    '<span class="win-badge win-badge-info" style="font-size:10px;padding:1px 6px;">' + bidi('الخطوة ' + stepHintInfo.stepNum + ' من ' + stepHintInfo.totalSteps) + '</span>' +
+                                '</span>' +
+                                '<button type="button" class="win-caption-btn" id="hud-hide-hint-btn" style="width:22px;height:22px;border-radius:4px">' + global.Win11Icons.get('winClose', 10) + '</button>' +
+                            '</div>' +
+                            '<div style="background:#EFF6FF;border-right:3px solid #2563EB;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:11.5px;color:#1E40AF;font-weight:700;">' +
+                                '👉 ' + bidi(stepHintInfo.stepLabel) +
+                            '</div>' +
+                            '<div style="font-size:12px;line-height:1.6;color:#1E293B;">' +
+                                '💡 ' + bidi(stepHintInfo.hintText) +
+                            '</div>' +
+                        '</div>';
+                    }
+                    return '<div class="hud-hint-callout" id="hud-inline-hint">' +
                         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
                             '<span style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px">' + global.Win11Icons.get('bulb', 14) + '<span>' + bidi(t('pedagogy.hintBtn')) + '</span></span>' +
                             '<button type="button" class="win-caption-btn" id="hud-hide-hint-btn" style="width:22px;height:22px;border-radius:4px">' + global.Win11Icons.get('winClose', 10) + '</button>' +
                         '</div>' +
                         '<div style="font-size:12.5px;line-height:1.58">' + bidi(getTaskField(task, 'hint')) + '</div>' +
-                    '</div>'
-                ) : '') +
+                    '</div>';
+                })() : '') +
                 '<div class="hud-actions">' +
                     (isExamMode ? '' : '<button type="button" class="win-btn win-btn-secondary" id="hud-hint-btn">' + global.Win11Icons.get('bulb', 14) + '<span>' + bidi(t('pedagogy.hintBtn')) + '</span></button>') +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-check-btn">' + global.Win11Icons.get('check', 14) + '<span>' + bidi(t('pedagogy.checkBtn')) + '</span></button>' +

@@ -265,6 +265,8 @@
         var passMismatchMsg = '';
         var quizTaskFilter = 0;
         var showAddQuestionForm = false;
+        var openDistractorCards = {};
+        var editingQuestionId = null;
         var needsInitialPass = !!(opts.firstTimeSetup && !(global.Win11Assessment.getActivePasswordInRam && global.Win11Assessment.getActivePasswordInRam()));
 
         // Track current token order for the visual builder
@@ -645,10 +647,73 @@
                                     }
                                 }
 
-                                var distractorsListHtml = '';
                                 var dPool = Array.isArray(qObj.distractorsAr) ? qObj.distractorsAr : [];
                                 var disabledDistractors = Array.isArray(qObj.disabledDistractors) ? qObj.disabledDistractors : [];
 
+                                // If this question is being edited / rephrased
+                                if (editingQuestionId === qObj.id) {
+                                    var editDistRowsHtml = '';
+                                    for (var edi = 0; edi < dPool.length; edi++) {
+                                        var edText = dPool[edi];
+                                        var isEdActive = (disabledDistractors.indexOf(edText) === -1);
+                                        editDistRowsHtml +=
+                                            '<div class="tc-editq-dist-row" style="display:flex;align-items:center;gap:6px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:4px;padding:4px 6px;">' +
+                                                '<input type="text" class="win-input tc-editq-dist-input" value="' + esc(edText) + '" style="flex:1;font-size:11.5px;min-height:26px;padding:2px 6px;">' +
+                                                '<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap;">' +
+                                                    '<input type="checkbox" class="tc-editq-dist-active" ' + (isEdActive ? 'checked' : '') + '> ' +
+                                                    '<span>' + bidi('مفعّل') + '</span>' +
+                                                '</label>' +
+                                                '<button type="button" class="win-btn win-btn-danger tc-editq-del-dist" style="min-height:24px;padding:1px 6px;font-size:11px;" title="' + esc('حذف هذا المموّه') + '">🗑️</button>' +
+                                            '</div>';
+                                    }
+
+                                    questionsCardsHtml +=
+                                        '<div class="tc-section-card" id="tc-editq-container" style="margin-bottom:12px;border:2px solid var(--win-accent);background:#F0F7FF;padding:12px 14px;">' +
+                                            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">' +
+                                                '<div style="display:flex;align-items:center;gap:8px;">' +
+                                                    '<span class="win-badge" style="background:#DBEAFE;color:#1E40AF;font-weight:700;font-size:11px;">' + bidi(qTaskTitle) + '</span>' +
+                                                    '<strong style="color:var(--win-accent);font-size:13px;">✏️ ' + bidi('إعادة صياغة السؤال والمموهات — تحرير شامل') + '</strong>' +
+                                                '</div>' +
+                                                '<div style="display:flex;align-items:center;gap:6px;">' +
+                                                    (!qObj.isCustom ? '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-revert" style="min-height:22px;padding:2px 8px;font-size:11px;">↺ ' + bidi('استعادة الأصل') + '</button>' : '') +
+                                                    '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-cancel" style="min-height:22px;padding:2px 8px;font-size:11px;">✕ ' + bidi('إلغاء') + '</button>' +
+                                                '</div>' +
+                                            '</div>' +
+                                            '<div class="tc-field-grid" style="margin-bottom:8px;">' +
+                                                '<label><strong>' + bidi('عنوان السؤال / الكفاءة المستهدفة:') + '</strong>' +
+                                                    '<input class="win-input" id="tc-editq-title" value="' + esc(qObj.titleAr || '') + '" style="font-size:12px;">' +
+                                                '</label>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom:8px;">' +
+                                                '<label style="display:block;margin-bottom:4px;"><strong>' + bidi('نص السؤال كاملاً (يمكنك حذف أو إضافة أي كلمات بدقة):') + '</strong></label>' +
+                                                '<textarea class="win-input" id="tc-editq-text" rows="3" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;">' + esc(qObj.questionAr || '') + '</textarea>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom:8px;">' +
+                                                '<label style="display:block;margin-bottom:4px;"><strong>✔ ' + bidi('الإجابة الصحيحة النموذجية:') + '</strong></label>' +
+                                                '<textarea class="win-input" id="tc-editq-answer" rows="2" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;border:1.5px solid #16A34A;background:#F0FDF4;">' + esc(qObj.correctAnswerAr || '') + '</textarea>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom:8px;">' +
+                                                '<label style="display:block;margin-bottom:4px;"><strong>💡 ' + bidi('التلميح البيداغوجي الذكي:') + '</strong></label>' +
+                                                '<textarea class="win-input" id="tc-editq-hint" rows="2" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;">' + esc(qObj.hintAr || '') + '</textarea>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom:8px;">' +
+                                                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+                                                    '<strong>' + bidi('قائمة الخيارات والمموهات الخاطئة المتاحة في المخزن:') + '</strong>' +
+                                                    '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-add-dist" style="min-height:22px;padding:2px 8px;font-size:11px;">➕ ' + bidi('إضافة مموّه جديد') + '</button>' +
+                                                '</div>' +
+                                                '<div id="tc-editq-dist-list" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;border:1px solid var(--win-border-control);border-radius:4px;padding:6px;background:#F8FAFC;">' +
+                                                    editDistRowsHtml +
+                                                '</div>' +
+                                            '</div>' +
+                                            '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">' +
+                                                '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-cancel-btn">' + bidi('إلغاء التعديل') + '</button>' +
+                                                '<button type="button" class="win-btn win-btn-accent" id="tc-editq-save-btn" style="font-weight:700;">💾 ' + bidi('حفظ التعديلات في بنك الأسئلة') + '</button>' +
+                                            '</div>' +
+                                        '</div>';
+                                    continue;
+                                }
+
+                                var distractorsListHtml = '';
                                 for (var di = 0; di < dPool.length; di++) {
                                     var dText = dPool[di];
                                     var isDistractorActive = (disabledDistractors.indexOf(dText) === -1);
@@ -666,8 +731,10 @@
                                                 '<span class="win-badge" style="background:#EFF6FF;color:#1D4ED8;font-weight:700;font-size:11px;">' + bidi(qTaskTitle) + '</span>' +
                                                 '<strong style="font-size:12.5px;color:#0F172A;">' + bidi(qObj.titleAr || '') + '</strong>' +
                                                 (qObj.isCustom ? ' <span class="win-badge" style="background:#ECFDF5;color:#065F46;font-size:10px;">' + bidi('سؤال مخصص') + '</span>' : '') +
+                                                (qObj.isCustomized ? ' <span class="win-badge" style="background:#FEF3C7;color:#92400E;font-size:10px;">' + bidi('مُعدّل الصياغة') + '</span>' : '') +
                                             '</div>' +
-                                            '<div style="display:flex;align-items:center;gap:10px;">' +
+                                            '<div style="display:flex;align-items:center;gap:8px;">' +
+                                                '<button type="button" class="win-btn win-btn-secondary" data-q-edit="' + esc(qObj.id) + '" style="min-height:22px;padding:1px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px;">✏️ <span>' + bidi('تعديل الصياغة والمموهات') + '</span></button>' +
                                                 '<label style="display:flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer;">' +
                                                     '<input type="checkbox" data-q-toggle="' + esc(qObj.id) + '" ' + (isQEnabled ? 'checked' : '') + '> ' +
                                                     '<span>' + bidi(isQEnabled ? 'مفعّل' : 'معطّل') + '</span>' +
@@ -681,8 +748,8 @@
                                         '<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11.5px;color:#065F46;">' +
                                             '<strong>' + bidi('✔ الإجابة الصحيحة:') + '</strong> ' + bidi(qObj.correctAnswerAr) +
                                         '</div>' +
-                                        '<details style="margin-bottom:8px;font-size:11.5px;">' +
-                                            '<summary style="cursor:pointer;color:var(--win-accent);font-weight:700;">' + bidi('قائمة المموهات الخاطئة المتاحة في المخزن (' + dPool.length + ' مموهات) — انقر للتعديل') + '</summary>' +
+                                        '<details data-q-details="' + esc(qObj.id) + '" ' + (openDistractorCards[qObj.id] ? 'open' : '') + ' style="margin-bottom:8px;font-size:11.5px;">' +
+                                            '<summary style="cursor:pointer;color:var(--win-accent);font-weight:700;">' + bidi('قائمة المموهات البديلة المتاحة في المخزن (' + dPool.length + ' مموهات) — انقر للإظهار والتعطيل/التفعيل') + '</summary>' +
                                             '<div style="margin-top:6px;display:grid;grid-template-columns:1fr;gap:4px;max-height:160px;overflow-y:auto;border:1px solid var(--win-border-control);border-radius:4px;padding:6px;">' +
                                                 distractorsListHtml +
                                             '</div>' +
@@ -1366,6 +1433,142 @@
                         };
                     }
 
+                    // Wire <details> expansion states so dropdowns never collapse unexpectedly
+                    var detailsList = wrap.querySelectorAll('[data-q-details]');
+                    for (var dli = 0; dli < detailsList.length; dli++) {
+                        detailsList[dli].ontoggle = function () {
+                            var qId = this.getAttribute('data-q-details');
+                            openDistractorCards[qId] = this.open;
+                        };
+                    }
+
+                    // Wire question edit buttons
+                    var qEdits = wrap.querySelectorAll('[data-q-edit]');
+                    for (var qei = 0; qei < qEdits.length; qei++) {
+                        qEdits[qei].onclick = function () {
+                            var qId = this.getAttribute('data-q-edit');
+                            editingQuestionId = (editingQuestionId === qId) ? null : qId;
+                            draw();
+                        };
+                    }
+
+                    // Wire question editor controls if active
+                    if (editingQuestionId) {
+                        var cancelEditBtn = wrap.querySelector('#tc-editq-cancel');
+                        var cancelEditBtn2 = wrap.querySelector('#tc-editq-cancel-btn');
+                        var doCancelEdit = function () {
+                            editingQuestionId = null;
+                            draw();
+                        };
+                        if (cancelEditBtn) cancelEditBtn.onclick = doCancelEdit;
+                        if (cancelEditBtn2) cancelEditBtn2.onclick = doCancelEdit;
+
+                        var revertEditBtn = wrap.querySelector('#tc-editq-revert');
+                        if (revertEditBtn) {
+                            revertEditBtn.onclick = function () {
+                                if (global.Win11QuizBank && editingQuestionId) {
+                                    global.Win11QuizBank.resetQuestionToDefault(editingQuestionId);
+                                    isDirty = true;
+                                    editingQuestionId = null;
+                                    draw();
+                                    if (global.Win11Dialogs && typeof global.Win11Dialogs.showToast === 'function') {
+                                        global.Win11Dialogs.showToast('تمت استعادة الصياغة والمموهات الأصلية للسؤال بنجاح.');
+                                    }
+                                }
+                            };
+                        }
+
+                        var addDistBtn = wrap.querySelector('#tc-editq-add-dist');
+                        if (addDistBtn) {
+                            addDistBtn.onclick = function () {
+                                var distListEl = wrap.querySelector('#tc-editq-dist-list');
+                                if (distListEl) {
+                                    var newRow = document.createElement('div');
+                                    newRow.className = 'tc-editq-dist-row';
+                                    newRow.style.cssText = 'display:flex;align-items:center;gap:6px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:4px;padding:4px 6px;';
+                                    newRow.innerHTML =
+                                        '<input type="text" class="win-input tc-editq-dist-input" value="" placeholder="' + esc('اكتب نص المموّه البديل الجديد...') + '" style="flex:1;font-size:11.5px;min-height:26px;padding:2px 6px;">' +
+                                        '<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap;">' +
+                                            '<input type="checkbox" class="tc-editq-dist-active" checked> ' +
+                                            '<span>' + bidi('مفعّل') + '</span>' +
+                                        '</label>' +
+                                        '<button type="button" class="win-btn win-btn-danger tc-editq-del-dist" style="min-height:24px;padding:1px 6px;font-size:11px;" title="' + esc('حذف هذا المموّه') + '">🗑️</button>';
+                                    distListEl.appendChild(newRow);
+                                    var delBtn = newRow.querySelector('.tc-editq-del-dist');
+                                    if (delBtn) {
+                                        delBtn.onclick = function () { newRow.remove(); };
+                                    }
+                                    var inp = newRow.querySelector('.tc-editq-dist-input');
+                                    if (inp) inp.focus();
+                                }
+                            };
+                        }
+
+                        var delDistBtns = wrap.querySelectorAll('.tc-editq-del-dist');
+                        for (var ddbi = 0; ddbi < delDistBtns.length; ddbi++) {
+                            delDistBtns[ddbi].onclick = function () {
+                                var row = this.closest('.tc-editq-dist-row');
+                                if (row) row.remove();
+                            };
+                        }
+
+                        var saveEditBtn = wrap.querySelector('#tc-editq-save-btn');
+                        if (saveEditBtn) {
+                            saveEditBtn.onclick = function () {
+                                var titleVal = (wrap.querySelector('#tc-editq-title') ? wrap.querySelector('#tc-editq-title').value : '').trim();
+                                var textVal = (wrap.querySelector('#tc-editq-text') ? wrap.querySelector('#tc-editq-text').value : '').trim();
+                                var ansVal = (wrap.querySelector('#tc-editq-answer') ? wrap.querySelector('#tc-editq-answer').value : '').trim();
+                                var hintVal = (wrap.querySelector('#tc-editq-hint') ? wrap.querySelector('#tc-editq-hint').value : '').trim();
+
+                                if (!textVal || !ansVal) {
+                                    if (global.Win11Dialogs && typeof global.Win11Dialogs.showMessage === 'function') {
+                                        global.Win11Dialogs.showMessage('بيانات غير مكتملة', 'يرجى التأكد من كتابة نص السؤال والإجابة النموذجية.', 'warning');
+                                    }
+                                    return;
+                                }
+
+                                var distRows = wrap.querySelectorAll('.tc-editq-dist-row');
+                                var newDistList = [];
+                                var newDisabled = [];
+                                for (var dri = 0; dri < distRows.length; dri++) {
+                                    var inpVal = (distRows[dri].querySelector('.tc-editq-dist-input') ? distRows[dri].querySelector('.tc-editq-dist-input').value : '').trim();
+                                    var chkActive = distRows[dri].querySelector('.tc-editq-dist-active');
+                                    if (inpVal.length > 0) {
+                                        newDistList.push(inpVal);
+                                        if (chkActive && !chkActive.checked) {
+                                            newDisabled.push(inpVal);
+                                        }
+                                    }
+                                }
+
+                                if (newDistList.length < 2) {
+                                    if (global.Win11Dialogs && typeof global.Win11Dialogs.showMessage === 'function') {
+                                        global.Win11Dialogs.showMessage('المموهات غير كافية', 'يرجى إبقاء أو إدخال خيارين مموهين اثنين على الأقل.', 'warning');
+                                    }
+                                    return;
+                                }
+
+                                if (global.Win11QuizBank && editingQuestionId) {
+                                    global.Win11QuizBank.updateQuestion(editingQuestionId, {
+                                        titleAr: titleVal,
+                                        questionAr: textVal,
+                                        correctAnswerAr: ansVal,
+                                        hintAr: hintVal,
+                                        distractorsAr: newDistList,
+                                        disabledDistractors: newDisabled
+                                    });
+                                }
+
+                                editingQuestionId = null;
+                                isDirty = true;
+                                draw();
+                                if (global.Win11Dialogs && typeof global.Win11Dialogs.showToast === 'function') {
+                                    global.Win11Dialogs.showToast('تم حفظ صياغة السؤال والمموهات وتحديث بنك الأسئلة بنجاح.');
+                                }
+                            };
+                        }
+                    }
+
                     // Toggles & deletes for questions
                     var qToggles = wrap.querySelectorAll('[data-q-toggle]');
                     for (var qti = 0; qti < qToggles.length; qti++) {
@@ -1417,10 +1620,27 @@
                                     } else if (!this.checked && exIdx === -1) {
                                         q.disabledDistractors.push(dVal);
                                     }
+                                    q.isCustomized = true;
                                 }
                             }
+                            openDistractorCards[qId] = true;
                             isDirty = true;
-                            draw();
+                            // Seamless in-place UI update without collapsing details or destroying DOM
+                            var parentLabel = this.closest('label');
+                            var textSpan = parentLabel ? parentLabel.querySelector('span') : null;
+                            if (this.checked) {
+                                if (parentLabel) parentLabel.style.background = 'transparent';
+                                if (textSpan) {
+                                    textSpan.style.color = '#334155';
+                                    textSpan.style.textDecoration = 'none';
+                                }
+                            } else {
+                                if (parentLabel) parentLabel.style.background = '#FEE2E2';
+                                if (textSpan) {
+                                    textSpan.style.color = '#991B1B';
+                                    textSpan.style.textDecoration = 'line-through';
+                                }
+                            }
                         };
                     }
                 }

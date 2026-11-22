@@ -939,8 +939,8 @@
                 var qStatusCls = '';
                 var qStatusText = '';
                 var qNameText = '';
-                var qAttemptsLabel = '';
-                var qEarnedDisplay = '';
+                var qAttemptsCellHtml = '';
+                var qEarnedCellHtml = '';
                 var qNotes = '';
 
                 if (isQuizOptedOut) {
@@ -951,8 +951,8 @@
                     qStatusCls = 'is-skipped';
                     qStatusText = 'معطّل ✘';
                     qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
-                    qAttemptsLabel = '0 (معطّل)';
-                    qEarnedDisplay = '0.00 (0%)';
+                    qAttemptsCellHtml = '<span style="color:#64748B;font-size:9.5px;">' + bidi('معطّل') + '</span>';
+                    qEarnedCellHtml = '<bdi dir="ltr">0.00</bdi><div style="font-size:8.5px;color:#64748B;line-height:1;">(0%)</div>';
                     qNotes = 'تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (' + qMax.toFixed(2) + ' نقطة).';
                 } else {
                     if (qDeduct > 0) totalDeductionsInTable += qDeduct;
@@ -968,9 +968,12 @@
                         qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
                     }
 
-                    qAttemptsLabel = qRes ? ('محاولة ' + qAttempts) : '-';
-                    var qEarnedPct = (qAttempts === 1) ? ' (100%)' : ((qAttempts === 2) ? ' (50%)' : ' (0%)');
-                    qEarnedDisplay = qRes ? (qEarned.toFixed(2) + qEarnedPct) : '0.00 (0%)';
+                    var qAttLabel = qRes ? ('محاولة ' + qAttempts) : '-';
+                    var qEarnedPct = (qAttempts === 1) ? '(100%)' : ((qAttempts === 2) ? '(50%)' : '(0%)');
+                    qAttemptsCellHtml = '<span style="font-size:10px;">' + bidi(qAttLabel) + '</span>';
+                    qEarnedCellHtml = qRes
+                        ? ('<bdi dir="ltr">' + qEarned.toFixed(2) + '</bdi><div style="font-size:8.5px;color:#6D28D9;line-height:1;">' + qEarnedPct + '</div>')
+                        : '<bdi dir="ltr">0.00</bdi>';
 
                     if (qRes) {
                         if (qAttempts === 1) {
@@ -993,9 +996,9 @@
                         '<td><span style="color:#581C87;">' + bidi(qNameText) + '</span></td>' +
                         '<td style="text-align:center;"><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>' +
                         '<td style="text-align:center;"><span class="a4-badge ' + qStatusCls + '">' + bidi(qStatusText) + '</span></td>' +
-                        '<td style="text-align:center;font-size:10.5px;">' + bidi(qAttemptsLabel) + '</td>' +
+                        '<td style="text-align:center;">' + qAttemptsCellHtml + '</td>' +
                         '<td style="text-align:center;font-weight:600;"><bdi dir="ltr">' + qMax.toFixed(2) + '</bdi></td>' +
-                        '<td style="text-align:center;font-weight:700;color:#6D28D9;"><bdi dir="ltr">' + qEarnedDisplay + '</bdi></td>' +
+                        '<td style="text-align:center;font-weight:700;color:#6D28D9;">' + qEarnedCellHtml + '</td>' +
                         '<td style="text-align:center;' + (qDeduct > 0 ? 'color:#DC2626;font-weight:700;' : 'color:#64748B;') + '">' +
                             (qDeduct > 0 ? ('<bdi dir="ltr">-' + qDeduct.toFixed(2) + '</bdi>') : '<bdi dir="ltr">0.00</bdi>') +
                         '</td>' +
@@ -1202,26 +1205,26 @@
                 '<table class="a4-report-table">' +
                     '<colgroup>' +
                         '<col style="width:3.5%;">' +
-                        '<col style="width:26.5%;">' +
+                        '<col style="width:25%;">' +
                         '<col style="width:8.5%;">' +
                         '<col style="width:11%;">' +
+                        '<col style="width:7.5%;">' +
+                        '<col style="width:7.5%;">' +
                         '<col style="width:8%;">' +
                         '<col style="width:7%;">' +
-                        '<col style="width:7%;">' +
-                        '<col style="width:7%;">' +
-                        '<col style="width:21.5%;">' +
+                        '<col style="width:22%;">' +
                     '</colgroup>' +
                     '<thead>' +
                         '<tr>' +
                             '<th style="width:3.5%;text-align:center;">#</th>' +
-                            '<th style="width:26.5%;text-align:right;">المهمة التطبيقية أو السؤال التقويمي</th>' +
-                            '<th style="width:8.5%;text-align:center;">النوع</th>' +
-                            '<th style="width:11%;text-align:center;">الحالة</th>' +
-                            '<th style="width:8%;text-align:center;">المحاولات</th>' +
-                            '<th style="width:7%;text-align:center;">المعامل الأقصى</th>' +
-                            '<th style="width:7%;text-align:center;">الممنوحة</th>' +
-                            '<th style="width:7%;text-align:center;">الخصم</th>' +
-                            '<th style="width:21.5%;text-align:right;">الملاحظات وتفاصيل الإنجاز</th>' +
+                            '<th style="width:25%;text-align:right;">' + bidi('المهمة التطبيقية أو السؤال التقويمي') + '</th>' +
+                            '<th style="width:8.5%;text-align:center;">' + bidi('النوع') + '</th>' +
+                            '<th style="width:11%;text-align:center;">' + bidi('الحالة') + '</th>' +
+                            '<th style="width:7.5%;text-align:center;">' + bidi('المحاولات') + '</th>' +
+                            '<th style="width:7.5%;text-align:center;">' + bidi('المعامل الأقصى') + '</th>' +
+                            '<th style="width:8%;text-align:center;">' + bidi('الممنوحة') + '</th>' +
+                            '<th style="width:7%;text-align:center;">' + bidi('الخصم') + '</th>' +
+                            '<th style="width:22%;text-align:right;">' + bidi('الملاحظات وتفاصيل الإنجاز') + '</th>' +
                         '</tr>' +
                     '</thead>' +
                     '<tbody>' +
@@ -1300,12 +1303,12 @@
             '.a4-info-table td{padding:5px 8px;border:1px solid #CBD5E1;vertical-align:middle;text-align:right;}\n' +
             '.a4-cell-lbl{font-size:10px;color:#64748B;font-weight:600;display:block;margin-bottom:2px;}\n' +
             '.a4-cell-val{color:#0F172A;}\n' +
-            '.a4-type-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap;}\n' +
+            '.a4-type-badge{display:block;margin:0 auto;padding:2px 2px;border-radius:4px;font-size:9.5px;font-weight:700;text-align:center;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}\n' +
             '.a4-type-badge.is-task{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;}\n' +
             '.a4-type-badge.is-quiz{background:#F5F3FF;color:#6D28D9;border:1px solid #DDD6FE;}\n' +
             '.a4-type-badge.is-penalty{background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA;}\n' +
             '.a4-crit-badge{color:#DC2626;font-size:10px;font-weight:700;}\n' +
-            '.a4-badge{display:inline-block;padding:2px 5px;border-radius:4px;font-size:10px;font-weight:700;max-width:100%;box-sizing:border-box;text-align:center;white-space:normal;word-break:keep-all;}\n' +
+            '.a4-badge{display:block;margin:0 auto;padding:2px 2px;border-radius:4px;font-size:9.5px;font-weight:700;width:100%;max-width:100%;box-sizing:border-box;text-align:center;white-space:normal;word-break:break-word;overflow:hidden;text-overflow:ellipsis;line-height:1.25;}\n' +
             '.a4-badge.is-done{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;}\n' +
             '.a4-badge.is-partial{background:#FEF3C7;color:#D97706;border:1px solid #FDE68A;}\n' +
             '.a4-badge.is-fail{background:#FEE2E2;color:#B91C1C;border:1px solid #FCA5A5;}\n' +
@@ -1325,7 +1328,7 @@
             '.a4-tsc-badge{margin-top:3px;}\n' +
             '.a4-report-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;border-spacing:0 !important;margin:6px 0 8px 0;font-size:10.5px;box-sizing:border-box !important;}\n' +
             '.a4-report-table col{box-sizing:border-box !important;}\n' +
-            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1 !important;padding:5px 3px !important;text-align:right;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;word-break:break-word !important;white-space:normal !important;box-sizing:border-box !important;}\n' +
+            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1 !important;padding:4px 2px !important;text-align:right;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;word-break:normal !important;white-space:normal !important;box-sizing:border-box !important;overflow:hidden !important;}\n' +
             '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;font-size:10px;line-height:1.35;}\n' +
             '.a4-quiz-disabled-notice{background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:6px;padding:6px 10px;margin:6px 0;color:#92400E;font-size:11px;line-height:1.5;}\n' +
             '.a4-math-grid{display:flex;gap:10px;margin-top:6px;align-items:stretch;width:100%;}\n' +

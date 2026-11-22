@@ -697,11 +697,81 @@
         return false;
     }
 
+    /**
+     * Update an existing question (title, text, answer, hint, distractors, disabledDistractors).
+     */
+    function updateQuestion(qId, updatedFields) {
+        var q = getQuestionById(qId);
+        if (!q || !updatedFields) return false;
+
+        if (typeof updatedFields.titleAr === 'string') q.titleAr = updatedFields.titleAr.trim();
+        if (typeof updatedFields.questionAr === 'string') q.questionAr = updatedFields.questionAr.trim();
+        if (typeof updatedFields.correctAnswerAr === 'string') q.correctAnswerAr = updatedFields.correctAnswerAr.trim();
+        if (typeof updatedFields.hintAr === 'string') q.hintAr = updatedFields.hintAr.trim();
+        if (Array.isArray(updatedFields.distractorsAr)) {
+            q.distractorsAr = updatedFields.distractorsAr.map(function (s) { return String(s).trim(); }).filter(function (s) { return s.length > 0; });
+        }
+        if (Array.isArray(updatedFields.disabledDistractors)) {
+            q.disabledDistractors = updatedFields.disabledDistractors.slice();
+        }
+        if (typeof updatedFields.enabled === 'boolean') {
+            q.enabled = updatedFields.enabled;
+        }
+        if (typeof updatedFields.isCustom === 'boolean') {
+            q.isCustom = updatedFields.isCustom;
+        }
+        q.isCustomized = true;
+        return true;
+    }
+
+    /**
+     * Reset a standard question to its original built-in defaults.
+     */
+    function resetQuestionToDefault(qId) {
+        if (!ORIGINAL_QUIZ_BANK) return false;
+        var orig = null;
+        for (var i = 0; i < ORIGINAL_QUIZ_BANK.length; i++) {
+            if (ORIGINAL_QUIZ_BANK[i].id === qId) {
+                orig = ORIGINAL_QUIZ_BANK[i];
+                break;
+            }
+        }
+        if (!orig) return false;
+        var q = getQuestionById(qId);
+        if (!q) return false;
+        q.titleAr = orig.titleAr;
+        q.questionAr = orig.questionAr;
+        q.correctAnswerAr = orig.correctAnswerAr;
+        q.hintAr = orig.hintAr;
+        q.distractorsAr = orig.distractorsAr.slice();
+        q.disabledDistractors = [];
+        q.isCustomized = false;
+        return true;
+    }
+
+    /**
+     * Get deep copy of the original default question.
+     */
+    function getOriginalQuestion(qId) {
+        if (!ORIGINAL_QUIZ_BANK) return null;
+        for (var i = 0; i < ORIGINAL_QUIZ_BANK.length; i++) {
+            if (ORIGINAL_QUIZ_BANK[i].id === qId) {
+                return JSON.parse(JSON.stringify(ORIGINAL_QUIZ_BANK[i]));
+            }
+        }
+        return null;
+    }
+
+    var ORIGINAL_QUIZ_BANK = JSON.parse(JSON.stringify(QUIZ_BANK));
+
     global.Win11QuizBank = {
         getAllQuestions: getAllQuestions,
         getQuestionsForTask: getQuestionsForTask,
         getQuestionById: getQuestionById,
         addQuestion: addQuestion,
+        updateQuestion: updateQuestion,
+        resetQuestionToDefault: resetQuestionToDefault,
+        getOriginalQuestion: getOriginalQuestion,
         deleteQuestion: deleteQuestion,
         toggleQuestionEnabled: toggleQuestionEnabled
     };

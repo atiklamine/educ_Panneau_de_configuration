@@ -22,40 +22,160 @@
 
     var TASK_SUBSTEPS_CATALOG = {
         1: [
-            { id: 0, labelAr: 'تغيير لغة عرض واجهة Windows من الإعدادات', labelFr: 'Modifier la langue d\'affichage' }
+            {
+                id: 0,
+                labelAr: 'تغيير لغة عرض واجهة Windows من الإعدادات',
+                labelFr: 'Modifier la langue d\'affichage',
+                hintAr: 'انتقل إلى: الإعدادات ← الوقت واللغة ← اللغة والمنطقة، ثم افتح قائمة "لغة عرض Windows" واختر لغة أخرى (مثل Français أو English) لتلاحظ انعكاس اتجاه الواجهة.'
+            }
         ],
         2: [
-            { id: 0, labelAr: 'ضبط سرعة النقر المزدوج على "سريعة"', labelFr: 'Régler la vitesse du double-clic sur Rapide' },
-            { id: 1, labelAr: 'اختيار نظام مؤشر مخصص (LimeGreen أو Noir)', labelFr: 'Choisir le curseur LimeGreen ou Noir' }
+            {
+                id: 0,
+                labelAr: 'ضبط سرعة النقر المزدوج على "سريعة"',
+                labelFr: 'Régler la vitesse du double-clic sur Rapide',
+                hintAr: 'انتقل إلى: الإعدادات ← Bluetooth والأجهزة ← الفأرة، ثم حرّك شريط "سرعة النقر المزدوج" نحو اليمين لضبطه على "سريعة" (Fast).'
+            },
+            {
+                id: 1,
+                labelAr: 'اختيار نظام مؤشر مخصص (LimeGreen أو Noir)',
+                labelFr: 'Choisir le curseur LimeGreen ou Noir',
+                hintAr: 'في صفحة الفأرة، انقر على "مؤشر الفأرة واللمس" واختر نمط أو لون المؤشر المخصص (LimeGreen أو Noir) ليتحول المؤشر فوراً للون المختار.'
+            }
         ],
         3: [
-            { id: 0, labelAr: 'إضافة لغة الإدخال العربية (الجزائر) إلى لوحات المفاتيح', labelFr: 'Ajouter la langue Arabe (Algérie)' },
-            { id: 1, labelAr: 'ضبط المنطقة الزمنية على الجزائر (GMT+1)', labelFr: 'Régler le fuseau horaire sur GMT+1' }
+            {
+                id: 0,
+                labelAr: 'إضافة لغة الإدخال العربية (الجزائر) إلى لوحات المفاتيح',
+                labelFr: 'Ajouter la langue Arabe (Algérie)',
+                hintAr: 'انتقل إلى: الإعدادات ← الوقت واللغة ← اللغة والمنطقة، وفي قسم اللغات المفضلة اضغط زر "إضافة لغة" واختر العربية (الجزائر).'
+            },
+            {
+                id: 1,
+                labelAr: 'ضبط المنطقة الزمنية على الجزائر (GMT+1)',
+                labelFr: 'Régler le fuseau horaire sur GMT+1',
+                hintAr: 'انتقل إلى: الإعدادات ← الوقت واللغة ← التاريخ والوقت، ومن قائمة "المنطقة الزمنية" اختر (UTC+01:00) غرب وسط إفريقيا المتوافقة مع الجزائر.'
+            }
         ],
         4: [
-            { id: 0, labelAr: 'تغيير الخلفية باختيار إحدى الصور المعروضة في نافذة الإعدادات', labelFr: 'Choisir une image parmi celles affichées dans la fenêtre' },
-            { id: 1, labelAr: 'تغيير الخلفية باختيار صورة من مجلد الصور (Pictures) عبر زر "استعراض صور"', labelFr: 'Choisir une image dans le dossier Pictures via Parcourir' },
-            { id: 2, labelAr: 'تغيير لون التمييز للنظام (Accent Color)', labelFr: 'Modifier la couleur d\'accentuation' }
+            {
+                id: 0,
+                labelAr: 'تغيير الخلفية باختيار إحدى الصور المعروضة في نافذة الإعدادات',
+                labelFr: 'Choisir une image parmi celles affichées dans la fenêtre',
+                hintAr: 'انتقل إلى: الإعدادات ← التخصيص ← الخلفية، وانقر مباشرة على إحدى الصور الجاهزة المعروضة في شبكة الصور لتطبيقها كخلفية لسطح المكتب.'
+            },
+            {
+                id: 1,
+                labelAr: 'تغيير الخلفية باختيار صورة من مجلد الصور (Pictures) عبر زر "استعراض صور"',
+                labelFr: 'Choisir une image dans le dossier Pictures via Parcourir',
+                hintAr: 'في صفحة الخلفية، اضغط زر "استعراض صور" (Browse photos)، واختر إحدى الصور المحفوظة في مجلد الصور (Pictures) واضغط اختيار صورة.'
+            },
+            {
+                id: 2,
+                labelAr: 'تغيير لون التمييز للنظام (Accent Color)',
+                labelFr: 'Modifier la couleur d\'accentuation',
+                hintAr: 'انتقل إلى: الإعدادات ← التخصيص ← الألوان، وانزل إلى قسم "لون التمييز" (Accent Color) واختر لوناً جديداً ومختلفاً من لوحة الألوان.'
+            }
         ],
         5: [
-            { id: 0, labelAr: 'تشغيل ملف LabTools_Setup.exe وتثبيت البرنامج', labelFr: 'Exécuter LabTools_Setup.exe et installer' },
-            { id: 1, labelAr: 'فتح تطبيق LabTools من قائمة ابدأ لتجربته ثم إغلاقه', labelFr: 'Ouvrir LabTools depuis Démarrer et fermer' },
-            { id: 2, labelAr: 'إلغاء تثبيت التطبيق من الإعدادات ← التطبيقات المثبتة', labelFr: 'Désinstaller l\'application' },
-            { id: 3, labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء التطبيق بعد حذفه', labelFr: 'Vérifier la disparition de LabTools de Démarrer' },
-            { id: 4, labelAr: 'تفعيل ميزة اختيارية (Paint/Notepad/Games) من الميزات الاختيارية', labelFr: 'Activer une fonctionnalité facultative' },
-            { id: 5, labelAr: 'فتح الميزة المفعلة (كالرسام) من قائمة ابدأ لتجربتها ثم إغلاقها', labelFr: 'Ouvrir la fonctionnalité depuis Démarrer et fermer' },
-            { id: 6, labelAr: 'إزالة/تعطيل الميزة الاختيارية من الإعدادات', labelFr: 'Désactiver la fonctionnalité facultative' },
-            { id: 7, labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء الميزة بعد تعطيلها', labelFr: 'Vérifier la disparition de la fonctionnalité de Démarrer' }
+            {
+                id: 0,
+                labelAr: 'تشغيل ملف LabTools_Setup.exe وتثبيت البرنامج',
+                labelFr: 'Exécuter LabTools_Setup.exe et installer',
+                hintAr: 'توجّه إلى سطح المكتب، وانقر نقراً مزدوجاً على ملف التثبيت LabTools_Setup.exe واتبع خطوات معالج التثبيت حتى اكتمال التثبيت.'
+            },
+            {
+                id: 1,
+                labelAr: 'فتح تطبيق LabTools من قائمة ابدأ لتجربته ثم إغلاقه',
+                labelFr: 'Ouvrir LabTools depuis Démarrer et fermer',
+                hintAr: 'افتح قائمة ابدأ (Start)، وابحث عن تطبيق "LabTools 1AS" المثبت وقم بتشغيله للتحقق من عمله، ثم أغلق النافذة.'
+            },
+            {
+                id: 2,
+                labelAr: 'إلغاء تثبيت التطبيق من الإعدادات ← التطبيقات المثبتة',
+                labelFr: 'Désinstaller l\'application',
+                hintAr: 'انتقل إلى: الإعدادات ← التطبيقات ← التطبيقات المثبتة، وانقر على خيارات (⋯) بجانب LabTools 1AS ثم اختر "إلغاء التثبيت" (Uninstall).'
+            },
+            {
+                id: 3,
+                labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء التطبيق بعد حذفه',
+                labelFr: 'Vérifier la disparition de LabTools de Démarrer',
+                hintAr: 'افتح قائمة ابدأ مجدداً وتأكد من اختفاء تطبيق LabTools من قائمة التطبيقات بعد أن قمت بإلغاء تثبيته.'
+            },
+            {
+                id: 4,
+                labelAr: 'تفعيل ميزة اختيارية (Paint/Notepad/Games) من الميزات الاختيارية',
+                labelFr: 'Activer une fonctionnalité facultative',
+                hintAr: 'انتقل إلى: الإعدادات ← التطبيقات ← الميزات الاختيارية، وحدد إحدى الميزات المتاحة (كالرسام Paint) واضغط زر إضافة/تثبيت لتفعيلها.'
+            },
+            {
+                id: 5,
+                labelAr: 'فتح الميزة المفعلة (كالرسام) من قائمة ابدأ لتجربتها ثم إغلاقها',
+                labelFr: 'Ouvrir la fonctionnalité depuis Démarrer et fermer',
+                hintAr: 'افتح قائمة ابدأ وابحث عن الميزة التي قمت بتفعيلها (مثل الرسام Paint) وشغّلها لتجربتها ثم أغلق نافذتها.'
+            },
+            {
+                id: 6,
+                labelAr: 'إزالة/تعطيل الميزة الاختيارية من الإعدادات',
+                labelFr: 'Désactiver la fonctionnalité facultative',
+                hintAr: 'عُد إلى: الإعدادات ← التطبيقات ← الميزات الاختيارية، وقم بإلغاء تثبيت أو تعطيل الميزة الاختيارية لإعادتها إلى حالتها السابقة.'
+            },
+            {
+                id: 7,
+                labelAr: 'فتح قائمة ابدأ للتحقق من اختفاء الميزة بعد تعطيلها',
+                labelFr: 'Vérifier la disparition de la fonctionnalité de Démarrer',
+                hintAr: 'افتح قائمة ابدأ وتحقق من اختفاء أيقونة الميزة الاختيارية بعد إزالتها للتأكد من زوالها.'
+            }
         ],
         6: [
-            { id: 0, labelAr: '(A) إنشاء حسابين قياسيين (Standard) ثم حذفهما', labelFr: 'A: Créer et supprimer 2 comptes standard' },
-            { id: 1, labelAr: '(B) إنشاء حسابي مسؤول وحذف القديم MENIAI وإبقاء آخر مسؤول', labelFr: 'B: Créer 2 admins, garder le dernier' },
-            { id: 2, labelAr: '(C) تفعيل حساب الضيف واختبار قيود الصلاحيات وحظر UAC', labelFr: 'C: Activer Invité et tester blocage UAC' },
-            { id: 3, labelAr: '(D) إنشاء حساب قياسي جديد محمي بكلمة مرور', labelFr: 'D: Créer un compte avec mot de passe' },
-            { id: 4, labelAr: '(E) تسجيل الدخول للحساب القياسي بكلمة المرور ثم الخروج', labelFr: 'E: Connexion et déconnexion' },
-            { id: 5, labelAr: '(F) العودة للمسؤول وتعديل كلمة مرور الحساب القياسي', labelFr: 'F: Modification du mot de passe par l\'admin' },
-            { id: 6, labelAr: '(G) الدخول مجدداً للحساب القياسي بكلمة المرور الجديدة', labelFr: 'G: Vérification avec nouveau mot de passe' },
-            { id: 7, labelAr: '(H) تحديث الصورة الرمزية للحساب (Avatar)', labelFr: 'H: Changer l\'avatar du compte' }
+            {
+                id: 0,
+                labelAr: '(A) إنشاء حسابين قياسيين (Standard) ثم حذفهما',
+                labelFr: 'A: Créer et supprimer 2 comptes standard',
+                hintAr: 'من الإعدادات ← الحسابات ← مستخدمون آخرون، أنشئ حسابين من نوع قياسي (Standard) ثم قم بحذفهما بعد إنشائهما.'
+            },
+            {
+                id: 1,
+                labelAr: '(B) إنشاء حسابي مسؤول وحذف القديم MENIAI وإبقاء آخر مسؤول',
+                labelFr: 'B: Créer 2 admins, garder le dernier',
+                hintAr: 'أنشئ حسابين من نوع مسؤول (Admin)، ثم احذف الحساب القديم MENIAI وأحد المسؤولين الجديدين لإبقاء آخر مسؤول فقط متحكماً بالجهاز.'
+            },
+            {
+                id: 2,
+                labelAr: '(C) تفعيل حساب الضيف واختبار قيود الصلاحيات وحظر UAC',
+                labelFr: 'C: Activer Invité et tester blocage UAC',
+                hintAr: 'فعّل حساب الضيف من الإعدادات، ثم توجّه لشاشة القفل وسجّل الدخول كضيف، وحاول فتح إعداد مقيّد لاختبار رسالة حظر UAC.'
+            },
+            {
+                id: 3,
+                labelAr: '(D) إنشاء حساب قياسي جديد محمي بكلمة مرور',
+                labelFr: 'D: Créer un compte avec mot de passe',
+                hintAr: 'من حساب المسؤول، افتح صفحة مستخدمون آخرون وأنشئ حساباً قياسياً جديداً وضع له كلمة مرور وتلميحاً لكلمة المرور.'
+            },
+            {
+                id: 4,
+                labelAr: '(E) تسجيل الدخول للحساب القياسي بكلمة المرور ثم الخروج',
+                labelFr: 'E: Connexion et déconnexion',
+                hintAr: 'توجّه لشاشة القفل، وسجّل الدخول للحساب القياسي بكلمة المرور لمعاينة سطح المكتب ثم انقر تسجيل الخروج.'
+            },
+            {
+                id: 5,
+                labelAr: '(F) العودة للمسؤول وتعديل كلمة مرور الحساب القياسي',
+                labelFr: 'F: Modification du mot de passe par l\'admin',
+                hintAr: 'سجّل الدخول بحساب المسؤول، وافتح الإعدادات ← الحسابات ← مستخدمون آخرون، واختر الحساب القياسي وغيّر كلمة مروره.'
+            },
+            {
+                id: 6,
+                labelAr: '(G) الدخول مجدداً للحساب القياسي بكلمة المرور الجديدة',
+                labelFr: 'G: Vérification avec nouveau mot de passe',
+                hintAr: 'عُد لشاشة القفل وسجّل الدخول للحساب القياسي مستخدماً كلمة المرور الجديدة التي حددها المسؤول للتأكد من سريان التغيير.'
+            },
+            {
+                id: 7,
+                labelAr: '(H) تحديث الصورة الرمزية للحساب (Avatar)',
+                labelFr: 'H: Changer l\'avatar du compte',
+                hintAr: 'انتقل إلى: الإعدادات ← الحسابات ← معلوماتك، واضغط على خيار الصورة الرمزية لاختيار وتعيين صورة جديدة للحساب.'
+            }
         ]
     };
 
@@ -1157,9 +1277,20 @@
             config.custom_quiz_questions = global.Win11QuizBank.getAllQuestions().filter(function (q) {
                 return !!q.isCustom;
             });
+            config.edited_quiz_questions = global.Win11QuizBank.getAllQuestions().filter(function (q) {
+                return !q.isCustom && !!q.isCustomized;
+            });
             config.quiz_disabled_questions = global.Win11QuizBank.getAllQuestions().filter(function (q) {
                 return q.enabled === false;
             }).map(function (q) { return q.id; });
+            var distMap = {};
+            var allQ = global.Win11QuizBank.getAllQuestions();
+            for (var qi = 0; qi < allQ.length; qi++) {
+                if (Array.isArray(allQ[qi].disabledDistractors) && allQ[qi].disabledDistractors.length > 0) {
+                    distMap[allQ[qi].id] = allQ[qi].disabledDistractors.slice();
+                }
+            }
+            config.quiz_disabled_distractors = distMap;
         }
         student.mode = config.mode || 'training';
         if (config.class_groups && config.class_groups.length > 0 && config.class_groups.indexOf(student.classGroup) === -1) {
@@ -1304,6 +1435,20 @@
             if (Array.isArray(config.custom_quiz_questions)) {
                 for (var cqi = 0; cqi < config.custom_quiz_questions.length; cqi++) {
                     global.Win11QuizBank.addQuestion(config.custom_quiz_questions[cqi]);
+                }
+            }
+            if (Array.isArray(config.edited_quiz_questions)) {
+                for (var eqi = 0; eqi < config.edited_quiz_questions.length; eqi++) {
+                    var eq = config.edited_quiz_questions[eqi];
+                    global.Win11QuizBank.updateQuestion(eq.id, eq);
+                }
+            }
+            if (config.quiz_disabled_distractors && typeof config.quiz_disabled_distractors === 'object') {
+                for (var dId in config.quiz_disabled_distractors) {
+                    var qObj = global.Win11QuizBank.getQuestionById(dId);
+                    if (qObj) {
+                        qObj.disabledDistractors = config.quiz_disabled_distractors[dId].slice();
+                    }
                 }
             }
             if (Array.isArray(config.quiz_disabled_questions)) {
@@ -1474,6 +1619,82 @@
         };
     }
 
+    function getActiveSubStepHint(taskId) {
+        var idNum = Number(taskId);
+        var ordered = syncConfiguredTasks();
+        var tk = null;
+        for (var i = 0; i < ordered.length; i++) {
+            if (ordered[i].id === idNum) {
+                tk = ordered[i];
+                break;
+            }
+        }
+        if (!tk) {
+            return {
+                hasSubStep: false,
+                stepNum: 0,
+                totalSteps: 0,
+                stepLabel: '',
+                hintText: ''
+            };
+        }
+
+        var steps = Array.isArray(tk.subSteps) ? tk.subSteps : [];
+        var cat = TASK_SUBSTEPS_CATALOG[idNum];
+        if (steps.length === 0 && cat && cat.length > 0) {
+            return {
+                hasSubStep: true,
+                stepNum: 1,
+                totalSteps: cat.length,
+                stepLabel: cat[0].labelAr || tk.titleAr,
+                hintText: cat[0].hintAr || tk.hintAr || 'اتبع الإرشادات الموضحة في قائمة خطوات المهمة.'
+            };
+        }
+
+        var pendingStep = null;
+        var stepIndex = -1;
+        for (var s = 0; s < steps.length; s++) {
+            if (!steps[s].ok && !steps[s].skipped) {
+                pendingStep = steps[s];
+                stepIndex = s;
+                break;
+            }
+        }
+
+        if (!pendingStep) {
+            return {
+                hasSubStep: false,
+                stepNum: steps.length,
+                totalSteps: steps.length,
+                stepLabel: tk.titleAr,
+                hintText: tk.hintAr || 'أحسنت! تم إنجاز كافة خطوات هذه المهمة بنجاح.'
+            };
+        }
+
+        var cat = TASK_SUBSTEPS_CATALOG[idNum];
+        var hint = '';
+        if (cat) {
+            var origIdx = (typeof pendingStep.origIndex === 'number') ? pendingStep.origIndex : stepIndex;
+            for (var c = 0; c < cat.length; c++) {
+                if (cat[c].id === origIdx) {
+                    hint = cat[c].hintAr || '';
+                    break;
+                }
+            }
+        }
+        if (!hint) {
+            hint = pendingStep.hintAr || tk.hintAr || 'اتبع الإرشادات الموضحة في قائمة خطوات المهمة.';
+        }
+
+        return {
+            hasSubStep: true,
+            stepNum: stepIndex + 1,
+            totalSteps: steps.length,
+            stepLabel: pendingStep.labelAr || ('الخطوة ' + (stepIndex + 1)),
+            hintText: hint
+        };
+    }
+
     global.Win11State.on('*', evaluate);
 
     global.Win11Assessment = {
@@ -1489,6 +1710,7 @@
             var list = syncConfiguredTasks().filter(function (x) { return x.enabled !== false; });
             return (activeTaskIndex < list.length) ? list[activeTaskIndex].id : null;
         },
+        getActiveSubStepHint: getActiveSubStepHint,
         getEffectiveElapsedSeconds: getEffectiveElapsedSeconds,
         getElapsedString: function () { return formatDuration(getEffectiveElapsedSeconds()); },
         getMistakes: function () { return mistakes; },
