@@ -914,13 +914,16 @@
 
             var reasonTxt = '';
             if (isDone) {
-                reasonTxt = 'تم إنجاز كافة خطوات المهمة بنجاح.';
+                reasonTxt = 'تم إنجاز كافة خطوات المهمة بنجاح (' + tkMax.toFixed(2) + ' من ' + tkMax.toFixed(2) + ' نقطة).';
             } else if (isSkip) {
-                reasonTxt = 'تم تخطي المهمة من قبل التلميذ.';
+                reasonTxt = 'تم تخطي المهمة بطلب من التلميذ؛ خصم كامل علامة المهمة (-' + tkMax.toFixed(2) + ' نقطة).';
+            } else if (isPart) {
+                var doneSt = (tk.doneStepsCount !== undefined && tk.totalStepsCount) ? ('إنجاز ' + tk.doneStepsCount + ' من ' + tk.totalStepsCount + ' خطوات: ') : '';
+                reasonTxt = doneSt + (tk.deductReasons && tk.deductReasons.length > 0 ? tk.deductReasons.join('؛ ') : 'تم استيفاء جزء من الخطوات وخصم المتبقي.');
             } else if (tk.deductReasons && tk.deductReasons.length > 0) {
                 reasonTxt = tk.deductReasons.join('؛ ');
             } else {
-                reasonTxt = 'لم يتم استيفاء الخطوات العملية المطلوبة.';
+                reasonTxt = 'لم يتم إنجاز الخطوات العملية المطلوبة للمهمة (خصم -' + tkMax.toFixed(2) + ' نقطة).';
             }
 
             // Practical Task Row
@@ -1151,25 +1154,11 @@
         var activeLogoB64 = '';
         if (cfg.report_logo_b64 && String(cfg.report_logo_b64).indexOf('data:image/') === 0) {
             activeLogoB64 = cfg.report_logo_b64;
-        } else if (typeof window !== 'undefined' && window.__WIN11_DEFAULT_LOGO__ && String(window.__WIN11_DEFAULT_LOGO__).indexOf('data:image/') === 0) {
-            activeLogoB64 = window.__WIN11_DEFAULT_LOGO__;
-        } else if (typeof window !== 'undefined' && window.__WIN11_INLINE_IMAGES__ && window.__WIN11_INLINE_IMAGES__['logo/logo.jpg']) {
-            activeLogoB64 = window.__WIN11_INLINE_IMAGES__['logo/logo.jpg'];
         }
-
-        var emblemSvg = '<svg width="52" height="52" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">' +
-            '<circle cx="27" cy="27" r="25" stroke="#1E3A8A" stroke-width="2" fill="#F8FAFC"/>' +
-            '<circle cx="27" cy="27" r="21" stroke="#16A34A" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>' +
-            '<path d="M16 35C20 33 24 33.5 27 35C30 33.5 34 33 38 35V23C34 21 30 21.5 27 23C24 21.5 20 21 16 23V35Z" fill="#1E3A8A" opacity="0.9"/>' +
-            '<path d="M27 23V35" stroke="#FFFFFF" stroke-width="1.2"/>' +
-            '<path d="M27 12C25 16 29 16 27 20C28.5 18 28.5 16.5 27 12Z" fill="#D97706"/>' +
-            '<circle cx="27" cy="16.5" r="1.5" fill="#DC2626"/>' +
-            '</svg>';
 
         var logoHtml = activeLogoB64
             ? '<img src="' + activeLogoB64 + '" alt="شعار المؤسسة" style="max-height:55px;max-width:90px;object-fit:contain;vertical-align:middle;">'
-            : ('<img src="logo/logo.jpg" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'inline-block\';" alt="شعار" style="max-height:55px;max-width:90px;object-fit:contain;vertical-align:middle;">' +
-               '<span style="display:none;">' + emblemSvg + '</span>');
+            : '';
 
         var isAllDone = (enabledTasks.length > 0 && doneTasksCount === enabledTasks.length);
         var isZeroDone = (doneTasksCount === 0);
@@ -1435,17 +1424,28 @@
                 // Header
                 '<div class="a4-header">' +
                     '<div class="a4-header-republic">' + bidi('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية') + '</div>' +
-                    '<div class="a4-header-grid">' +
-                        '<div class="a4-header-right" style="text-align:right;">' +
-                            '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong></div>' +
-                            '<div>الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
-                        '</div>' +
-                        '<div class="a4-header-logo" style="text-align:center;">' + logoHtml + '</div>' +
-                        '<div class="a4-header-left" style="text-align:left;" dir="ltr">' +
-                            '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong></div>' +
-                            '<div>Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
-                        '</div>' +
-                    '</div>' +
+                    (logoHtml ? (
+                        '<div class="a4-header-grid has-logo">' +
+                            '<div class="a4-header-right" style="text-align:right;">' +
+                                '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong></div>' +
+                                '<div>الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
+                            '</div>' +
+                            '<div class="a4-header-logo" style="text-align:center;">' + logoHtml + '</div>' +
+                            '<div class="a4-header-left" style="text-align:left;" dir="ltr">' +
+                                '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong></div>' +
+                                '<div>Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
+                            '</div>' +
+                        '</div>'
+                    ) : (
+                        '<div class="a4-header-grid no-logo">' +
+                            '<div class="a4-header-right" style="text-align:right;">' +
+                                '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong> &nbsp;|&nbsp; الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
+                            '</div>' +
+                            '<div class="a4-header-left" style="text-align:left;" dir="ltr">' +
+                                '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong> &nbsp;|&nbsp; Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
+                            '</div>' +
+                        '</div>'
+                    )) +
                     '<div class="a4-banner">' +
                         '<div class="a4-banner-title">' + bidi('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي') + '</div>' +
                         '<div class="a4-banner-sub">' + bidi('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)') + '</div>' +
@@ -1529,10 +1529,13 @@
             '.a4-tsc-time .a4-tsc-grade{color:#1D4ED8;font-family:Consolas,monospace;}\n' +
             '.a4-tsc-out{font-size:14px;color:#64748B;font-weight:700;}\n' +
             '.a4-tsc-badge{margin-top:3px;}\n' +
-            '.a4-report-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;border-spacing:0 !important;margin:6px 0 8px 0;font-size:10.5px;box-sizing:border-box !important;}\n' +
+            '.a4-report-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;border-spacing:0 !important;margin:6px 0 8px 0;font-size:11px;box-sizing:border-box !important;}\n' +
             '.a4-report-table col{box-sizing:border-box !important;}\n' +
-            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1 !important;padding:4px 2px !important;text-align:right;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;word-break:normal !important;white-space:normal !important;box-sizing:border-box !important;overflow:hidden !important;}\n' +
-            '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;font-size:10px;line-height:1.35;}\n' +
+            '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1 !important;padding:5px 5px !important;text-align:right;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;word-break:normal !important;white-space:normal !important;box-sizing:border-box !important;line-height:1.4 !important;}\n' +
+            '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;font-size:10.5px;line-height:1.35;text-align:center;}\n' +
+            '.a4-audit-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;margin:6px 0 8px 0;font-size:11px;box-sizing:border-box !important;}\n' +
+            '.a4-audit-table th,.a4-audit-table td{border:1px solid #CBD5E1 !important;padding:5px 6px !important;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;line-height:1.45 !important;}\n' +
+            '.a4-audit-table th{background:#F8FAFC;color:#334155;font-weight:700;font-size:10.5px;text-align:center;}\n' +
             '.a4-quiz-disabled-notice{background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:6px;padding:6px 10px;margin:6px 0;color:#92400E;font-size:11px;line-height:1.5;}\n' +
             '.a4-math-grid{display:flex;gap:10px;margin-top:6px;align-items:stretch;width:100%;}\n' +
             '.a4-math-steps{flex:1 1 100%;width:100%;display:flex;flex-direction:column;gap:4px;}\n' +
@@ -1543,7 +1546,7 @@
             '.a4-step-val{margin-right:auto;font-weight:700;color:#0F172A;}\n' +
             '.a4-step-sub{font-size:10px;color:#64748B;}\n' +
             '.a4-footer-sig{margin-top:8px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #CBD5E1;padding-top:6px;font-size:11px;}\n' +
-            '@media print{@page{size:A4 portrait;margin:6mm 6mm;}body{background:#FFFFFF;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.a4-report-sheet{border:none;box-shadow:none;padding:0;max-width:none;width:100%;}.a4-top-summary-card{page-break-inside:avoid;break-inside:avoid;}.a4-section-title{page-break-after:avoid;break-after:avoid;}.a4-report-table{width:100% !important;table-layout:fixed !important;}.a4-report-table tr{page-break-inside:avoid;break-inside:avoid;}.a4-section-c,.a4-footer-sig{page-break-inside:avoid;break-inside:avoid;}}\n' +
+            '@media print{@page{size:A4 portrait;margin:6mm 6mm;}body{background:#FFFFFF;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.a4-report-sheet{border:none;box-shadow:none;padding:0;max-width:none;width:100%;}.a4-top-summary-card{page-break-inside:avoid;break-inside:avoid;}.a4-section-title{page-break-after:avoid;break-after:avoid;}.a4-report-table{width:100% !important;table-layout:fixed !important;}.a4-report-table tr{page-break-inside:avoid;break-inside:avoid;}.a4-section-c,.a4-section-d,.a4-footer-sig{page-break-inside:avoid;break-inside:avoid;}}\n' +
             '</style>\n</head>\n<body>\n' + a4Inner + '\n</body>\n</html>';
     }
 

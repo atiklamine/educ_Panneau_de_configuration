@@ -204,7 +204,7 @@
             theme_lock: false,
             multi_user_mode: true,
             lock_fullscreen_in_exam: false,
-            report_logo_b64: (typeof window !== 'undefined' && window.__WIN11_DEFAULT_LOGO__) ? window.__WIN11_DEFAULT_LOGO__ : '',
+            report_logo_b64: '',
             show_mistakes: true,
             show_penalties: true,
             show_time: true,
@@ -1512,21 +1512,6 @@
 
     function fetchSidecarFromHost(doneCb) {
         var finish = function () {
-            if (!config.report_logo_b64 && global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
-                try {
-                    global.fetch('/api/logo').then(function (r) {
-                        if (r.ok && typeof FileReader !== 'undefined') {
-                            return r.blob().then(function (blob) {
-                                var reader = new FileReader();
-                                reader.onload = function () {
-                                    if (reader.result) config.report_logo_b64 = String(reader.result);
-                                };
-                                reader.readAsDataURL(blob);
-                            });
-                        }
-                    }).catch(function () { });
-                } catch (eLogo) { }
-            }
             if (typeof doneCb === 'function') doneCb();
         };
         var host = (global.location && global.location.hostname) ? String(global.location.hostname) : '';

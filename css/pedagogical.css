@@ -425,20 +425,33 @@ html[dir="ltr"] .hud-resize-corner {
     margin-bottom: 8px;
     line-height: 1.4;
 }
-.a4-header-right {
+.a4-header-grid.has-logo .a4-header-right {
     text-align: right;
-    flex: 1 1 35%;
+    flex: 1 1 38%;
 }
-.a4-header-logo {
+.a4-header-grid.has-logo .a4-header-logo {
     text-align: center;
     flex: 0 0 100px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
-.a4-header-left {
+.a4-header-grid.has-logo .a4-header-left {
     text-align: left;
-    flex: 1 1 35%;
+    flex: 1 1 38%;
+}
+.a4-header-grid.no-logo {
+    padding: 2px 4px;
+}
+.a4-header-grid.no-logo .a4-header-right {
+    text-align: right;
+    flex: 1 1 54%;
+    font-size: 12px;
+}
+.a4-header-grid.no-logo .a4-header-left {
+    text-align: left;
+    flex: 1 1 46%;
+    font-size: 12px;
 }
 .a4-banner {
     text-align: center;
@@ -673,13 +686,13 @@ html[dir="ltr"] .hud-resize-corner {
     table-layout: fixed !important;
     border-collapse: collapse;
     margin: 6px 0 8px 0;
-    font-size: 10.5px;
+    font-size: 11px;
     box-sizing: border-box;
 }
 .a4-report-table th,
 .a4-report-table td {
     border: 1px solid #CBD5E1;
-    padding: 4px 3px;
+    padding: 6px 5px !important;
     vertical-align: middle;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -687,12 +700,13 @@ html[dir="ltr"] .hud-resize-corner {
     white-space: normal;
     box-sizing: border-box;
     overflow: hidden;
+    line-height: 1.4 !important;
 }
 .a4-report-table th {
     background: #F1F5F9;
     color: #0F172A;
     font-weight: 700;
-    font-size: 10px;
+    font-size: 10.5px;
     line-height: 1.35;
     text-align: center;
 }
@@ -925,22 +939,23 @@ html[dir="ltr"] .hud-resize-corner {
     width: 100% !important;
     table-layout: fixed !important;
     border-collapse: collapse;
-    margin: 4px 0 6px 0;
-    font-size: 10px;
+    margin: 6px 0 8px 0;
+    font-size: 11px;
 }
 .a4-audit-table th,
 .a4-audit-table td {
     border: 1px solid #CBD5E1;
-    padding: 4px 5px;
+    padding: 6px 6px;
     vertical-align: middle;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    line-height: 1.45;
 }
 .a4-audit-table th {
     background: #F8FAFC;
     color: #334155;
     font-weight: 700;
-    font-size: 9.5px;
+    font-size: 10.5px;
     text-align: center;
 }
 .a4-audit-initial-row {

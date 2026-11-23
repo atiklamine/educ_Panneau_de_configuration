@@ -608,7 +608,7 @@ namespace Win11SimHost
                     Match mLevel = Regex.Match(html ?? "", @"Niveau:[\s\S]*?<strong>([^<]+)</strong>");
                     if (mLevel.Success) levelName = CleanHtml(mLevel.Groups[1].Value);
 
-                    // Extract or find Logo Image
+                    // Extract or find Logo Image (Strict: ONLY from HTML/Teacher Settings, never default fallback or disk probe)
                     Image logoImg = null;
                     try
                     {
@@ -624,36 +624,19 @@ namespace Win11SimHost
                     }
                     catch { }
 
-                    if (logoImg == null)
-                    {
-                        string[] cands = new string[] {
-                            Path.Combine(_exeDir, "logo.jpg"),
-                            Path.Combine(_exeDir, "logo.png"),
-                            Path.Combine(Path.Combine(_exeDir, "logo"), "logo.jpg"),
-                            Path.Combine(Path.Combine(_exeDir, "logo"), "logo.png")
-                        };
-                        foreach (var c in cands)
-                        {
-                            if (File.Exists(c))
-                            {
-                                try { logoImg = new Bitmap(Image.FromFile(c)); break; } catch { }
-                            }
-                        }
-                    }
-
-                    // 3-Column Header Grid (Y = 86 to 142)
-                    // Right Box: Institution & Teacher (X = 700 to 1160)
-                    using (Font fGridBold = new Font("Segoe UI", 11f, FontStyle.Bold))
-                    using (Font fGridReg = new Font("Segoe UI", 10.5f, FontStyle.Regular))
-                    using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
-                    {
-                        g.DrawString("المؤسسة: " + instName, fGridBold, bGridText, new RectangleF(700, 88, 460, 24), rtlRight);
-                        g.DrawString("الأستاذ المشرف: " + teachName, fGridReg, bGridText, new RectangleF(700, 114, 460, 24), rtlRight);
-                    }
-
-                    // Center Box: Logo (X = 570 to 670, Y = 84 to 142)
                     if (logoImg != null)
                     {
+                        // 3-Column Header Grid (Y = 86 to 142)
+                        // Right Box: Institution & Teacher (X = 700 to 1160)
+                        using (Font fGridBold = new Font("Segoe UI", 11f, FontStyle.Bold))
+                        using (Font fGridReg = new Font("Segoe UI", 10.5f, FontStyle.Regular))
+                        using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                        {
+                            g.DrawString("المؤسسة: " + instName, fGridBold, bGridText, new RectangleF(700, 88, 460, 24), rtlRight);
+                            g.DrawString("الأستاذ المشرف: " + teachName, fGridReg, bGridText, new RectangleF(700, 114, 460, 24), rtlRight);
+                        }
+
+                        // Center Box: Logo (X = 570 to 670, Y = 84 to 142)
                         float maxW = 90f;
                         float maxH = 54f;
                         float scale = Math.Min(maxW / logoImg.Width, maxH / logoImg.Height);
@@ -662,32 +645,34 @@ namespace Win11SimHost
                         float destX = 620f - (destW / 2f);
                         float destY = 86f + ((maxH - destH) / 2f);
                         g.DrawImage(logoImg, destX, destY, destW, destH);
+
+                        // Left Box: Année scolaire & Niveau (LTR, X = 80 to 540)
+                        using (Font fGridLtr = new Font("Segoe UI", 10.5f, FontStyle.Regular))
+                        using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                        {
+                            g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 460, 24), ltrRight);
+                            g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 114, 460, 24), ltrRight);
+                        }
                     }
                     else
                     {
-                        // Draw vector official emblem seal
-                        using (Brush bSealBg = new SolidBrush(Color.FromArgb(248, 250, 252)))
-                        using (Pen pSealOuter = new Pen(Color.FromArgb(30, 58, 138), 2f))
-                        using (Pen pSealInner = new Pen(Color.FromArgb(22, 163, 74), 1.2f))
+                        // 2-Column Balanced Header (Zero Logo, Zero Emblem - Right & Left Symmetrical)
+                        // Right Box: Institution & Teacher (X = 620 to 1160, Width = 540)
+                        using (Font fGridBold = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                        using (Font fGridReg = new Font("Segoe UI", 11f, FontStyle.Regular))
+                        using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
                         {
-                            pSealInner.DashStyle = DashStyle.Dash;
-                            g.FillEllipse(bSealBg, 595, 88, 50, 50);
-                            g.DrawEllipse(pSealOuter, 595, 88, 50, 50);
-                            g.DrawEllipse(pSealInner, 599, 92, 42, 42);
+                            g.DrawString("المؤسسة: " + instName, fGridBold, bGridText, new RectangleF(620, 88, 540, 25), rtlRight);
+                            g.DrawString("الأستاذ المشرف: " + teachName, fGridReg, bGridText, new RectangleF(620, 115, 540, 25), rtlRight);
                         }
-                        using (Font fEmblem = new Font("Segoe UI", 8f, FontStyle.Bold))
-                        using (Brush bNavy = new SolidBrush(Color.FromArgb(30, 58, 138)))
-                        {
-                            g.DrawString("وزارة التربية", fEmblem, bNavy, new RectangleF(595, 102, 50, 20), rtlCenter);
-                        }
-                    }
 
-                    // Left Box: Année scolaire & Niveau (LTR, X = 80 to 540)
-                    using (Font fGridLtr = new Font("Segoe UI", 10.5f, FontStyle.Regular))
-                    using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
-                    {
-                        g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 460, 24), ltrRight);
-                        g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 114, 460, 24), ltrRight);
+                        // Left Box: Année scolaire & Niveau (LTR, X = 80 to 620, Width = 540)
+                        using (Font fGridLtr = new Font("Segoe UI", 11f, FontStyle.Regular))
+                        using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                        {
+                            g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 540, 25), ltrRight);
+                            g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 115, 540, 25), ltrRight);
+                        }
                     }
 
                     // Banner (Y = 148 to 214)
@@ -1016,12 +1001,11 @@ namespace Win11SimHost
                     }
                     curY += thHeight;
 
-                    // Draw Table Rows
-                    int rowHeight = (rows.Count > 13) ? 24 : 26;
+                    // Draw Table Rows (Dynamic Height with zero text clipping)
                     using (Pen pGrid = new Pen(Color.FromArgb(203, 213, 225), 1f))
-                    using (Font fTdBold = new Font("Segoe UI", 9f, FontStyle.Bold))
-                    using (Font fTdReg = new Font("Segoe UI", 8.5f, FontStyle.Regular))
-                    using (Font fTdNotes = new Font("Segoe UI", 8f, FontStyle.Regular))
+                    using (Font fTdBold = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                    using (Font fTdReg = new Font("Segoe UI", 9f, FontStyle.Regular))
+                    using (Font fTdNotes = new Font("Segoe UI", 8.5f, FontStyle.Regular))
                     using (Brush bText = new SolidBrush(Color.FromArgb(15, 23, 42)))
                     using (Brush bRed = new SolidBrush(Color.FromArgb(220, 38, 38)))
                     using (Brush bGreen = new SolidBrush(Color.FromArgb(21, 128, 61)))
@@ -1032,20 +1016,27 @@ namespace Win11SimHost
                             NativeReportRow row = rows[rIdx];
                             if (row.IsFooter)
                             {
+                                int ftrH = 28;
                                 // Footer row
                                 using (Brush bgFooter = new SolidBrush(Color.FromArgb(248, 250, 252)))
                                 {
-                                    g.FillRectangle(bgFooter, 80, curY, 1080, rowHeight + 2);
+                                    g.FillRectangle(bgFooter, 80, curY, 1080, ftrH);
                                 }
-                                g.DrawRectangle(pGrid, 80, curY, 1080, rowHeight + 2);
-                                g.DrawString(row.Title, fTdBold, bText, new RectangleF(cX_Att, curY, (cX_Num + cW_Num) - cX_Att, rowHeight + 2), rtlRight);
-                                g.DrawString(row.Max, fTdBold, bText, new RectangleF(cX_Max, curY, cW_Max, rowHeight + 2), ltrCenter);
-                                g.DrawString(row.Earned, fTdBold, bGreen, new RectangleF(cX_Earn, curY, cW_Earn, rowHeight + 2), ltrCenter);
-                                g.DrawString(row.Deduct, fTdBold, bRed, new RectangleF(cX_Ded, curY, cW_Ded, rowHeight + 2), ltrCenter);
-                                g.DrawString(row.Notes, fTdReg, bText, new RectangleF(cX_Notes, curY, cW_Notes, rowHeight + 2), rtlRight);
-                                curY += rowHeight + 2;
+                                g.DrawRectangle(pGrid, 80, curY, 1080, ftrH);
+                                g.DrawString(row.Title, fTdBold, bText, new RectangleF(cX_Att, curY, (cX_Num + cW_Num) - cX_Att, ftrH), rtlRight);
+                                g.DrawString(row.Max, fTdBold, bText, new RectangleF(cX_Max, curY, cW_Max, ftrH), ltrCenter);
+                                g.DrawString(row.Earned, fTdBold, bGreen, new RectangleF(cX_Earn, curY, cW_Earn, ftrH), ltrCenter);
+                                g.DrawString(row.Deduct, fTdBold, bRed, new RectangleF(cX_Ded, curY, cW_Ded, ftrH), ltrCenter);
+                                g.DrawString(row.Notes, fTdReg, bText, new RectangleF(cX_Notes, curY, cW_Notes, ftrH), rtlRight);
+                                curY += ftrH;
                                 continue;
                             }
+
+                            // Dynamic measurement of row height to prevent text clipping
+                            SizeF sizeT = g.MeasureString(row.Title, fTdReg, cW_Title - 8);
+                            SizeF sizeN = g.MeasureString(row.Notes, fTdNotes, cW_Notes - 8);
+                            int contentH = (int)Math.Ceiling(Math.Max(sizeT.Height, sizeN.Height)) + 8;
+                            int rowH = Math.Max(26, contentH);
 
                             Color rowBg = (rIdx % 2 == 0) ? Color.White : Color.FromArgb(248, 250, 252);
                             if (row.IsQuiz) rowBg = Color.FromArgb(250, 245, 255);
@@ -1053,25 +1044,27 @@ namespace Win11SimHost
 
                             using (Brush bRowBg = new SolidBrush(rowBg))
                             {
-                                g.FillRectangle(bRowBg, 80, curY, 1080, rowHeight);
+                                g.FillRectangle(bRowBg, 80, curY, 1080, rowH);
                             }
-                            g.DrawRectangle(pGrid, 80, curY, 1080, rowHeight);
+                            g.DrawRectangle(pGrid, 80, curY, 1080, rowH);
 
                             // Col 0: #
                             Brush numBrush = row.IsQuiz ? bPurple : (row.IsPenalty ? bRed : bText);
-                            g.DrawString(row.Num, fTdBold, numBrush, new RectangleF(cX_Num, curY, cW_Num, rowHeight), rtlCenter);
+                            g.DrawString(row.Num, fTdBold, numBrush, new RectangleF(cX_Num, curY, cW_Num, rowH), rtlCenter);
 
-                            // Col 1: Title
-                            g.DrawString(row.Title, fTdReg, bText, new RectangleF(cX_Title, curY, cW_Title, rowHeight), rtlRight);
+                            // Col 1: Title (Multi-line comfortable rendering with rtlNearTop)
+                            g.DrawString(row.Title, fTdReg, bText, new RectangleF(cX_Title + 4, curY + 4, cW_Title - 8, rowH - 6), rtlNearTop);
 
                             // Col 2: Type
                             Color typeBg = row.IsQuiz ? Color.FromArgb(245, 243, 255) : (row.IsPenalty ? Color.FromArgb(254, 242, 242) : Color.FromArgb(239, 246, 255));
                             Color typeFg = row.IsQuiz ? Color.FromArgb(109, 40, 217) : (row.IsPenalty ? Color.FromArgb(185, 28, 28) : Color.FromArgb(29, 78, 216));
+                            int badgeH = 20;
+                            int badgeY = curY + ((rowH - badgeH) / 2);
                             using (Brush bTypeBg = new SolidBrush(typeBg))
                             using (Brush bTypeFg = new SolidBrush(typeFg))
                             {
-                                g.FillRectangle(bTypeBg, cX_Type + 4, curY + 3, cW_Type - 8, rowHeight - 6);
-                                g.DrawString(row.Type, fTdBold, bTypeFg, new RectangleF(cX_Type, curY, cW_Type, rowHeight), rtlCenter);
+                                g.FillRectangle(bTypeBg, cX_Type + 4, badgeY, cW_Type - 8, badgeH);
+                                g.DrawString(row.Type, fTdBold, bTypeFg, new RectangleF(cX_Type, curY, cW_Type, rowH), rtlCenter);
                             }
 
                             // Col 3: Status Badge
@@ -1082,27 +1075,27 @@ namespace Win11SimHost
                             using (Brush bStBg = new SolidBrush(stBg))
                             using (Brush bStFg = new SolidBrush(stFg))
                             {
-                                g.FillRectangle(bStBg, cX_Status + 4, curY + 3, cW_Status - 8, rowHeight - 6);
-                                g.DrawString(row.Status, fTdBold, bStFg, new RectangleF(cX_Status, curY, cW_Status, rowHeight), rtlCenter);
+                                g.FillRectangle(bStBg, cX_Status + 4, badgeY, cW_Status - 8, badgeH);
+                                g.DrawString(row.Status, fTdBold, bStFg, new RectangleF(cX_Status, curY, cW_Status, rowH), rtlCenter);
                             }
 
                             // Col 4: Attempts
-                            g.DrawString(row.Attempts, fTdReg, bText, new RectangleF(cX_Att, curY, cW_Att, rowHeight), rtlCenter);
+                            g.DrawString(row.Attempts, fTdReg, bText, new RectangleF(cX_Att, curY, cW_Att, rowH), rtlCenter);
 
                             // Col 5: Max Points
-                            g.DrawString(row.Max, fTdReg, bText, new RectangleF(cX_Max, curY, cW_Max, rowHeight), ltrCenter);
+                            g.DrawString(row.Max, fTdReg, bText, new RectangleF(cX_Max, curY, cW_Max, rowH), ltrCenter);
 
                             // Col 6: Earned Points
-                            g.DrawString(row.Earned, fTdBold, row.IsQuiz ? bPurple : bGreen, new RectangleF(cX_Earn, curY, cW_Earn, rowHeight), ltrCenter);
+                            g.DrawString(row.Earned, fTdBold, row.IsQuiz ? bPurple : bGreen, new RectangleF(cX_Earn, curY, cW_Earn, rowH), ltrCenter);
 
                             // Col 7: Deduction
                             bool hasDed = row.Deduct.IndexOf("-") >= 0 || (row.Deduct != "0.00" && row.Deduct != "0" && !string.IsNullOrEmpty(row.Deduct));
-                            g.DrawString(row.Deduct, fTdBold, hasDed ? bRed : bText, new RectangleF(cX_Ded, curY, cW_Ded, rowHeight), ltrCenter);
+                            g.DrawString(row.Deduct, fTdBold, hasDed ? bRed : bText, new RectangleF(cX_Ded, curY, cW_Ded, rowH), ltrCenter);
 
-                            // Col 8: Notes
-                            g.DrawString(row.Notes, fTdNotes, bText, new RectangleF(cX_Notes + 4, curY, cW_Notes - 8, rowHeight), rtlRight);
+                            // Col 8: Notes (Multi-line comfortable rendering with rtlNearTop)
+                            g.DrawString(row.Notes, fTdNotes, bText, new RectangleF(cX_Notes + 4, curY + 4, cW_Notes - 8, rowH - 6), rtlNearTop);
 
-                            curY += rowHeight;
+                            curY += rowH;
                         }
                     }
 
@@ -1187,9 +1180,10 @@ namespace Win11SimHost
                             // Step Label
                             g.DrawString(step.Label, fStepLbl, bStepText, new RectangleF(650, curY, 474, mathStepHeight), rtlRight);
 
-                            // Step Value
+                            // Step Value (STRICT LTR if contains '/' so numerator/denominator is never inverted to e.g. 20/14.78)
                             Brush valBrush = isFinal ? new SolidBrush(Color.FromArgb(21, 128, 61)) : bStepText;
-                            g.DrawString(step.Value, fStepVal, valBrush, new RectangleF(450, curY, 190, mathStepHeight), rtlCenter);
+                            bool valHasSlash = (step.Value ?? "").IndexOf("/") >= 0;
+                            g.DrawString(step.Value, fStepVal, valBrush, new RectangleF(450, curY, 190, mathStepHeight), valHasSlash ? ltrCenter : rtlCenter);
 
                             // Step Subtext (Formula)
                             g.DrawString(step.Sub, fStepSub, bStepSubText, new RectangleF(90, curY, 350, mathStepHeight), rtlRight);
@@ -1234,8 +1228,8 @@ namespace Win11SimHost
                                     using (Font fH = new Font("Segoe UI", 9.5f, FontStyle.Bold))
                                     using (Brush bH = new SolidBrush(Color.FromArgb(51, 65, 85)))
                                     {
-                                        g.FillRectangle(bgH, 80, curY, 1080, 22);
-                                        g.DrawRectangle(pH, 80, curY, 1080, 22);
+                                        g.FillRectangle(bgH, 80, curY, 1080, 24);
+                                        g.DrawRectangle(pH, 80, curY, 1080, 24);
                                         g.DrawString("المرحلة", fH, bH, new RectangleF(1050, curY + 2, 100, 20), rtlCenter);
                                         g.DrawString("توقيت النظام", fH, bH, new RectangleF(930, curY + 2, 110, 20), rtlCenter);
                                         g.DrawString("وقت المحاكاة", fH, bH, new RectangleF(810, curY + 2, 110, 20), rtlCenter);
@@ -1243,7 +1237,7 @@ namespace Win11SimHost
                                         g.DrawString("البيان المعدل", fH, bH, new RectangleF(530, curY + 2, 140, 20), rtlCenter);
                                         g.DrawString("تفاصيل التغيير (سابق ➔ جديد)", fH, bH, new RectangleF(90, curY + 2, 430, 20), rtlRight);
                                     }
-                                    curY += 24;
+                                    curY += 26;
                                     isHeader = false;
                                     continue;
                                 }
@@ -1261,32 +1255,41 @@ namespace Win11SimHost
                                     bool isInit = cStage.IndexOf("أولي", StringComparison.OrdinalIgnoreCase) >= 0;
                                     Color rowBg = isInit ? Color.FromArgb(248, 250, 252) : Color.White;
 
-                                    using (Brush bgR = new SolidBrush(rowBg))
-                                    using (Pen pR = new Pen(Color.FromArgb(226, 232, 240), 1f))
                                     using (Font fR = new Font("Segoe UI", 9f, FontStyle.Regular))
-                                    using (Font fRBold = new Font("Segoe UI", 9f, FontStyle.Bold))
-                                    using (Brush bDarkR = new SolidBrush(Color.FromArgb(15, 23, 42)))
-                                    using (Brush bAmber = new SolidBrush(Color.FromArgb(180, 83, 9)))
-                                    using (Brush bBlue = new SolidBrush(Color.FromArgb(37, 99, 235)))
+                                    using (Font fRBold = new Font("Segoe UI", 9.5f, FontStyle.Bold))
                                     {
-                                        g.FillRectangle(bgR, 80, curY, 1080, 22);
-                                        g.DrawRectangle(pR, 80, curY, 1080, 22);
+                                        // Dynamic measurement to prevent diff details from being cut off vertically
+                                        SizeF sizeDet = g.MeasureString(cDetail, fR, 420);
+                                        int auditRowH = Math.Max(28, (int)Math.Ceiling(sizeDet.Height) + 12);
 
-                                        g.DrawString(cStage, fRBold, isInit ? bDarkR : bAmber, new RectangleF(1050, curY + 2, 100, 20), rtlCenter);
-                                        g.DrawString(cClock, fRBold, bAmber, new RectangleF(930, curY + 2, 110, 20), ltrCenter);
-                                        g.DrawString(cElapsed, fRBold, bAmber, new RectangleF(810, curY + 2, 110, 20), ltrCenter);
-                                        g.DrawString(cProg, fR, bBlue, new RectangleF(680, curY + 2, 120, 20), rtlCenter);
-                                        g.DrawString(cField, fRBold, bDarkR, new RectangleF(530, curY + 2, 140, 20), rtlCenter);
-                                        g.DrawString(cDetail, fR, bDarkR, new RectangleF(90, curY + 2, 430, 20), rtlRight);
+                                        using (Brush bgR = new SolidBrush(rowBg))
+                                        using (Pen pR = new Pen(Color.FromArgb(226, 232, 240), 1f))
+                                        using (Brush bDarkR = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                                        using (Brush bAmber = new SolidBrush(Color.FromArgb(180, 83, 9)))
+                                        using (Brush bBlue = new SolidBrush(Color.FromArgb(37, 99, 235)))
+                                        {
+                                            g.FillRectangle(bgR, 80, curY, 1080, auditRowH);
+                                            g.DrawRectangle(pR, 80, curY, 1080, auditRowH);
+
+                                            g.DrawString(cStage, fRBold, isInit ? bDarkR : bAmber, new RectangleF(1050, curY, 100, auditRowH), rtlCenter);
+                                            g.DrawString(cClock, fRBold, bAmber, new RectangleF(930, curY, 110, auditRowH), ltrCenter);
+                                            g.DrawString(cElapsed, fRBold, bAmber, new RectangleF(810, curY, 110, auditRowH), ltrCenter);
+                                            g.DrawString(cProg, fR, bBlue, new RectangleF(680, curY, 120, auditRowH), rtlCenter);
+                                            g.DrawString(cField, fRBold, bDarkR, new RectangleF(530, curY, 140, auditRowH), rtlCenter);
+                                            g.DrawString(cDetail, fR, bDarkR, new RectangleF(90, curY + 5, 430, auditRowH - 8), rtlNearTop);
+                                        }
+                                        curY += auditRowH;
                                     }
-                                    curY += 23;
                                 }
                             }
                         }
                     }
 
-                    // Signature & Seal (Anchored dynamically or at least Y = 1530)
-                    int ySig = Math.Max(1530, curY + 16);
+                    // Signature & Seal (Anchored dynamically or at least Y = 1530, max constrained to avoid border collision)
+                    int ySig = Math.Max(curY + 18, 1530);
+                    if (ySig + 152 > 1705) { ySig = curY + 14; }
+                    if (ySig + 152 > 1705) { ySig = 1705 - 152; }
+
                     using (Pen pSig = new Pen(Color.FromArgb(100, 116, 139), 1.5f))
                     {
                         pSig.DashStyle = DashStyle.Dash;

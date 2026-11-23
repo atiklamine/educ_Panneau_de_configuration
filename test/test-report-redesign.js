@@ -267,14 +267,28 @@ global.Win11Assessment.evaluate();
 console.log('[PASS] Student opted out: Section B shows zeroed/deducted rows, Section C displays pedagogical warning.');
 
 console.log('--- TEST 8: VERIFY DYNAMIC SESSION COMPLETION & PROGRESS STATUS AND LOGO ---');
-// 8.1 Setup all tasks completed
+// 8.1 Setup all tasks completed & strict logo policy verification
 for (let i = 0; i < tasks.length; i++) {
     tasks[i].completed = true;
     tasks[i].earnedPoints = tasks[i].maxPoints;
 }
-const fullSessionHtml = global.Win11Report.buildA4Html();
-assert(fullSessionHtml.includes('a4-header-logo'), 'Report header must have dedicated logo container');
-assert(fullSessionHtml.includes('<img') || fullSessionHtml.includes('<svg'), 'Report header must render logo img or official crest SVG');
+
+// 8.1.1 Default mode: ZERO logo by default (no placeholder, no SVG crest, clean 2-column header)
+const defaultReportHtml = global.Win11Report.buildA4Html();
+assert(defaultReportHtml.includes('no-logo'), 'Default report header must use 2-column balanced no-logo layout');
+assert(!defaultReportHtml.includes('a4-header-logo'), 'Default report header must NOT have logo container');
+assert(!defaultReportHtml.includes('<svg'), 'Default report must NEVER render fallback SVG crest');
+
+// 8.1.2 Teacher configured logo mode: ONLY renders when report_logo_b64 is set in teacher settings
+const customCfg = global.Win11Assessment.getConfig();
+customCfg.report_logo_b64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+const logoReportHtml = global.Win11Report.buildA4Html();
+assert(logoReportHtml.includes('has-logo'), 'Report with teacher logo must use 3-column has-logo layout');
+assert(logoReportHtml.includes('a4-header-logo'), 'Report with teacher logo must have a4-header-logo container');
+assert(logoReportHtml.includes('<img'), 'Report with teacher logo must render img element');
+customCfg.report_logo_b64 = ''; // Reset back to default
+
+const fullSessionHtml = defaultReportHtml;
 
 // 8.2 Full completion check
 assert(fullSessionHtml.includes('جلسة مكتملة ومستوفاة لكافة المهام'), 'Full session badge text');
