@@ -99,6 +99,25 @@ if (fs.existsSync(aboutHeroPath)) {
         'data:image/jpeg;base64,' + fs.readFileSync(aboutHeroPath).toString('base64');
 }
 
+// Inlined Official School/Ministry Logo
+let defaultLogoB64 = '';
+const logoCandidates = [
+    path.join(ROOT, 'logo', 'logo.jpg'),
+    path.join(ROOT, 'logo', 'logo_ecole.jpg'),
+    path.join(ROOT, 'logo', 'logo.png')
+];
+for (const cand of logoCandidates) {
+    if (fs.existsSync(cand)) {
+        const ext = path.extname(cand).toLowerCase();
+        const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
+        defaultLogoB64 = 'data:' + mime + ';base64,' + fs.readFileSync(cand).toString('base64');
+        inlineImagesMap['logo/' + path.basename(cand)] = defaultLogoB64;
+        inlineImagesMap['logo/logo.jpg'] = defaultLogoB64;
+        inlineImagesMap['logo'] = defaultLogoB64;
+        break;
+    }
+}
+
 const cssBundle = CSS_FILES.map(f => '/* ' + f + ' */\n' + readUtf8(f)).join('\n\n');
 
 const lazyPreMarkScript =
@@ -110,7 +129,9 @@ const lazyPreMarkScript =
     '}})();';
 
 const scriptTags = [
-    '<script>\nwindow.__WIN11_INLINE_BG__ = ' + JSON.stringify(inlineBgMap) + ';\nwindow.__WIN11_INLINE_IMAGES__ = ' + JSON.stringify(inlineImagesMap) + ';\n</script>'
+    '<script>\nwindow.__WIN11_INLINE_BG__ = ' + JSON.stringify(inlineBgMap) + ';\n' +
+    'window.__WIN11_INLINE_IMAGES__ = ' + JSON.stringify(inlineImagesMap) + ';\n' +
+    'window.__WIN11_DEFAULT_LOGO__ = ' + JSON.stringify(defaultLogoB64) + ';\n</script>'
 ];
 
 for (const jsFile of CORE_AND_APP_SCRIPTS) {
@@ -178,6 +199,12 @@ cscArgs.push('/out:' + outExePath);
 cscArgs.push(csSource);
 
 execFileSync(cscPath, cscArgs, { stdio: 'inherit' });
+
+// Ensure logo files exist adjacent to EXE in dist
+if (fs.existsSync(path.join(ROOT, 'logo', 'logo.jpg'))) {
+    fs.copyFileSync(path.join(ROOT, 'logo', 'logo.jpg'), path.join(DIST_DIR, 'logo.jpg'));
+    fs.copyFileSync(path.join(ROOT, 'logo', 'logo.jpg'), path.join(DIST_DIR, 'logo.png'));
+}
 
 const exeStat = fs.statSync(outExePath);
 console.log('Portable EXE compiled:', outExePath, '(' + (exeStat.size / (1024 * 1024)).toFixed(2) + ' MB)');

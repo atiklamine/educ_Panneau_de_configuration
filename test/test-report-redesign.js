@@ -266,6 +266,44 @@ stu.quizOptIn = true;
 global.Win11Assessment.evaluate();
 console.log('[PASS] Student opted out: Section B shows zeroed/deducted rows, Section C displays pedagogical warning.');
 
+console.log('--- TEST 8: VERIFY DYNAMIC SESSION COMPLETION & PROGRESS STATUS AND LOGO ---');
+// 8.1 Setup all tasks completed
+for (let i = 0; i < tasks.length; i++) {
+    tasks[i].completed = true;
+    tasks[i].earnedPoints = tasks[i].maxPoints;
+}
+const fullSessionHtml = global.Win11Report.buildA4Html();
+assert(fullSessionHtml.includes('a4-header-logo'), 'Report header must have dedicated logo container');
+assert(fullSessionHtml.includes('<img') || fullSessionHtml.includes('<svg'), 'Report header must render logo img or official crest SVG');
+
+// 8.2 Full completion check
+assert(fullSessionHtml.includes('جلسة مكتملة ومستوفاة لكافة المهام'), 'Full session badge text');
+assert(fullSessionHtml.includes('تم تثبيت وقت الإنجاز النهائي لكافة المهام'), 'Full session clarifier');
+assert(fullSessionHtml.includes('مكتملة بالكامل'), 'Section A completion badge');
+
+// 8.3 Partial session check (2/6 completed)
+for (let i = 2; i < tasks.length; i++) {
+    tasks[i].completed = false;
+    tasks[i].earnedPoints = 0;
+}
+const partialHtml = global.Win11Report.buildA4Html();
+assert(partialHtml.includes('جلسة غير مكتملة — منجزة جزئياً'), 'Partial session badge text');
+assert(partialHtml.includes('توقيت استخراج التقرير (الجلسة غير مكتملة — بقيت'), 'Partial session clarifier');
+assert(partialHtml.includes('منجزة جزئياً'), 'Section A partial badge');
+assert(!partialHtml.includes('تم تثبيت وقت الإنجاز النهائي'), 'Partial session must NEVER claim final completion time is frozen');
+
+// 8.4 Zero session check (0/6 completed)
+for (let i = 0; i < tasks.length; i++) {
+    tasks[i].completed = false;
+    tasks[i].earnedPoints = 0;
+}
+const zeroHtml = global.Win11Report.buildA4Html();
+assert(zeroHtml.includes('جلسة غير منجزة'), 'Zero session badge text');
+assert(zeroHtml.includes('توقيت استخراج التقرير (لم تُنجز أي مهمة عملية)'), 'Zero session clarifier');
+assert(zeroHtml.includes('غير منجزة'), 'Section A zero badge');
+assert(!zeroHtml.includes('تم تثبيت وقت الإنجاز النهائي'), 'Zero session must NEVER claim final completion time is frozen');
+console.log('[PASS] Dynamic session progress and completion verified across 100%, 33%, and 0% states.');
+
 console.log('\n=========================================');
 console.log('ALL REPORT REDESIGN TESTS PASSED 100%!');
 console.log('=========================================');

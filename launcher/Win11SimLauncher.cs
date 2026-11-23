@@ -581,7 +581,7 @@ namespace Win11SimHost
                         g.DrawString("الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية", f1, b1, new RectangleF(60, 56, 1120, 32), rtlCenter);
                     }
 
-                    // Extract Institution and Teacher
+                    // Extract Institution, Teacher, Academic Year, Level
                     string instName = "المؤسسة التعليمية";
                     Match mInst = Regex.Match(html ?? "", @"inf\.dll\):[\s\S]*?<span>([^<]+)</span>");
                     if (mInst.Success) instName = CleanHtml(mInst.Groups[1].Value);
@@ -594,31 +594,120 @@ namespace Win11SimHost
                     string teachName = "الأستاذ المشرف";
                     Match mTeach = Regex.Match(html ?? "", @"المشرف البيداغوجي والمؤسسة[\s\S]*?<strong>([^<]+)</strong>");
                     if (mTeach.Success) teachName = CleanHtml(mTeach.Groups[1].Value);
-
-                    using (Font fInfo = new Font("Segoe UI", 11.5f, FontStyle.Bold))
-                    using (Brush bInfo = new SolidBrush(Color.FromArgb(71, 85, 105)))
+                    else
                     {
-                        g.DrawString("المؤسسة: " + instName + "   |   الأستاذ المشرف: " + teachName, fInfo, bInfo, new RectangleF(80, 88, 1080, 24), rtlCenter);
+                        Match mTeach2 = Regex.Match(html ?? "", @"الأستاذ المشرف:[\s\S]*?<strong>([^<]+)</strong>");
+                        if (mTeach2.Success) teachName = CleanHtml(mTeach2.Groups[1].Value);
                     }
 
-                    // Banner
+                    string acadYear = "2025/2026";
+                    Match mYear = Regex.Match(html ?? "", @"Année scolaire:[\s\S]*?<strong>([^<]+)</strong>");
+                    if (mYear.Success) acadYear = CleanHtml(mYear.Groups[1].Value);
+
+                    string levelName = "1AS (جذع مشترك)";
+                    Match mLevel = Regex.Match(html ?? "", @"Niveau:[\s\S]*?<strong>([^<]+)</strong>");
+                    if (mLevel.Success) levelName = CleanHtml(mLevel.Groups[1].Value);
+
+                    // Extract or find Logo Image
+                    Image logoImg = null;
+                    try
+                    {
+                        Match mLogo = Regex.Match(html ?? "", @"<img[^>]*src=""data:image\/[^;]+;base64,([^""]+)""");
+                        if (mLogo.Success)
+                        {
+                            byte[] imgBytes = Convert.FromBase64String(mLogo.Groups[1].Value);
+                            using (MemoryStream ms = new MemoryStream(imgBytes))
+                            {
+                                logoImg = new Bitmap(Image.FromStream(ms));
+                            }
+                        }
+                    }
+                    catch { }
+
+                    if (logoImg == null)
+                    {
+                        string[] cands = new string[] {
+                            Path.Combine(_exeDir, "logo.jpg"),
+                            Path.Combine(_exeDir, "logo.png"),
+                            Path.Combine(Path.Combine(_exeDir, "logo"), "logo.jpg"),
+                            Path.Combine(Path.Combine(_exeDir, "logo"), "logo.png")
+                        };
+                        foreach (var c in cands)
+                        {
+                            if (File.Exists(c))
+                            {
+                                try { logoImg = new Bitmap(Image.FromFile(c)); break; } catch { }
+                            }
+                        }
+                    }
+
+                    // 3-Column Header Grid (Y = 86 to 142)
+                    // Right Box: Institution & Teacher (X = 700 to 1160)
+                    using (Font fGridBold = new Font("Segoe UI", 11f, FontStyle.Bold))
+                    using (Font fGridReg = new Font("Segoe UI", 10.5f, FontStyle.Regular))
+                    using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                    {
+                        g.DrawString("المؤسسة: " + instName, fGridBold, bGridText, new RectangleF(700, 88, 460, 24), rtlRight);
+                        g.DrawString("الأستاذ المشرف: " + teachName, fGridReg, bGridText, new RectangleF(700, 114, 460, 24), rtlRight);
+                    }
+
+                    // Center Box: Logo (X = 570 to 670, Y = 84 to 142)
+                    if (logoImg != null)
+                    {
+                        float maxW = 90f;
+                        float maxH = 54f;
+                        float scale = Math.Min(maxW / logoImg.Width, maxH / logoImg.Height);
+                        float destW = logoImg.Width * scale;
+                        float destH = logoImg.Height * scale;
+                        float destX = 620f - (destW / 2f);
+                        float destY = 86f + ((maxH - destH) / 2f);
+                        g.DrawImage(logoImg, destX, destY, destW, destH);
+                    }
+                    else
+                    {
+                        // Draw vector official emblem seal
+                        using (Brush bSealBg = new SolidBrush(Color.FromArgb(248, 250, 252)))
+                        using (Pen pSealOuter = new Pen(Color.FromArgb(30, 58, 138), 2f))
+                        using (Pen pSealInner = new Pen(Color.FromArgb(22, 163, 74), 1.2f))
+                        {
+                            pSealInner.DashStyle = DashStyle.Dash;
+                            g.FillEllipse(bSealBg, 595, 88, 50, 50);
+                            g.DrawEllipse(pSealOuter, 595, 88, 50, 50);
+                            g.DrawEllipse(pSealInner, 599, 92, 42, 42);
+                        }
+                        using (Font fEmblem = new Font("Segoe UI", 8f, FontStyle.Bold))
+                        using (Brush bNavy = new SolidBrush(Color.FromArgb(30, 58, 138)))
+                        {
+                            g.DrawString("وزارة التربية", fEmblem, bNavy, new RectangleF(595, 102, 50, 20), rtlCenter);
+                        }
+                    }
+
+                    // Left Box: Année scolaire & Niveau (LTR, X = 80 to 540)
+                    using (Font fGridLtr = new Font("Segoe UI", 10.5f, FontStyle.Regular))
+                    using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                    {
+                        g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 460, 24), ltrRight);
+                        g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 114, 460, 24), ltrRight);
+                    }
+
+                    // Banner (Y = 148 to 214)
                     using (Brush bgBanner = new SolidBrush(Color.FromArgb(248, 250, 252)))
                     using (Pen pBanner = new Pen(Color.FromArgb(226, 232, 240), 1.5f))
                     {
-                        g.FillRectangle(bgBanner, 80, 116, 1080, 68);
-                        g.DrawRectangle(pBanner, 80, 116, 1080, 68);
+                        g.FillRectangle(bgBanner, 80, 148, 1080, 64);
+                        g.DrawRectangle(pBanner, 80, 148, 1080, 64);
                     }
 
-                    using (Font fTitle = new Font("Segoe UI", 17f, FontStyle.Bold))
+                    using (Font fTitle = new Font("Segoe UI", 16f, FontStyle.Bold))
                     using (Brush bTitle = new SolidBrush(Color.FromArgb(30, 58, 138)))
                     {
-                        g.DrawString("بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي", fTitle, bTitle, new RectangleF(80, 122, 1080, 32), rtlCenter);
+                        g.DrawString("بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي", fTitle, bTitle, new RectangleF(80, 154, 1080, 30), rtlCenter);
                     }
 
-                    using (Font fSub = new Font("Segoe UI", 11f, FontStyle.Regular))
+                    using (Font fSub = new Font("Segoe UI", 10.5f, FontStyle.Regular))
                     using (Brush bSub = new SolidBrush(Color.FromArgb(71, 85, 105)))
                     {
-                        g.DrawString("المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)", fSub, bSub, new RectangleF(80, 154, 1080, 24), rtlCenter);
+                        g.DrawString("المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)", fSub, bSub, new RectangleF(80, 184, 1080, 22), rtlCenter);
                     }
 
                     // Extract student info
@@ -668,85 +757,7 @@ namespace Win11SimHost
                     double.TryParse(scoreVal, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out scoreNum);
                     bool isPass = scoreNum >= 10.0;
 
-                    // Section A: Student Box
-                    using (Brush bgBox = new SolidBrush(Color.FromArgb(241, 245, 249)))
-                    using (Pen pBox = new Pen(Color.FromArgb(203, 213, 225), 1.2f))
-                    {
-                        g.FillRectangle(bgBox, 80, 192, 1080, 84);
-                        g.DrawRectangle(pBox, 80, 192, 1080, 84);
-                    }
-
-                    using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
-                    using (Brush bDark = new SolidBrush(Color.FromArgb(15, 23, 42)))
-                    {
-                        g.DrawString("اسم ولقب التلميذ(ة): " + stuName + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fLabel, bDark, new RectangleF(100, 202, 1040, 28), rtlRight);
-                        g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText, fLabel, bDark, new RectangleF(100, 236, 1040, 28), rtlRight);
-                    }
-
-                    // Top Highlights: Score Card (Right) & Duration Card (Left)
-                    // Score Box (Right: X = 630, W = 530)
-                    Color scoreBg = isPass ? Color.FromArgb(240, 253, 244) : Color.FromArgb(254, 243, 199);
-                    Color scoreBorder = isPass ? Color.FromArgb(22, 163, 74) : Color.FromArgb(217, 119, 6);
-                    Color scoreTextColor = isPass ? Color.FromArgb(21, 128, 61) : Color.FromArgb(180, 83, 9);
-
-                    using (Brush bgScore = new SolidBrush(scoreBg))
-                    using (Pen pScore = new Pen(scoreBorder, 2f))
-                    {
-                        g.FillRectangle(bgScore, 630, 286, 530, 96);
-                        g.DrawRectangle(pScore, 630, 286, 530, 96);
-                    }
-                    using (Font fScoreLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
-                    using (Brush bScoreLbl = new SolidBrush(scoreTextColor))
-                    {
-                        g.DrawString("العلامة النهائية المستحقة:", fScoreLbl, bScoreLbl, new RectangleF(640, 292, 510, 20), rtlCenter);
-                    }
-                    using (Font fScoreVal = new Font("Segoe UI", 24f, FontStyle.Bold))
-                    using (Brush bScoreVal = new SolidBrush(scoreTextColor))
-                    {
-                        // STRICT LTR SO "11.30 / 20.00" IS NEVER REVERSED TO "20.00 / 11.30"!
-                        g.DrawString(scoreVal + " / 20.00", fScoreVal, bScoreVal, new RectangleF(640, 314, 510, 30), ltrCenter);
-                    }
-                    using (Font fScoreClarifier = new Font("Segoe UI", 10f, FontStyle.Bold))
-                    using (Brush bScoreClarifier = new SolidBrush(scoreTextColor))
-                    {
-                        g.DrawString("(" + scoreVal + " من أصل 20.00)", fScoreClarifier, bScoreClarifier, new RectangleF(640, 344, 510, 18), rtlCenter);
-                    }
-                    using (Font fScoreBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
-                    using (Brush bScoreBadge = new SolidBrush(scoreTextColor))
-                    {
-                        string badgeMsg = isPass ? "✔ مستوفٍ لمعيار النجاح — معتمد" : "✘ دون المعدل المطلوب";
-                        g.DrawString(badgeMsg, fScoreBadge, bScoreBadge, new RectangleF(640, 362, 510, 18), rtlCenter);
-                    }
-
-                    // Duration Box (Left: X = 80, W = 530)
-                    using (Brush bgDur = new SolidBrush(Color.FromArgb(239, 246, 255)))
-                    using (Pen pDur = new Pen(Color.FromArgb(37, 99, 235), 2f))
-                    {
-                        g.FillRectangle(bgDur, 80, 286, 530, 96);
-                        g.DrawRectangle(pDur, 80, 286, 530, 96);
-                    }
-                    using (Font fDurLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
-                    using (Brush bBlueDark = new SolidBrush(Color.FromArgb(30, 64, 175)))
-                    {
-                        g.DrawString("الوقت الإجمالي المستغرق:", fDurLbl, bBlueDark, new RectangleF(90, 292, 510, 20), rtlCenter);
-                    }
-                    using (Font fDurVal = new Font("Consolas", 24f, FontStyle.Bold))
-                    using (Brush bBlue = new SolidBrush(Color.FromArgb(37, 99, 235)))
-                    {
-                        g.DrawString(durText, fDurVal, bBlue, new RectangleF(90, 314, 510, 30), ltrCenter);
-                    }
-                    using (Font fDurClarifier = new Font("Segoe UI", 10f, FontStyle.Bold))
-                    using (Brush bBlueClarifier = new SolidBrush(Color.FromArgb(30, 64, 175)))
-                    {
-                        g.DrawString("تم تثبيت وقت الإنجاز النهائي", fDurClarifier, bBlueClarifier, new RectangleF(90, 344, 510, 18), rtlCenter);
-                    }
-                    using (Font fDurBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
-                    using (Brush bBlueBadge = new SolidBrush(Color.FromArgb(30, 64, 175)))
-                    {
-                        g.DrawString("✔ جلسة مكتملة وموثقة بيداغوجياً", fDurBadge, bBlueBadge, new RectangleF(90, 362, 510, 18), rtlCenter);
-                    }
-
-                    // Section B: Parse Table Rows from HTML
+                    // Section B: Parse Table Rows from HTML FIRST to get task counts and completion status
                     string tableHtml = "";
                     Match mTable = Regex.Match(html ?? "", @"<table class=""a4-report-table""[^>]*>([\s\S]*?)<\/table>");
                     if (mTable.Success) tableHtml = mTable.Groups[1].Value;
@@ -814,7 +825,139 @@ namespace Win11SimHost
                         }
                     }
 
-                    int curY = 392;
+                    // Compute dynamic completion status
+                    int practicalTotal = 0;
+                    int practicalDone = 0;
+                    foreach (var r in rows)
+                    {
+                        if (!r.IsQuiz && !r.IsPenalty && !r.IsFooter)
+                        {
+                            practicalTotal++;
+                            if (r.Status.IndexOf("مكتملة", StringComparison.OrdinalIgnoreCase) >= 0 || r.Status.IndexOf("✔", StringComparison.OrdinalIgnoreCase) >= 0 || r.Status.IndexOf("✓", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                practicalDone++;
+                            }
+                        }
+                    }
+
+                    bool isAllCompleted = (practicalTotal > 0 && practicalDone == practicalTotal);
+                    bool isZeroCompleted = (practicalDone == 0);
+                    int completionPctNum = practicalTotal > 0 ? (int)Math.Round((double)practicalDone / practicalTotal * 100.0) : 0;
+
+                    // Match dynamic clarifier and badge from HTML if present
+                    string durClarifierText = "";
+                    string durBadgeText = "";
+                    Color durBgColor = Color.FromArgb(239, 246, 255);
+                    Color durBorderColor = Color.FromArgb(37, 99, 235);
+                    Color durTextColor = Color.FromArgb(30, 64, 175);
+
+                    if (isAllCompleted)
+                    {
+                        durClarifierText = "تم تثبيت وقت الإنجاز النهائي لكافة المهام";
+                        durBadgeText = "✔ جلسة مكتملة ومستوفاة لكافة المهام (" + practicalDone + " / " + practicalTotal + " مهام — 100%)";
+                        durBgColor = Color.FromArgb(240, 253, 244);
+                        durBorderColor = Color.FromArgb(22, 163, 74);
+                        durTextColor = Color.FromArgb(21, 128, 61);
+                    }
+                    else if (isZeroCompleted)
+                    {
+                        durClarifierText = "توقيت استخراج التقرير (لم تُنجز أي مهمة عملية)";
+                        durBadgeText = "✘ جلسة غير منجزة (0 / " + practicalTotal + " مهام — 0%)";
+                        durBgColor = Color.FromArgb(254, 242, 242);
+                        durBorderColor = Color.FromArgb(220, 38, 38);
+                        durTextColor = Color.FromArgb(185, 28, 28);
+                    }
+                    else
+                    {
+                        int rem = practicalTotal - practicalDone;
+                        durClarifierText = "توقيت استخراج التقرير (الجلسة غير مكتملة — بقيت " + rem + " مهام)";
+                        durBadgeText = "⚠️ جلسة غير مكتملة — منجزة جزئياً (" + practicalDone + " / " + practicalTotal + " مهام — " + completionPctNum + "%)";
+                        durBgColor = Color.FromArgb(255, 251, 235);
+                        durBorderColor = Color.FromArgb(217, 119, 6);
+                        durTextColor = Color.FromArgb(180, 83, 9);
+                    }
+
+                    string sessionProgressText = isAllCompleted ? ("مكتملة بالكامل (" + practicalDone + "/" + practicalTotal + " — 100%)") : (isZeroCompleted ? ("غير منجزة (0/" + practicalTotal + " — 0%)") : ("منجزة جزئياً (" + practicalDone + "/" + practicalTotal + " — " + completionPctNum + "%)"));
+
+                    // Section A: Student Box (Y = 220 to 304)
+                    using (Brush bgBox = new SolidBrush(Color.FromArgb(241, 245, 249)))
+                    using (Pen pBox = new Pen(Color.FromArgb(203, 213, 225), 1.2f))
+                    {
+                        g.FillRectangle(bgBox, 80, 220, 1080, 84);
+                        g.DrawRectangle(pBox, 80, 220, 1080, 84);
+                    }
+
+                    using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
+                    using (Brush bDark = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                    {
+                        g.DrawString("اسم ولقب التلميذ(ة): " + stuName + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fLabel, bDark, new RectangleF(100, 230, 1040, 28), rtlRight);
+                        g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText + "      |      حالة الجلسة: " + sessionProgressText, fLabel, bDark, new RectangleF(100, 264, 1040, 28), rtlRight);
+                    }
+
+                    // Top Highlights: Score Card (Right) & Duration Card (Left)
+                    // Score Box (Right: X = 630, W = 530, Y = 312, H = 96)
+                    Color scoreBg = isPass ? Color.FromArgb(240, 253, 244) : Color.FromArgb(254, 243, 199);
+                    Color scoreBorder = isPass ? Color.FromArgb(22, 163, 74) : Color.FromArgb(217, 119, 6);
+                    Color scoreTextColor = isPass ? Color.FromArgb(21, 128, 61) : Color.FromArgb(180, 83, 9);
+
+                    using (Brush bgScore = new SolidBrush(scoreBg))
+                    using (Pen pScore = new Pen(scoreBorder, 2f))
+                    {
+                        g.FillRectangle(bgScore, 630, 312, 530, 96);
+                        g.DrawRectangle(pScore, 630, 312, 530, 96);
+                    }
+                    using (Font fScoreLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                    using (Brush bScoreLbl = new SolidBrush(scoreTextColor))
+                    {
+                        g.DrawString("العلامة النهائية المستحقة:", fScoreLbl, bScoreLbl, new RectangleF(640, 318, 510, 20), rtlCenter);
+                    }
+                    using (Font fScoreVal = new Font("Segoe UI", 24f, FontStyle.Bold))
+                    using (Brush bScoreVal = new SolidBrush(scoreTextColor))
+                    {
+                        // STRICT LTR SO "11.30 / 20.00" IS NEVER REVERSED TO "20.00 / 11.30"!
+                        g.DrawString(scoreVal + " / 20.00", fScoreVal, bScoreVal, new RectangleF(640, 340, 510, 30), ltrCenter);
+                    }
+                    using (Font fScoreClarifier = new Font("Segoe UI", 10f, FontStyle.Bold))
+                    using (Brush bScoreClarifier = new SolidBrush(scoreTextColor))
+                    {
+                        g.DrawString("(" + scoreVal + " من أصل 20.00)", fScoreClarifier, bScoreClarifier, new RectangleF(640, 370, 510, 18), rtlCenter);
+                    }
+                    using (Font fScoreBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                    using (Brush bScoreBadge = new SolidBrush(scoreTextColor))
+                    {
+                        string badgeMsg = isPass ? "✔ مستوفٍ لمعيار النجاح — معتمد" : "✘ دون المعدل المطلوب";
+                        g.DrawString(badgeMsg, fScoreBadge, bScoreBadge, new RectangleF(640, 388, 510, 18), rtlCenter);
+                    }
+
+                    // Duration Box (Left: X = 80, W = 530, Y = 312, H = 96)
+                    using (Brush bgDur = new SolidBrush(durBgColor))
+                    using (Pen pDur = new Pen(durBorderColor, 2f))
+                    {
+                        g.FillRectangle(bgDur, 80, 312, 530, 96);
+                        g.DrawRectangle(pDur, 80, 312, 530, 96);
+                    }
+                    using (Font fDurLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                    using (Brush bDurTitle = new SolidBrush(durTextColor))
+                    {
+                        g.DrawString("الوقت المستغرق وحالة الجلسة:", fDurLbl, bDurTitle, new RectangleF(90, 318, 510, 20), rtlCenter);
+                    }
+                    using (Font fDurVal = new Font("Consolas", 24f, FontStyle.Bold))
+                    using (Brush bDurVal = new SolidBrush(durTextColor))
+                    {
+                        g.DrawString(durText, fDurVal, bDurVal, new RectangleF(90, 340, 510, 30), ltrCenter);
+                    }
+                    using (Font fDurClarifier = new Font("Segoe UI", 10f, FontStyle.Bold))
+                    using (Brush bDurClar = new SolidBrush(durTextColor))
+                    {
+                        g.DrawString(durClarifierText, fDurClarifier, bDurClar, new RectangleF(90, 370, 510, 18), rtlCenter);
+                    }
+                    using (Font fDurBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                    using (Brush bDurBadg = new SolidBrush(durTextColor))
+                    {
+                        g.DrawString(durBadgeText, fDurBadge, bDurBadg, new RectangleF(90, 388, 510, 18), rtlCenter);
+                    }
+
+                    int curY = 416;
 
                     // Section B Title
                     using (Brush bgSec = new SolidBrush(Color.FromArgb(241, 245, 249)))

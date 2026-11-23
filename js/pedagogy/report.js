@@ -1148,9 +1148,68 @@
                 '</div>' +
             '</div>';
 
-        var logoHtml = (cfg.report_logo_b64 && String(cfg.report_logo_b64).indexOf('data:image/') === 0)
-            ? '<img src="' + cfg.report_logo_b64 + '" alt="logo" style="max-height:50px;max-width:85px;object-fit:contain;">'
-            : '';
+        var activeLogoB64 = '';
+        if (cfg.report_logo_b64 && String(cfg.report_logo_b64).indexOf('data:image/') === 0) {
+            activeLogoB64 = cfg.report_logo_b64;
+        } else if (typeof window !== 'undefined' && window.__WIN11_DEFAULT_LOGO__ && String(window.__WIN11_DEFAULT_LOGO__).indexOf('data:image/') === 0) {
+            activeLogoB64 = window.__WIN11_DEFAULT_LOGO__;
+        } else if (typeof window !== 'undefined' && window.__WIN11_INLINE_IMAGES__ && window.__WIN11_INLINE_IMAGES__['logo/logo.jpg']) {
+            activeLogoB64 = window.__WIN11_INLINE_IMAGES__['logo/logo.jpg'];
+        }
+
+        var emblemSvg = '<svg width="52" height="52" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">' +
+            '<circle cx="27" cy="27" r="25" stroke="#1E3A8A" stroke-width="2" fill="#F8FAFC"/>' +
+            '<circle cx="27" cy="27" r="21" stroke="#16A34A" stroke-width="1.2" stroke-dasharray="3 2" fill="none"/>' +
+            '<path d="M16 35C20 33 24 33.5 27 35C30 33.5 34 33 38 35V23C34 21 30 21.5 27 23C24 21.5 20 21 16 23V35Z" fill="#1E3A8A" opacity="0.9"/>' +
+            '<path d="M27 23V35" stroke="#FFFFFF" stroke-width="1.2"/>' +
+            '<path d="M27 12C25 16 29 16 27 20C28.5 18 28.5 16.5 27 12Z" fill="#D97706"/>' +
+            '<circle cx="27" cy="16.5" r="1.5" fill="#DC2626"/>' +
+            '</svg>';
+
+        var logoHtml = activeLogoB64
+            ? '<img src="' + activeLogoB64 + '" alt="شعار المؤسسة" style="max-height:55px;max-width:90px;object-fit:contain;vertical-align:middle;">'
+            : ('<img src="logo/logo.jpg" onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'inline-block\';" alt="شعار" style="max-height:55px;max-width:90px;object-fit:contain;vertical-align:middle;">' +
+               '<span style="display:none;">' + emblemSvg + '</span>');
+
+        var isAllDone = (enabledTasks.length > 0 && doneTasksCount === enabledTasks.length);
+        var isZeroDone = (doneTasksCount === 0);
+        var isPartDone = (!isAllDone && !isZeroDone);
+
+        var timeCardCls = isAllDone ? 'is-done' : (isZeroDone ? 'is-fail' : 'is-partial');
+        var timeBadgeIcon = isAllDone
+            ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✔')
+            : (isPartDone
+                ? (global.Win11Icons ? global.Win11Icons.get('circleHalf', 11) : '⚠️')
+                : (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✘'));
+
+        var timeBadgeText = '';
+        var timeClarifierText = '';
+        var timeClarifierColor = '';
+
+        if (isAllDone) {
+            timeBadgeText = 'جلسة مكتملة ومستوفاة لكافة المهام (' + doneTasksCount + ' / ' + enabledTasks.length + ' مهام — 100%)';
+            timeClarifierText = 'تم تثبيت وقت الإنجاز النهائي لكافة المهام';
+            timeClarifierColor = '#15803D';
+        } else if (isPartDone) {
+            var remainingTasks = enabledTasks.length - doneTasksCount;
+            timeBadgeText = 'جلسة غير مكتملة — منجزة جزئياً (' + doneTasksCount + ' / ' + enabledTasks.length + ' مهام — ' + completionPct + '%)';
+            timeClarifierText = 'توقيت استخراج التقرير (الجلسة غير مكتملة — بقيت ' + remainingTasks + ' مهام)';
+            timeClarifierColor = '#B45309';
+        } else {
+            timeBadgeText = 'جلسة غير منجزة (0 / ' + enabledTasks.length + ' مهام — 0%)';
+            timeClarifierText = 'توقيت استخراج التقرير (لم تُنجز أي مهمة عملية)';
+            timeClarifierColor = '#DC2626';
+        }
+
+        var sessionProgressBadgeHtml = '';
+        if (isAllDone) {
+            sessionProgressBadgeHtml = '<span class="a4-pass-badge is-pass" style="font-size:10.5px;padding:2px 8px;">✔ ' + bidi('مكتملة بالكامل') + ' (<bdi dir="ltr">' + doneTasksCount + ' / ' + enabledTasks.length + '</bdi> — <bdi dir="ltr">100%</bdi>)</span>';
+        } else if (isPartDone) {
+            sessionProgressBadgeHtml = '<span class="a4-pass-badge is-partial" style="font-size:10.5px;padding:2px 8px;background:#FFFBEB;color:#B45309;border:1px solid #D97706;">⚠️ ' + bidi('منجزة جزئياً') + ' (<bdi dir="ltr">' + doneTasksCount + ' / ' + enabledTasks.length + '</bdi> — <bdi dir="ltr">' + completionPct + '%</bdi>)</span>';
+        } else {
+            sessionProgressBadgeHtml = '<span class="a4-pass-badge is-fail" style="font-size:10.5px;padding:2px 8px;">✘ ' + bidi('غير منجزة') + ' (<bdi dir="ltr">0 / ' + enabledTasks.length + '</bdi> — <bdi dir="ltr">0%</bdi>)</span>';
+        }
+
         var studentName = (stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || '');
         var pcNum = global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01'));
 
@@ -1189,8 +1248,8 @@
                                 '<div class="a4-cell-val"><bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></div>' +
                             '</td>' +
                             '<td>' +
-                                '<div class="a4-cell-lbl">' + bidi('الوقت الإجمالي المستغرق:') + '</div>' +
-                                '<div class="a4-cell-val" style="font-family:Consolas,monospace;font-weight:700;color:#1E3A8A;font-size:13px;"><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></div>' +
+                                '<div class="a4-cell-lbl">' + bidi('حالة إنجاز الجلسة والتقدم:') + '</div>' +
+                                '<div class="a4-cell-val">' + sessionProgressBadgeHtml + '</div>' +
                             '</td>' +
                         '</tr>' +
                     '</tbody>' +
@@ -1204,10 +1263,6 @@
                     ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✓')
                     : (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗');
                 var passBadgeText = isPassed ? 'مستوفٍ لمعيار النجاح' : 'دون المعدل المطلوب';
-                var timeBadgeIcon = stu.allCompleted
-                    ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✓')
-                    : (global.Win11Icons ? global.Win11Icons.get('hourglass', 11) : '');
-                var timeBadgeText = stu.allCompleted ? 'تم تثبيت وقت الإنجاز النهائي' : 'جلسة قيد الإنجاز';
 
                 var topSummaryCardHtml =
                     '<div class="a4-top-summary-card">' +
@@ -1217,11 +1272,11 @@
                             '<div class="a4-tsc-clarifier" style="font-size:11px;font-weight:700;color:' + (isPassed ? '#15803D' : '#B45309') + ';margin-top:1px;">(' + finalScoreStr + ' من أصل 20.00)</div>' +
                             '<div class="a4-tsc-badge"><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + passBadgeIcon + ' <span>' + bidi(passBadgeText) + '</span> — <strong>' + bidi(scores.appreciation || 'متوسط') + '</strong></span></div>' +
                         '</div>' +
-                        '<div class="a4-tsc-time">' +
-                            '<div class="a4-tsc-title">' + bidi('الوقت الإجمالي المستغرق:') + '</div>' +
+                        '<div class="a4-tsc-time ' + timeCardCls + '">' +
+                            '<div class="a4-tsc-title">' + bidi('الوقت المستغرق وحالة الجلسة:') + '</div>' +
                             '<div class="a4-tsc-grade"><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></div>' +
-                            '<div class="a4-tsc-clarifier" style="font-size:11px;font-weight:700;color:#1D4ED8;margin-top:1px;">' + bidi('تم تثبيت وقت الإنجاز النهائي') + '</div>' +
-                            '<div class="a4-tsc-badge"><span class="a4-badge is-done" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + timeBadgeIcon + ' <span>' + bidi(timeBadgeText) + '</span></span></div>' +
+                            '<div class="a4-tsc-clarifier" style="font-size:11px;font-weight:700;color:' + timeClarifierColor + ';margin-top:1px;">' + bidi(timeClarifierText) + '</div>' +
+                            '<div class="a4-tsc-badge"><span class="a4-badge ' + timeCardCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + timeBadgeIcon + ' <span>' + bidi(timeBadgeText) + '</span></span></div>' +
                         '</div>' +
                     '</div>';
 
@@ -1381,12 +1436,12 @@
                 '<div class="a4-header">' +
                     '<div class="a4-header-republic">' + bidi('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية') + '</div>' +
                     '<div class="a4-header-grid">' +
-                        '<div style="text-align:right;">' +
+                        '<div class="a4-header-right" style="text-align:right;">' +
                             '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong></div>' +
                             '<div>الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
                         '</div>' +
-                        (logoHtml ? '<div>' + logoHtml + '</div>' : '') +
-                        '<div style="text-align:left;" dir="ltr">' +
+                        '<div class="a4-header-logo" style="text-align:center;">' + logoHtml + '</div>' +
+                        '<div class="a4-header-left" style="text-align:left;" dir="ltr">' +
                             '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong></div>' +
                             '<div>Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
                         '</div>' +
@@ -1434,6 +1489,9 @@
             '.a4-header{border-bottom:2px solid #1E3A8A;padding-bottom:8px;margin-bottom:8px;}\n' +
             '.a4-header-republic{text-align:center;font-size:13.5px;font-weight:700;color:#0F172A;margin-bottom:6px;}\n' +
             '.a4-header-grid{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#334155;margin-bottom:8px;line-height:1.4;}\n' +
+            '.a4-header-right{text-align:right;flex:1 1 35%;}\n' +
+            '.a4-header-logo{text-align:center;flex:0 0 100px;display:flex;justify-content:center;align-items:center;}\n' +
+            '.a4-header-left{text-align:left;flex:1 1 35%;}\n' +
             '.a4-banner{text-align:center;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 12px;}\n' +
             '.a4-banner-title{font-size:15px;font-weight:800;color:#1E3A8A;}\n' +
             '.a4-banner-sub{font-size:11.5px;color:#475569;margin-top:2px;}\n' +
@@ -1459,6 +1517,12 @@
             '.a4-tsc-score{flex:1 1 50%;background:#F0FDF4;border:2px solid #16A34A;border-radius:6px;padding:8px 10px;text-align:center;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;}\n' +
             '.a4-tsc-score.is-fail{background:#FFFBEB;border-color:#D97706;}\n' +
             '.a4-tsc-time{flex:1 1 50%;background:#EFF6FF;border:2px solid #2563EB;border-radius:6px;padding:8px 10px;text-align:center;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;}\n' +
+            '.a4-tsc-time.is-done{background:#F0FDF4;border-color:#16A34A;}\n' +
+            '.a4-tsc-time.is-done .a4-tsc-grade{color:#15803D;}\n' +
+            '.a4-tsc-time.is-partial{background:#FFFBEB;border-color:#D97706;}\n' +
+            '.a4-tsc-time.is-partial .a4-tsc-grade{color:#B45309;}\n' +
+            '.a4-tsc-time.is-fail{background:#FEF2F2;border-color:#DC2626;}\n' +
+            '.a4-tsc-time.is-fail .a4-tsc-grade{color:#DC2626;}\n' +
             '.a4-tsc-title{font-size:11.5px;font-weight:700;color:#475569;margin-bottom:2px;}\n' +
             '.a4-tsc-grade{font-size:26px;font-weight:900;color:#15803D;line-height:1.15;margin:2px 0;}\n' +
             '.a4-tsc-score.is-fail .a4-tsc-grade{color:#B45309;}\n' +
@@ -1660,27 +1724,41 @@
             ctx.fillStyle = isPassed ? '#15803D' : '#DC2626';
             ctx.fillText('(' + finalScoreStr + ' من أصل 20.00)', 252, 248);
 
+            var isAllDone = (enabledTasks.length > 0 && doneTasksCount === enabledTasks.length);
+            var isZeroDone = (doneTasksCount === 0);
+            var isPartDone = (!isAllDone && !isZeroDone);
+
             // Card 2: Duration Card (445, 182, 350, 76)
-            ctx.fillStyle = '#EFF6FF';
+            var durBg = isAllDone ? '#F0FDF4' : (isPartDone ? '#FFFBEB' : '#FEF2F2');
+            var durBorder = isAllDone ? '#16A34A' : (isPartDone ? '#D97706' : '#DC2626');
+            var durTextCol = isAllDone ? '#15803D' : (isPartDone ? '#B45309' : '#DC2626');
+            var durTitle = 'الوقت المستغرق وحالة الجلسة:';
+            var durClarifier = isAllDone
+                ? 'تم تثبيت وقت الإنجاز النهائي لكافة المهام'
+                : (isPartDone
+                    ? ('توقيت استخراج التقرير (غير مكتملة — بقيت ' + (enabledTasks.length - doneTasksCount) + ' مهام)')
+                    : 'توقيت استخراج التقرير (لم تُنجز أي مهمة)');
+
+            ctx.fillStyle = durBg;
             ctx.fillRect(445, 182, 350, 76);
-            ctx.strokeStyle = '#2563EB';
+            ctx.strokeStyle = durBorder;
             ctx.lineWidth = 2;
             ctx.strokeRect(445, 182, 350, 76);
 
             ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#1E40AF';
-            ctx.fillText('الوقت الإجمالي المستغرق:', 620, 202);
+            ctx.fillStyle = durTextCol;
+            ctx.fillText(durTitle, 620, 202);
 
             ctx.save();
             ctx.direction = 'ltr';
             ctx.font = 'bold 22px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#1D4ED8';
+            ctx.fillStyle = durTextCol;
             ctx.fillText(totalDurationStr, 620, 229);
             ctx.restore();
 
             ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#1D4ED8';
-            ctx.fillText('تم تثبيت وقت الإنجاز النهائي', 620, 248);
+            ctx.fillStyle = durTextCol;
+            ctx.fillText(durClarifier, 620, 248);
 
             // Card 3: Completion / Mode Card (815, 182, 345, 76)
             ctx.fillStyle = '#F8FAFC';
@@ -1691,12 +1769,17 @@
 
             ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#334155';
-            ctx.fillText('التقدم الكلي والنمط:', 987, 204);
+            ctx.fillText('التقدم الكلي والنمط:', 987, 202);
 
             ctx.font = 'bold 17px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#0F172A';
+            ctx.fillStyle = isAllDone ? '#15803D' : (isPartDone ? '#B45309' : '#DC2626');
             var modeLbl = isExam ? 'امتحان رسمي' : 'استطلاع وتدريب';
-            ctx.fillText(completionPct + '% (' + modeLbl + ')', 987, 238);
+            ctx.fillText(completionPct + '% (' + modeLbl + ')', 987, 228);
+
+            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = isAllDone ? '#15803D' : (isPartDone ? '#B45309' : '#DC2626');
+            var compBadgeTxt = isAllDone ? '✔ مكتملة (100%)' : (isPartDone ? '⚠️ غير مكتملة جزئياً' : '✘ غير منجزة');
+            ctx.fillText(compBadgeTxt, 987, 248);
 
             // 3. Section A: Student Metadata Box (Y = 268..338)
             ctx.fillStyle = '#F8FAFC';
@@ -1713,7 +1796,8 @@
 
             ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#475569';
-            ctx.fillText('المستوى: السنة الأولى ثانوي (1AS) — الوحدة 3: لوحة التحكم وإعدادات النظام      |      تاريخ الإنجاز: ' + dateFormatted, 1140, 323);
+            var sessStatusStr = isAllDone ? 'مكتملة بالكامل (100%)' : (isPartDone ? ('غير مكتملة — منجزة جزئياً (' + completionPct + '%)') : 'غير منجزة (0%)');
+            ctx.fillText('تاريخ الإنجاز: ' + dateFormatted + '      |      حالة الجلسة والتقدم: ' + sessStatusStr, 1140, 323);
 
             // 4. Section B: Table Header (Y = 348..378)
             var curY = 348;

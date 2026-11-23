@@ -204,7 +204,7 @@
             theme_lock: false,
             multi_user_mode: true,
             lock_fullscreen_in_exam: false,
-            report_logo_b64: '',
+            report_logo_b64: (typeof window !== 'undefined' && window.__WIN11_DEFAULT_LOGO__) ? window.__WIN11_DEFAULT_LOGO__ : '',
             show_mistakes: true,
             show_penalties: true,
             show_time: true,
