@@ -546,7 +546,7 @@
         var cfg = global.Win11Assessment.getConfig();
         var tpl = (cfg && cfg.filename_template)
             ? String(cfg.filename_template)
-            : 'Class_{class}_Score_{score}_Time_{time}_Student_{student_lastname}_{student_firstname}';
+            : 'Class_{class}_PC_{device}_Score_{score}_Time_{time}_Student_{student_lastname}_{student_firstname}';
 
         var nameParts = (stu.lastName && stu.firstName)
             ? { lastname: cleanFileToken(stu.lastName), firstname: cleanFileToken(stu.firstName) }
@@ -558,8 +558,10 @@
             ? global.Win11State.getSimulatedNow()
             : new Date();
 
+        var devNum = stu.pcNumber || stu.deviceNumber || (cfg && cfg.default_device) || '01';
         var tokens = {
-            '{class}': cleanFileToken(stu.classGroup),
+            '{class}': cleanFileToken(stu.classGroup || (cfg && cfg.class_groups && cfg.class_groups[0]) || '01'),
+            '{device}': cleanFileToken(devNum),
             '{score}': scores.net.toFixed(2),
             '{time}': cleanFileToken(timeTok),
             '{student_lastname}': nameParts.lastname,

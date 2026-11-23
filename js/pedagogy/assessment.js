@@ -187,7 +187,7 @@
             academic_year: '2026 / 2027',
             wallpaper_source_folder: 'C:\\Users\\<user>\\Pictures\\',
             mode: 'training', // 'training' (Exploration) | 'exam'
-            filename_template: 'Class_{class}_Score_{score}_Time_{time}_Student_{student_lastname}_{student_firstname}',
+            filename_template: 'Class_{class}_PC_{device}_Score_{score}_Time_{time}_Student_{student_lastname}_{student_firstname}',
             device_numbers: ['01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20'],
             default_device: '01',
             exam_time_limit_min: 0,
@@ -1526,7 +1526,7 @@
             };
             var fetchTimer = setTimeout(function () {
                 safeFinish();
-            }, 2000);
+            }, 8000);
 
             global.fetch('/api/inf', { cache: 'no-store' }).then(function (resp) {
                 clearTimeout(fetchTimer);

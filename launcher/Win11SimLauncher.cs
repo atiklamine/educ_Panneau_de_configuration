@@ -37,12 +37,7 @@ namespace Win11SimHost
         {
             try
             {
-                string target = _infPath;
-                if (!File.Exists(target))
-                {
-                    string p2 = Path.Combine(Environment.CurrentDirectory, "inf.dll");
-                    if (File.Exists(p2)) target = p2;
-                }
+                string target = Program.ResolveInfDllPath();
                 if (!File.Exists(target)) return "";
                 byte[] bytes = File.ReadAllBytes(target);
                 return Convert.ToBase64String(bytes);
@@ -63,15 +58,16 @@ namespace Win11SimHost
                 {
                     return false;
                 }
-                string tmp = _infPath + ".tmp";
+                string target = Program.ResolveInfDllPath();
+                string tmp = target + ".tmp";
                 File.WriteAllBytes(tmp, bytes);
-                if (File.Exists(_infPath))
+                if (File.Exists(target))
                 {
-                    File.Replace(tmp, _infPath, null);
+                    File.Replace(tmp, target, null);
                 }
                 else
                 {
-                    File.Move(tmp, _infPath);
+                    File.Move(tmp, target);
                 }
                 return true;
             }
@@ -1092,6 +1088,7 @@ namespace Win11SimHost
             }
         }
 
+        private static byte[] _htmlGzBytes;
         private static byte[] _htmlBytes;
         private static string _exeDir;
         private static string _infPath;
@@ -1101,6 +1098,106 @@ namespace Win11SimHost
         private static string _tempProfileDir = null;
         private static DateTime _lastPingUtc = DateTime.UtcNow;
         private static volatile bool _hasReceivedPing = false;
+
+        public static string ResolveInfDllPath()
+        {
+            List<string> candidateDirs = new List<string>();
+
+            // 1. Process MainModule (physical directory of the running .exe)
+            try
+            {
+                string exePath = Process.GetCurrentProcess().MainModule.FileName;
+                if (!string.IsNullOrEmpty(exePath))
+                {
+                    string d = Path.GetDirectoryName(exePath);
+                    if (!string.IsNullOrEmpty(d) && !candidateDirs.Contains(d)) candidateDirs.Add(d);
+                }
+            }
+            catch { }
+
+            // 2. Assembly Location directory
+            try
+            {
+                string asmLoc = Assembly.GetExecutingAssembly().Location;
+                if (!string.IsNullOrEmpty(asmLoc))
+                {
+                    string d = Path.GetDirectoryName(asmLoc);
+                    if (!string.IsNullOrEmpty(d) && !candidateDirs.Contains(d)) candidateDirs.Add(d);
+                }
+            }
+            catch { }
+
+            // 3. AppDomain BaseDirectory
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                if (!string.IsNullOrEmpty(baseDir))
+                {
+                    baseDir = baseDir.TrimEnd('\\', '/');
+                    if (!candidateDirs.Contains(baseDir)) candidateDirs.Add(baseDir);
+                }
+            }
+            catch { }
+
+            // 4. Environment CurrentDirectory
+            try
+            {
+                string curDir = Environment.CurrentDirectory;
+                if (!string.IsNullOrEmpty(curDir))
+                {
+                    curDir = curDir.TrimEnd('\\', '/');
+                    if (!candidateDirs.Contains(curDir)) candidateDirs.Add(curDir);
+                }
+            }
+            catch { }
+
+            // 5. Parent directories of all candidate directories
+            int initialCount = candidateDirs.Count;
+            for (int i = 0; i < initialCount; i++)
+            {
+                try
+                {
+                    DirectoryInfo parent = Directory.GetParent(candidateDirs[i]);
+                    if (parent != null && parent.Exists && !candidateDirs.Contains(parent.FullName))
+                    {
+                        candidateDirs.Add(parent.FullName);
+                    }
+                }
+                catch { }
+            }
+
+            // Search for inf.dll in each directory
+            for (int i = 0; i < candidateDirs.Count; i++)
+            {
+                try
+                {
+                    string dir = candidateDirs[i];
+                    if (!Directory.Exists(dir)) continue;
+
+                    string direct = Path.Combine(dir, "inf.dll");
+                    if (File.Exists(direct))
+                    {
+                        return Path.GetFullPath(direct);
+                    }
+
+                    // Directory scan fallback in case of Samba/Linux share case variations
+                    string[] files = Directory.GetFiles(dir, "*inf*.dll");
+                    for (int f = 0; f < files.Length; f++)
+                    {
+                        string fname = Path.GetFileName(files[f]);
+                        if (string.Equals(fname, "inf.dll", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return Path.GetFullPath(files[f]);
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // If not found, default to primary executable directory
+            string fallbackDir = candidateDirs.Count > 0 ? candidateDirs[0] : AppDomain.CurrentDomain.BaseDirectory;
+            return Path.Combine(fallbackDir, "inf.dll");
+        }
 
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
@@ -1143,7 +1240,9 @@ namespace Win11SimHost
                     {
                         if (title.IndexOf("محاكي", StringComparison.OrdinalIgnoreCase) >= 0 ||
                             title.IndexOf("Windows 11", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            title.IndexOf("المساعد البيداغوجي", StringComparison.OrdinalIgnoreCase) >= 0)
+                            title.IndexOf("المساعد البيداغوجي", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            title.IndexOf("127.0.0.1", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            title.IndexOf("Win11", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             targetHwnd = hWnd;
                             return false; // Stop enumeration
@@ -1183,7 +1282,7 @@ namespace Win11SimHost
         static int Main(string[] args)
         {
             _exeDir = AppDomain.CurrentDomain.BaseDirectory;
-            _infPath = Path.Combine(_exeDir, "inf.dll");
+            _infPath = ResolveInfDllPath();
 
             int requestedPort = 0;
             bool noBrowser = false;
@@ -1238,9 +1337,9 @@ namespace Win11SimHost
             {
                 if (!noBrowser && !embeddedBrowser)
                 {
-                    SplashScreen.Update(35, "فك ضغط الموارد التعليمية المضمنة...");
+                    SplashScreen.Update(35, "تحميل الموارد التعليمية المضمنة...");
                 }
-                _htmlBytes = LoadEmbeddedHtmlBytes();
+                LoadEmbeddedHtml();
             }
             catch (Exception ex)
             {
@@ -1318,23 +1417,42 @@ namespace Win11SimHost
             return 0;
         }
 
-        private static byte[] LoadEmbeddedHtmlBytes()
+        private static void LoadEmbeddedHtml()
         {
+            if (_htmlGzBytes != null && _htmlGzBytes.Length > 0) return;
             Assembly asm = Assembly.GetExecutingAssembly();
             using (Stream raw = asm.GetManifestResourceStream("Win11_Simulator_1AS.html.gz"))
             {
                 if (raw == null) throw new InvalidOperationException("Missing embedded HTML resource.");
-                using (GZipStream gz = new GZipStream(raw, CompressionMode.Decompress))
-                using (MemoryStream ms = new MemoryStream())
+                using (MemoryStream msGz = new MemoryStream())
                 {
                     byte[] buf = new byte[65536];
                     int read;
-                    while ((read = gz.Read(buf, 0, buf.Length)) > 0)
+                    while ((read = raw.Read(buf, 0, buf.Length)) > 0)
                     {
-                        ms.Write(buf, 0, read);
+                        msGz.Write(buf, 0, read);
                     }
-                    return ms.ToArray();
+                    _htmlGzBytes = msGz.ToArray();
                 }
+            }
+        }
+
+        private static byte[] GetDecompressedHtmlBytes()
+        {
+            if (_htmlBytes != null) return _htmlBytes;
+            if (_htmlGzBytes == null) LoadEmbeddedHtml();
+            using (MemoryStream msIn = new MemoryStream(_htmlGzBytes))
+            using (GZipStream gz = new GZipStream(msIn, CompressionMode.Decompress))
+            using (MemoryStream msOut = new MemoryStream())
+            {
+                byte[] buf = new byte[65536];
+                int read;
+                while ((read = gz.Read(buf, 0, buf.Length)) > 0)
+                {
+                    msOut.Write(buf, 0, read);
+                }
+                _htmlBytes = msOut.ToArray();
+                return _htmlBytes;
             }
         }
 
@@ -1405,6 +1523,7 @@ namespace Win11SimHost
                 int contentLength = 0;
                 string headerContentType = null;
                 string headerFilename = null;
+                bool clientAcceptsGzip = false;
                 for (int i = 1; i < lines.Length; i++)
                 {
                     string l = lines[i];
@@ -1419,6 +1538,13 @@ namespace Win11SimHost
                     else if (l.StartsWith("X-Filename:", StringComparison.OrdinalIgnoreCase))
                     {
                         headerFilename = l.Substring(11).Trim();
+                    }
+                    else if (l.StartsWith("Accept-Encoding:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (l.IndexOf("gzip", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            clientAcceptsGzip = true;
+                        }
                     }
                 }
 
@@ -1454,26 +1580,7 @@ namespace Win11SimHost
                 {
                     if (method == "GET")
                     {
-                        string targetInf = _infPath;
-                        if (!File.Exists(targetInf))
-                        {
-                            string curDirInf = Path.Combine(Environment.CurrentDirectory, "inf.dll");
-                            if (File.Exists(curDirInf)) targetInf = curDirInf;
-                        }
-                        if (!File.Exists(targetInf))
-                        {
-                            try
-                            {
-                                string asmDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                                if (!string.IsNullOrEmpty(asmDir))
-                                {
-                                    string asmInf = Path.Combine(asmDir, "inf.dll");
-                                    if (File.Exists(asmInf)) targetInf = asmInf;
-                                }
-                            }
-                            catch { }
-                        }
-
+                        string targetInf = ResolveInfDllPath();
                         if (!File.Exists(targetInf))
                         {
                             SendResponse(stream, 204, "No Content", "application/octet-stream", new byte[0], true);
@@ -1497,16 +1604,18 @@ namespace Win11SimHost
                             return;
                         }
 
+                        string targetInf = ResolveInfDllPath();
                         try
                         {
-                            if (File.Exists(_infPath))
+                            if (File.Exists(targetInf))
                             {
-                                File.Delete(_infPath);
+                                File.Delete(targetInf);
                             }
                         }
                         catch { }
 
-                        File.WriteAllBytes(_infPath, body);
+                        File.WriteAllBytes(targetInf, body);
+                        _infPath = targetInf;
 
                         byte[] okJson = Encoding.UTF8.GetBytes("{\"ok\":true}");
                         SendResponse(stream, 200, "OK", "application/json; charset=utf-8", okJson, true);
@@ -1903,7 +2012,15 @@ namespace Win11SimHost
 
                 if (path == "/" || path == "/index.html")
                 {
-                    SendResponse(stream, 200, "OK", "text/html; charset=utf-8", _htmlBytes, true);
+                    if (clientAcceptsGzip && _htmlGzBytes != null && _htmlGzBytes.Length > 0)
+                    {
+                        SendResponse(stream, 200, "OK", "text/html; charset=utf-8", _htmlGzBytes, true, "gzip");
+                    }
+                    else
+                    {
+                        byte[] rawHtml = GetDecompressedHtmlBytes();
+                        SendResponse(stream, 200, "OK", "text/html; charset=utf-8", rawHtml, true, null);
+                    }
                     client.Close();
                     return;
                 }
@@ -1933,9 +2050,18 @@ namespace Win11SimHost
 
         private static void SendResponse(NetworkStream stream, int statusCode, string statusReason, string contentType, byte[] data, bool cors)
         {
+            SendResponse(stream, statusCode, statusReason, contentType, data, cors, null);
+        }
+
+        private static void SendResponse(NetworkStream stream, int statusCode, string statusReason, string contentType, byte[] data, bool cors, string contentEncoding)
+        {
             StringBuilder sb = new StringBuilder();
             sb.AppendFormat("HTTP/1.1 {0} {1}\r\n", statusCode, statusReason);
             sb.AppendFormat("Content-Type: {0}\r\n", contentType);
+            if (!string.IsNullOrEmpty(contentEncoding))
+            {
+                sb.AppendFormat("Content-Encoding: {0}\r\n", contentEncoding);
+            }
             sb.AppendFormat("Content-Length: {0}\r\n", data != null ? data.Length : 0);
             sb.Append("Cache-Control: no-store, no-cache, must-revalidate\r\n");
             sb.Append("X-UA-Compatible: IE=edge\r\n");
@@ -2078,7 +2204,12 @@ namespace Win11SimHost
             string chromium = FindChromiumBrowser();
             if (chromium != null)
             {
-                _tempProfileDir = Path.Combine(Path.GetTempPath(), "win11sim_prof_" + Guid.NewGuid().ToString("N"));
+                string localAppDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                if (string.IsNullOrEmpty(localAppDir) || !Directory.Exists(localAppDir))
+                {
+                    localAppDir = Path.GetTempPath();
+                }
+                _tempProfileDir = Path.Combine(localAppDir, "Win11Sim_UserData_1AS");
                 Directory.CreateDirectory(_tempProfileDir);
                 try
                 {
@@ -2111,6 +2242,8 @@ namespace Win11SimHost
                         "--noerrdialogs " +
                         "--disable-infobars " +
                         "--test-type " +
+                        "--disable-hang-monitor " +
+                        "--disable-prompt-on-repost " +
                         "--disable-save-password-bubble " +
                         "--disable-single-click-autofill " +
                         "--disable-autofill-keyboard-accessory-view " +
@@ -2126,9 +2259,10 @@ namespace Win11SimHost
                         "--safebrowsing-disable-auto-update " +
                         "--safebrowsing-disable-extension-blacklist " +
                         "--disable-component-update " +
+                        "--disk-cache-size=20971520 " +
                         "--proxy-server=\"direct://\" " +
                         "--proxy-bypass-list=\"*\" " +
-                        "--disable-features=msSmartScreenProtection,msSmartScreenPua,msSmartScreenPhishing,msDefenderSmartScreen,ScarewareBlockerProtectionEnabled,ScarewareBlockerBlocksDetectedSitesEnabled,msScarewareBlocker,msEdgeScarewareBlocker,SafetyHub,msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled,msPasswordManager,msPasswordHealth,msWalletPasswordManager,msShowPasswordManagerOffer " +
+                        "--disable-features=msSmartScreenProtection,msSmartScreenPua,msSmartScreenPhishing,msDefenderSmartScreen,ScarewareBlockerProtectionEnabled,ScarewareBlockerBlocksDetectedSitesEnabled,msScarewareBlocker,msEdgeScarewareBlocker,SafetyHub,msEdgeStartupBoost,msStartupBoost,msPreemptiveLaunch,msEdgePreemptiveLaunch,Translate,msAccountSync,ChromeWhatsNewUI,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled,msPasswordManager,msPasswordHealth,msWalletPasswordManager,msShowPasswordManagerOffer,OptimizationHints,MediaRouter " +
                         "--disable-background-mode " +
                         "--disable-backgrounding-occluded-windows " +
                         "--new-window " +
@@ -2346,7 +2480,8 @@ namespace Win11SimHost
             {
                 try
                 {
-                    Directory.Delete(_tempProfileDir, true);
+                    string lockFile = Path.Combine(_tempProfileDir, "lockfile");
+                    if (File.Exists(lockFile)) File.Delete(lockFile);
                 }
                 catch { }
                 _tempProfileDir = null;

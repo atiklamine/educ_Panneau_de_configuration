@@ -13,6 +13,7 @@
 
     var ALL_TOKENS = [
         { token: '{class}', label: 'الفوج ({class})' },
+        { token: '{device}', label: 'الحاسوب ({device})' },
         { token: '{score}', label: 'العلامة ({score})' },
         { token: '{time}', label: 'الزمن ({time})' },
         { token: '{student_lastname}', label: 'اللقب ({student_lastname})' },
@@ -58,7 +59,8 @@
         if (dd.length < 2) dd = '0' + dd;
         var out = String(pat || '');
         var sampleMap = {
-            '{class}': '1AS_ST_G1',
+            '{class}': '01',
+            '{device}': '01',
             '{score}': '20.00',
             '{time}': '00-15-30',
             '{student_lastname}': 'BENALI',
