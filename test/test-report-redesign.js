@@ -252,7 +252,7 @@ const reportOptOutHtml = global.Win11Report.buildA4Html(optOutScores);
 
 // Section B MUST show quiz rows because points were zeroed/deducted!
 assert(reportOptOutHtml.includes('a4-type-badge is-quiz'), 'Section B must show quiz rows when student opted out');
-assert(reportOptOutHtml.includes('معطّل ✘'), 'Section B must show opted-out badge');
+assert(reportOptOutHtml.includes('معطّل') && reportOptOutHtml.includes('is-skipped'), 'Section B must show opted-out badge');
 assert(reportOptOutHtml.includes('تم إلغاء تفعيل الأسئلة بطلب من التلميذ'), 'Section B notes must explain student opted out');
 assert(reportOptOutHtml.includes('معطّل'), 'Section B must show opted out status');
 assert(reportOptOutHtml.includes('0.00') && reportOptOutHtml.includes('(0%)'), 'Section B must show 0.00 earned');

@@ -33,7 +33,7 @@
         var locMsg = desktopPath ? 'تم حفظ تقرير PDF الرسمي على سطح المكتب باسم:' : 'تم استخراج وحفظ تقرير PDF الرسمي باسم:';
 
         toast.innerHTML =
-            '<span class="export-toast-icon">✓</span>' +
+            '<span class="export-toast-icon">' + (global.Win11Icons ? global.Win11Icons.get('check', 16) : '✓') + '</span>' +
             '<div class="export-toast-body">' +
                 '<span>' + bidi(locMsg) + ' </span>' +
                 '<bdi dir="ltr" class="export-toast-filename">' + esc(filename) + '</bdi>' +
@@ -104,15 +104,17 @@
         var statusNoteHtml = '';
         if (isAllDone) {
             statusNoteHtml =
-                '<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:8px 12px;font-size:12px;color:#065F46;text-align:right;line-height:1.5;">' +
-                    '✔ <strong>' + bidi('تهانينا! تم إنجاز كافة المهام بنجاح (100%) وتثبيت وقت إنجازك النهائي.') + '</strong>' +
+                '<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:8px 12px;font-size:12px;color:#065F46;text-align:right;line-height:1.5;display:flex;align-items:center;gap:6px;">' +
+                    (global.Win11Icons ? global.Win11Icons.get('check', 14) : '') +
+                    '<strong>' + bidi('تهانينا! تم إنجاز كافة المهام بنجاح (100%) وتثبيت وقت إنجازك النهائي.') + '</strong>' +
                 '</div>';
         } else {
             var doneCount = allTasks.length - uncompletedTasks.length;
             statusNoteHtml =
-                '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;font-size:12px;color:#92400E;text-align:right;line-height:1.5;">' +
-                    '💡 <strong>' + bidi('تنبيه بيداغوجي:') + '</strong> ' +
-                    bidi('تم استيفاء ') + '<strong dir="ltr">' + doneCount + '</strong>' + bidi(' من أصل ') + '<strong dir="ltr">' + allTasks.length + '</strong>' + bidi(' مهام. تم حفظ هذا التقرير كمعاينة مرحلية؛ يمكنك الضغط على «مواصلة المحاكاة» لإتمام ما تبقى ورفع علامتك المستحقة.') +
+                '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;font-size:12px;color:#92400E;text-align:right;line-height:1.5;display:flex;align-items:flex-start;gap:6px;">' +
+                    (global.Win11Icons ? global.Win11Icons.get('bulb', 14) : '') +
+                    '<div><strong>' + bidi('تنبيه بيداغوجي:') + '</strong> ' +
+                    bidi('تم استيفاء ') + '<strong dir="ltr">' + doneCount + '</strong>' + bidi(' من أصل ') + '<strong dir="ltr">' + allTasks.length + '</strong>' + bidi(' مهام. تم حفظ هذا التقرير كمعاينة مرحلية؛ يمكنك الضغط على «مواصلة المحاكاة» لإتمام ما تبقى ورفع علامتك المستحقة.') + '</div>' +
                 '</div>';
         }
 
@@ -194,7 +196,7 @@
             renderBody: function (wrap) {
                 wrap.innerHTML =
                     '<div style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:4px 0">' +
-                        '<div style="font-size:38px;color:#107C41;line-height:1">✓</div>' +
+                        '<div style="display:flex;justify-content:center;color:#107C41;line-height:1">' + (global.Win11Icons ? global.Win11Icons.get('check', 40) : '✓') + '</div>' +
                         '<div style="font-size:14.5px;font-weight:700;color:var(--win-text-primary)">' +
                             mainMsg +
                         '</div>' +
@@ -893,7 +895,15 @@
             var isPart = (!isDone && !isSkip && (Number(tk.earnedPoints) > 0));
 
             var badgeCls = isDone ? 'is-done' : (isPart ? 'is-partial' : (isSkip ? 'is-skipped' : 'is-fail'));
-            var badgeText = isDone ? 'مكتملة ✔' : (isPart ? 'منجزة جزئياً ◐' : (isSkip ? 'تم تخطيها ⏭' : 'غير منجزة ✘'));
+            var badgeIcon = isDone
+                ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✓')
+                : (isPart
+                    ? (global.Win11Icons ? global.Win11Icons.get('circleHalf', 11) : '')
+                    : (isSkip
+                        ? (global.Win11Icons ? global.Win11Icons.get('skip', 11) : '>>')
+                        : (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗')));
+            var badgeLabel = isDone ? 'مكتملة' : (isPart ? 'منجزة جزئياً' : (isSkip ? 'تم تخطيها' : 'غير منجزة'));
+            var badgeHtml = '<span class="a4-badge ' + badgeCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + badgeIcon + ' <span>' + bidi(badgeLabel) + '</span></span>';
 
             var tkMax = Number(tk.maxPoints || tk.coefficient || 1);
             var tkEarned = Number(tk.earnedPoints || 0);
@@ -917,7 +927,7 @@
                     '<td style="text-align:center;font-weight:700;color:#64748B;">' + (i + 1) + '</td>' +
                     '<td><strong>' + bidi(tk.titleAr) + '</strong>' + (tk.critical ? ' <span class="a4-crit-badge">(أساسية)</span>' : '') + '</td>' +
                     '<td style="text-align:center;"><span class="a4-type-badge is-task">مهمة عملية</span></td>' +
-                    '<td style="text-align:center;"><span class="a4-badge ' + badgeCls + '">' + bidi(badgeText) + '</span></td>' +
+                    '<td style="text-align:center;">' + badgeHtml + '</td>' +
                     '<td style="text-align:center;">' + (isDone ? '<bdi dir="ltr">1</bdi>' : '-') + '</td>' +
                     '<td style="text-align:center;font-weight:600;"><bdi dir="ltr">' + tkMax.toFixed(2) + '</bdi></td>' +
                     '<td style="text-align:center;font-weight:700;color:#1E3A8A;"><bdi dir="ltr">' + tkEarned.toFixed(2) + '</bdi></td>' +
@@ -938,6 +948,7 @@
 
                 var qStatusCls = '';
                 var qStatusText = '';
+                var qStatusHtml = '';
                 var qNameText = '';
                 var qAttemptsCellHtml = '';
                 var qEarnedCellHtml = '';
@@ -949,7 +960,9 @@
                     qDeduct = qMax;
                     totalDeductionsInTable += qDeduct;
                     qStatusCls = 'is-skipped';
-                    qStatusText = 'معطّل ✘';
+                    qStatusText = 'معطّل';
+                    var qIcon = (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗');
+                    qStatusHtml = '<span class="a4-badge ' + qStatusCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + qIcon + ' <span>' + bidi(qStatusText) + '</span></span>';
                     qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
                     qAttemptsCellHtml = '<span style="color:#64748B;">-</span>';
                     qEarnedCellHtml = '<bdi dir="ltr">0.00</bdi><div style="font-size:8.5px;color:#64748B;line-height:1;">(0%)</div>';
@@ -957,7 +970,13 @@
                 } else {
                     if (qDeduct > 0) totalDeductionsInTable += qDeduct;
                     qStatusCls = (qRes && qRes.answeredCorrectly) ? 'is-done' : (isSkip ? 'is-skipped' : 'is-skipped');
-                    qStatusText = (qRes && qRes.answeredCorrectly) ? 'إجابة صحيحة ✔' : (isSkip ? 'تم تخطيه ⏭' : 'في الانتظار ⏳');
+                    var qIcon = (qRes && qRes.answeredCorrectly)
+                        ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✓')
+                        : (isSkip
+                            ? (global.Win11Icons ? global.Win11Icons.get('skip', 11) : '>>')
+                            : (global.Win11Icons ? global.Win11Icons.get('hourglass', 11) : ''));
+                    qStatusText = (qRes && qRes.answeredCorrectly) ? 'إجابة صحيحة' : (isSkip ? 'تم تخطيه' : 'في الانتظار');
+                    qStatusHtml = '<span class="a4-badge ' + qStatusCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + qIcon + ' <span>' + bidi(qStatusText) + '</span></span>';
 
                     if (qRes && qRes.questionText) {
                         var fullQ = qRes.questionText.trim();
@@ -995,7 +1014,7 @@
                         '<td style="text-align:center;font-weight:700;color:#7C3AED;">س' + (i + 1) + '</td>' +
                         '<td><span style="color:#581C87;">' + bidi(qNameText) + '</span></td>' +
                         '<td style="text-align:center;"><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>' +
-                        '<td style="text-align:center;"><span class="a4-badge ' + qStatusCls + '">' + bidi(qStatusText) + '</span></td>' +
+                        '<td style="text-align:center;">' + qStatusHtml + '</td>' +
                         '<td style="text-align:center;">' + qAttemptsCellHtml + '</td>' +
                         '<td style="text-align:center;font-weight:600;"><bdi dir="ltr">' + qMax.toFixed(2) + '</bdi></td>' +
                         '<td style="text-align:center;font-weight:700;color:#6D28D9;">' + qEarnedCellHtml + '</td>' +
@@ -1179,19 +1198,28 @@
         // ==========================================
         // TOP SCORE & DURATION HIGHLIGHT CARD
         // ==========================================
-        var topSummaryCardHtml =
-            '<div class="a4-top-summary-card">' +
-                '<div class="a4-tsc-score ' + (isPassed ? 'is-pass' : 'is-fail') + '">' +
-                    '<div class="a4-tsc-title">' + bidi('العلامة النهائية المستحقة:') + '</div>' +
-                    '<div class="a4-tsc-grade" dir="ltr" style="direction:ltr !important;"><bdi dir="ltr">' + finalScoreStr + ' <span class="a4-tsc-out">/ 20.00</span></bdi></div>' +
-                    '<div class="a4-tsc-badge"><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '">' + bidi(isPassed ? '✔ مستوفٍ لمعيار النجاح' : '✘ دون المعدل المطلوب') + ' — <strong>' + bidi(scores.appreciation || 'متوسط') + '</strong></span></div>' +
-                '</div>' +
-                '<div class="a4-tsc-time">' +
-                    '<div class="a4-tsc-title">' + bidi('الوقت الإجمالي المستغرق:') + '</div>' +
-                    '<div class="a4-tsc-grade"><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></div>' +
-                    '<div class="a4-tsc-badge"><span class="a4-badge is-done">' + bidi(stu.allCompleted ? 'تم تثبيت وقت الإنجاز النهائي ✔' : 'جلسة قيد الإنجاز ⏳') + '</span></div>' +
-                '</div>' +
-            '</div>';
+                var passBadgeIcon = isPassed
+                    ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✓')
+                    : (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗');
+                var passBadgeText = isPassed ? 'مستوفٍ لمعيار النجاح' : 'دون المعدل المطلوب';
+                var timeBadgeIcon = stu.allCompleted
+                    ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✓')
+                    : (global.Win11Icons ? global.Win11Icons.get('hourglass', 11) : '');
+                var timeBadgeText = stu.allCompleted ? 'تم تثبيت وقت الإنجاز النهائي' : 'جلسة قيد الإنجاز';
+
+                var topSummaryCardHtml =
+                    '<div class="a4-top-summary-card">' +
+                        '<div class="a4-tsc-score ' + (isPassed ? 'is-pass' : 'is-fail') + '">' +
+                            '<div class="a4-tsc-title">' + bidi('العلامة النهائية المستحقة:') + '</div>' +
+                            '<div class="a4-tsc-grade" dir="ltr" style="direction:ltr !important;"><bdi dir="ltr">' + finalScoreStr + ' <span class="a4-tsc-out">/ 20.00</span></bdi></div>' +
+                            '<div class="a4-tsc-badge"><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + passBadgeIcon + ' <span>' + bidi(passBadgeText) + '</span> — <strong>' + bidi(scores.appreciation || 'متوسط') + '</strong></span></div>' +
+                        '</div>' +
+                        '<div class="a4-tsc-time">' +
+                            '<div class="a4-tsc-title">' + bidi('الوقت الإجمالي المستغرق:') + '</div>' +
+                            '<div class="a4-tsc-grade"><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></div>' +
+                            '<div class="a4-tsc-badge"><span class="a4-badge is-done" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + timeBadgeIcon + ' <span>' + bidi(timeBadgeText) + '</span></span></div>' +
+                        '</div>' +
+                    '</div>';
 
         // ==========================================
         // SECTION B: BREAKDOWN TABLE CONTAINER
@@ -1645,16 +1673,16 @@
                 // Status Badge
                 if (isDone) {
                     ctx.fillStyle = '#15803D';
-                    ctx.fillText('مكتملة ✔', 615, curY + 21);
+                    ctx.fillText('مكتملة', 615, curY + 21);
                 } else if (isPart) {
                     ctx.fillStyle = '#B45309';
-                    ctx.fillText('منجزة جزئياً ◐', 615, curY + 21);
+                    ctx.fillText('منجزة جزئياً', 615, curY + 21);
                 } else if (isSkip) {
                     ctx.fillStyle = '#64748B';
-                    ctx.fillText('تم تخطيها ⏭', 615, curY + 21);
+                    ctx.fillText('تم تخطيها', 615, curY + 21);
                 } else {
                     ctx.fillStyle = '#DC2626';
-                    ctx.fillText('غير منجزة ✘', 615, curY + 21);
+                    ctx.fillText('غير منجزة', 615, curY + 21);
                 }
 
                 // Attempts
@@ -1730,16 +1758,16 @@
                     // Quiz Status
                     if (isQuizOptedOut) {
                         ctx.fillStyle = '#DC2626';
-                        ctx.fillText('معطّل ✘', 615, curY + 18);
+                        ctx.fillText('معطّل', 615, curY + 18);
                     } else if (qRes && qRes.answeredCorrectly) {
                         ctx.fillStyle = '#15803D';
-                        ctx.fillText('إجابة صحيحة ✔', 615, curY + 18);
+                        ctx.fillText('إجابة صحيحة', 615, curY + 18);
                     } else if (qRes && qRes.attempts >= 3) {
                         ctx.fillStyle = '#DC2626';
-                        ctx.fillText('استنفاد محاولات ✘', 615, curY + 18);
+                        ctx.fillText('استنفاد محاولات', 615, curY + 18);
                     } else {
                         ctx.fillStyle = '#B45309';
-                        ctx.fillText('قيد التقويم ◐', 615, curY + 18);
+                        ctx.fillText('قيد التقويم', 615, curY + 18);
                     }
 
                     // Attempts
@@ -2194,8 +2222,8 @@ function downloadTextFile(filename, mimeType, content) {
                             '<strong style="color:#B45309;font-size:12.5px;">' + bidi(utk.titleAr) + '</strong>' +
                             '<div style="color:#64748B;font-size:11.5px;margin-top:2px;">' + bidi(missingNote) + '</div>' +
                         '</div>' +
-                        '<button type="button" class="win-btn win-btn-secondary a4-goto-pending-btn" data-task-id="' + utk.id + '" style="min-height:26px;padding:2px 10px;font-size:11.5px;color:#0067C0;flex-shrink:0;">' +
-                            bidi('الانتقال للمهمة ↩') +
+                        '<button type="button" class="win-btn win-btn-secondary a4-goto-pending-btn" data-task-id="' + utk.id + '" style="min-height:26px;padding:2px 10px;font-size:11.5px;color:#0067C0;flex-shrink:0;display:inline-flex;align-items:center;gap:4px;">' +
+                            '<span>' + bidi('الانتقال للمهمة') + '</span>' + (global.Win11Icons ? global.Win11Icons.get('arrowBackCurved', 12) : '') +
                         '</button>' +
                     '</div>';
             }
@@ -2203,7 +2231,7 @@ function downloadTextFile(filename, mimeType, content) {
             guidanceBannerHtml =
                 '<div class="a4-guidance-card" style="margin-bottom:16px;background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:8px;padding:12px 16px;text-align:right;box-shadow:0 2px 8px rgba(245,158,11,0.08);">' +
                     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
-                        '<span style="font-size:20px;color:#D97706;line-height:1;">💡</span>' +
+                        '<span style="color:#D97706;line-height:1;display:inline-flex;">' + (global.Win11Icons ? global.Win11Icons.get('bulb', 20) : '') + '</span>' +
                         '<strong style="font-size:14px;color:#92400E;">' + bidi('توجيه تربوي — استكمال مسار الأنشطة العملية:') + '</strong>' +
                     '</div>' +
                     '<div style="font-size:12.5px;color:#78350F;line-height:1.6;margin-bottom:10px;">' +
@@ -2211,8 +2239,8 @@ function downloadTextFile(filename, mimeType, content) {
                     '</div>' +
                     taskListItems +
                     '<div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap;">' +
-                        '<button type="button" class="win-btn win-btn-accent" id="a4-btn-resume-all" style="padding:5px 16px;font-weight:700;">' +
-                            bidi('مواصلة إنجاز المهام الآن ↩') +
+                        '<button type="button" class="win-btn win-btn-accent" id="a4-btn-resume-all" style="padding:5px 16px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">' +
+                            '<span>' + bidi('مواصلة إنجاز المهام الآن') + '</span>' + (global.Win11Icons ? global.Win11Icons.get('arrowBackCurved', 13) : '') +
                         '</button>' +
                         '<span style="font-size:11.5px;color:#92400E;">' +
                             bidi('(ملاحظة: يمكنك تصدير بطاقة التقييم الحالية كمعاينة مرحلية، أو إتمام ما تبقى لرفع علامتك).') +
@@ -2223,7 +2251,7 @@ function downloadTextFile(filename, mimeType, content) {
             guidanceBannerHtml =
                 '<div class="a4-guidance-card" style="margin-bottom:16px;background:#ECFDF5;border:1.5px solid #107C41;border-radius:8px;padding:12px 16px;text-align:right;box-shadow:0 2px 8px rgba(16,124,65,0.08);">' +
                     '<div style="display:flex;align-items:center;gap:8px;">' +
-                        '<span style="font-size:22px;color:#107C41;line-height:1;">✔</span>' +
+                        '<span style="color:#107C41;line-height:1;display:inline-flex;">' + (global.Win11Icons ? global.Win11Icons.get('check', 22) : '✓') + '</span>' +
                         '<div>' +
                             '<strong style="font-size:14px;color:#065F46;">' + bidi('مبارك! تم إنجاز كافة المهام المقررة بنجاح وبتحكم تام (100%).') + '</strong>' +
                             '<div style="font-size:12px;color:#166534;margin-top:2px;">' + bidi('لقد تم تثبيت وقت إنجازك النهائي، ويمكنك الآن تصدير بطاقة تقييمك الرسمية كملف PDF على سطح المكتب.') + '</div>' +
@@ -2236,7 +2264,7 @@ function downloadTextFile(filename, mimeType, content) {
         if (uncompletedTasks.length > 0) {
             dialogButtons.push({
                 id: 'btn-resume-tasks',
-                label: 'مواصلة إنجاز المهام ↩',
+                label: 'مواصلة إنجاز المهام',
                 primary: true,
                 onClick: function (closeDlg) {
                     closeDlg();

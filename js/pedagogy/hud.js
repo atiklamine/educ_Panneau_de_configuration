@@ -134,8 +134,15 @@
                 (isSkipped ? ' is-skipped-task' : '') +
                 (isLocked ? ' is-locked-task' : '') +
                 (i === currentTaskIdx ? ' is-active' : '');
-            var prefix = isLocked ? '🔒 ' : (isDone ? '✓ ' : (isSkipped ? '⏭ ' : ''));
-            tabsHtml += '<button type="button" class="' + tabCls + '" data-hud-tab="' + i + '" data-hud-locked="' + (isLocked ? '1' : '0') + '" title="' + global.Win11Compat.escapeHtml(getTaskField(tk, 'title')) + '"><bdi dir="ltr">' + prefix + (i + 1) + '</bdi></button>';
+            var prefix = isLocked
+                ? (global.Win11Icons ? global.Win11Icons.get('lock', 11, 'hud-tab-icon') : '')
+                : (isDone
+                    ? (global.Win11Icons ? global.Win11Icons.get('check', 11, 'hud-tab-icon') : '✓')
+                    : (isSkipped
+                        ? (global.Win11Icons ? global.Win11Icons.get('skip', 11, 'hud-tab-icon') : '>>')
+                        : ''));
+            var prefixSpacer = prefix ? ' ' : '';
+            tabsHtml += '<button type="button" class="' + tabCls + '" data-hud-tab="' + i + '" data-hud-locked="' + (isLocked ? '1' : '0') + '" title="' + global.Win11Compat.escapeHtml(getTaskField(tk, 'title')) + '"><bdi dir="ltr">' + prefix + prefixSpacer + (i + 1) + '</bdi></button>';
         }
 
         var isViewingActive = (currentTaskIdx === activeIdx && activeIdx < tasks.length);
@@ -176,9 +183,16 @@
                 var eLock = (!eDone && !eSkip && ei > activeIdx);
                 var stText = eDone ? t('pedagogy.taskCompleted') : (eSkip ? t('pedagogy.taskSkippedShort') : (eAct ? 'المهمة النشطة' : 'مقفلة'));
                 var stCls = eDone ? 'win-badge-success' : (eSkip ? 'win-badge-danger' : (eAct ? 'win-badge-info' : 'win-badge-warning'));
+                var eIcon = eLock
+                    ? (global.Win11Icons ? global.Win11Icons.get('lock', 11) : '')
+                    : (eDone
+                        ? (global.Win11Icons ? global.Win11Icons.get('check', 11) : '✓')
+                        : (eSkip
+                            ? (global.Win11Icons ? global.Win11Icons.get('skip', 11) : '>>')
+                            : (global.Win11Icons ? global.Win11Icons.get('play', 10) : '>')));
                 examListHtml +=
                     '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;' + (eAct ? 'background:rgba(0,103,192,0.10);border:1px solid rgba(0,103,192,0.35);font-weight:700;' : (eLock ? 'opacity:0.6;' : '')) + 'margin-top:4px">' +
-                        '<span style="font-size:12px">' + '<bdi dir="ltr">' + (eLock ? '🔒 ' : (eDone ? '✓ ' : (eSkip ? '⏭ ' : '▶ '))) + (ei + 1) + '.</bdi> ' + bidi(getTaskField(et, 'title')) + '</span>' +
+                        '<span style="font-size:12px;display:inline-flex;align-items:center;gap:4px">' + '<bdi dir="ltr" style="display:inline-flex;align-items:center;gap:3px">' + eIcon + ' ' + (ei + 1) + '.</bdi> ' + bidi(getTaskField(et, 'title')) + '</span>' +
                         '<span class="win-badge ' + stCls + '" style="font-size:10.5px;white-space:nowrap">' + bidi(stText) + ' (<bdi dir="ltr">' + et.earnedPoints + '/' + et.maxPoints + '</bdi>)</span>' +
                     '</div>';
             }
@@ -209,7 +223,13 @@
                         firstPendingFound = true;
                     }
                     var liCls = doneStep ? 'is-done' : (skippedStep ? 'is-skipped' : ('is-pending' + (isNextTarget ? ' is-next-target' : '')));
-                    var iconCh = doneStep ? '✔' : (skippedStep ? '⏭' : (isNextTarget ? '👉' : '○'));
+                    var iconCh = doneStep
+                        ? (global.Win11Icons ? global.Win11Icons.get('check', 13) : '✓')
+                        : (skippedStep
+                            ? (global.Win11Icons ? global.Win11Icons.get('skip', 12) : '>>')
+                            : (isNextTarget
+                                ? (global.Win11Icons ? global.Win11Icons.get('target', 13) : '>')
+                                : (global.Win11Icons ? global.Win11Icons.get('circleEmpty', 12) : '○')));
                     var stepRightHtml = '';
                     if (skippedStep) {
                         stepRightHtml = '<span class="win-badge win-badge-neutral" style="font-size:10.5px;flex-shrink:0">' + bidi(t('pedagogy.subStepSkippedBadge')) + ' (<bdi dir="ltr">0</bdi>)</span>';
@@ -306,11 +326,13 @@
                                 '</span>' +
                                 '<button type="button" class="win-caption-btn" id="hud-hide-hint-btn" style="width:22px;height:22px;border-radius:4px">' + global.Win11Icons.get('winClose', 10) + '</button>' +
                             '</div>' +
-                            '<div style="background:#EFF6FF;border-right:3px solid #2563EB;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:11.5px;color:#1E40AF;font-weight:700;">' +
-                                '👉 ' + bidi(stepHintInfo.stepLabel) +
+                            '<div style="background:#EFF6FF;border-right:3px solid #2563EB;border-radius:4px;padding:6px 8px;margin-bottom:6px;font-size:11.5px;color:#1E40AF;font-weight:700;display:flex;align-items:center;gap:6px;">' +
+                                (global.Win11Icons ? global.Win11Icons.get('target', 14) : '') +
+                                '<span>' + bidi(stepHintInfo.stepLabel) + '</span>' +
                             '</div>' +
-                            '<div style="font-size:12px;line-height:1.6;color:#1E293B;">' +
-                                '💡 ' + bidi(stepHintInfo.hintText) +
+                            '<div style="font-size:12px;line-height:1.6;color:#1E293B;display:flex;align-items:flex-start;gap:6px;">' +
+                                (global.Win11Icons ? global.Win11Icons.get('bulb', 14) : '') +
+                                '<span>' + bidi(stepHintInfo.hintText) + '</span>' +
                             '</div>' +
                         '</div>';
                     }
@@ -325,7 +347,7 @@
                 '<div class="hud-actions">' +
                     (isExamMode ? '' : '<button type="button" class="win-btn win-btn-secondary" id="hud-hint-btn">' + global.Win11Icons.get('bulb', 14) + '<span>' + bidi(t('pedagogy.hintBtn')) + '</span></button>') +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-check-btn">' + global.Win11Icons.get('check', 14) + '<span>' + bidi(t('pedagogy.checkBtn')) + '</span></button>' +
-                    '<button type="button" class="win-btn win-btn-secondary" id="hud-skip-btn"' + (isViewingActive ? '' : ' disabled') + '><span>⏭ ' + bidi(t('pedagogy.skipBtn')) + '</span></button>' +
+                    '<button type="button" class="win-btn win-btn-secondary" id="hud-skip-btn"' + (isViewingActive ? '' : ' disabled') + '>' + (global.Win11Icons ? global.Win11Icons.get('skip', 13) : '') + '<span>' + bidi(t('pedagogy.skipBtn')) + '</span></button>' +
                     '<button type="button" class="win-btn win-btn-secondary" id="hud-new-sim-btn">' + global.Win11Icons.get('refresh', 14) + '<span>' + bidi(t('pedagogy.newSimBtn')) + '</span></button>' +
                     '<button type="button" class="win-btn win-btn-accent" id="hud-report-btn" style="margin-inline-start:auto">' + global.Win11Icons.get('trophy', 14) + '<span>' + bidi(t('pedagogy.reportBtn')) + '</span></button>' +
                 '</div>' +
@@ -433,7 +455,7 @@
                 var missingSteps = (tObj.subSteps || []).filter(function (s) { return !s.ok && !s.skipped; });
                 var checkMsg = 'توجيه تربوي: لقد أحرزت ' + tObj.earnedPoints + ' من أصل ' + tObj.maxPoints + ' نقطة في هذه المهمة.';
                 if (missingSteps.length > 0) {
-                    checkMsg += '\n\n👉 الخطوة التالية المطلوبة: ' + (missingSteps[0].labelAr || missingSteps[0].labelFr || '');
+                    checkMsg += '\n\n• الخطوة التالية المطلوبة: ' + (missingSteps[0].labelAr || missingSteps[0].labelFr || '');
                 }
                 global.Win11Dialogs.showMessage(
                     global.Win11I18N.t('pedagogy.checkBtn'),

@@ -233,7 +233,7 @@
         if (session.eliminatedIndexes.length > 0 && !isResolved) {
             hintBoxHtml =
                 '<div class="quiz-hint-box" style="margin-top:12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 14px;color:#1E3A8A;display:flex;align-items:flex-start;gap:10px;animation:quizFadeIn 0.3s ease;">' +
-                    '<span style="font-size:20px;line-height:1;flex-shrink:0;">💡</span>' +
+                    '<span style="color:#D97706;flex-shrink:0;display:inline-flex;">' + (global.Win11Icons ? global.Win11Icons.get('bulb', 22) : '') + '</span>' +
                     '<div style="font-size:12.5px;line-height:1.6;">' +
                         '<strong>' + bidi('تلميح بيداغوجي للمساعدة:') + '</strong> ' +
                         bidi(q.hintAr) +
@@ -247,7 +247,7 @@
             var earnedP = calculateEarnedPoints(session.attempts, session.maxPoints);
             successBoxHtml =
                 '<div class="quiz-success-box" style="margin-top:12px;background:#ECFDF5;border:1.5px solid #107C41;border-radius:8px;padding:12px 16px;color:#065F46;display:flex;align-items:center;gap:10px;animation:quizBounceIn 0.3s ease;">' +
-                    '<span style="font-size:24px;line-height:1;color:#107C41;">✔</span>' +
+                    '<span style="color:#107C41;flex-shrink:0;display:inline-flex;">' + (global.Win11Icons ? global.Win11Icons.get('check', 24) : '✓') + '</span>' +
                     '<div style="font-size:13px;line-height:1.5;">' +
                         '<strong>' + bidi('إجابة صحيحة وممتازة!') + '</strong> ' +
                         bidi('النقاط المكتسبة: ') + '<bdi dir="ltr"><strong>' + earnedP.toFixed(2) + ' / ' + Number(session.maxPoints).toFixed(2) + '</strong></bdi>' +
@@ -256,7 +256,9 @@
                 '</div>';
         }
 
-        var btnText = isResolved ? bidi('مواصلة المحاكاة ➔') : bidi('تأكيد الإجابة');
+        var btnText = isResolved
+            ? ('<span>' + bidi('مواصلة المحاكاة') + '</span>' + (global.Win11Icons ? ' ' + global.Win11Icons.get('arrowForward', 14) : ''))
+            : bidi('تأكيد الإجابة');
         var btnCls = isResolved ? 'win-btn win-btn-accent' : 'win-btn win-btn-primary';
 
         backdrop.innerHTML =

@@ -386,7 +386,7 @@
                                 '<span>' + bidi('البرنامج يعمل بنجاح! تم استيفاء خطوة تشغيل وتجربة التطبيق.') + '</span>' +
                             '</div>' +
                             '<div style="font-size:12.5px;color:#166534;line-height:1.6">' +
-                                '<strong>' + bidi('👉 الخطوة البيداغوجية التالية للتلميذ في المحاكاة:') + '</strong> ' +
+                                '<strong style="display:inline-flex;align-items:center;gap:4px">' + (global.Win11Icons ? global.Win11Icons.get('target', 14) : '') + '<span>' + bidi('الخطوة البيداغوجية التالية للتلميذ في المحاكاة:') + '</span></strong> ' +
                                 bidi('يمكنك الآن إغلاق هذه النافذة بالزر أدناه، والتوجه فوراً إلى: ') +
                                 '<span style="background:rgba(22,163,74,0.15);padding:1px 6px;border-radius:4px;font-weight:700">' + bidi('الإعدادات ← التطبيقات ← التطبيقات المثبتة') + '</span> ' +
                                 bidi('والنقر على زر خيارات البرنامج (...) ثم اختيار «إلغاء التثبيت» (Uninstall) لإزالته، ثم فتح قائمة ابدأ للتحقق من اختفائه.') +
@@ -402,8 +402,9 @@
 
                             // Card 1: Meaning of installation
                             '<div class="win-card" style="background:var(--win-surface-subtle);border-radius:6px;padding:10px 12px;border:1px solid var(--win-border-card)">' +
-                                '<div style="font-weight:700;font-size:12.5px;color:#0284C7;margin-bottom:4px">' +
-                                    bidi('📦 1. ما معنى "تنصيب/تثبيت برنامج" (Software Installation)؟') +
+                                '<div style="font-weight:700;font-size:12.5px;color:#0284C7;margin-bottom:4px;display:flex;align-items:center;gap:6px">' +
+                                    (global.Win11Icons ? global.Win11Icons.get('package', 15) : '') +
+                                    '<span>' + bidi('1. ما معنى "تنصيب/تثبيت برنامج" (Software Installation)؟') + '</span>' +
                                 '</div>' +
                                 '<div style="font-size:12px;color:var(--win-text-primary);line-height:1.6">' +
                                     bidi('عملية التثبيت ليست مجرد وضع ملف على القرص، بل هي إدماج متكامل للبرنامج داخل نظام التشغيل عبر الخطوات الآلية الآتية:') +
@@ -418,8 +419,9 @@
 
                             // Card 2: Install vs Copy/Paste
                             '<div class="win-card" style="background:var(--win-surface-subtle);border-radius:6px;padding:10px 12px;border:1px solid var(--win-border-card)">' +
-                                '<div style="font-weight:700;font-size:12.5px;color:#D97706;margin-bottom:4px">' +
-                                    bidi('⚖️ 2. ما الفرق الجوهري بين "تنصيب برنامج" ومجرد "النسخ واللصق" (Copy & Paste)؟') +
+                                '<div style="font-weight:700;font-size:12.5px;color:#D97706;margin-bottom:4px;display:flex;align-items:center;gap:6px">' +
+                                    (global.Win11Icons ? global.Win11Icons.get('scale', 15) : '') +
+                                    '<span>' + bidi('2. ما الفرق الجوهري بين "تنصيب برنامج" ومجرد "النسخ واللصق" (Copy & Paste)؟') + '</span>' +
                                 '</div>' +
                                 '<div style="font-size:12px;color:var(--win-text-primary);line-height:1.6">' +
                                     '<div style="margin-bottom:4px">• <strong>' + bidi('النسخ واللصق (Copy & Paste):') + '</strong> ' + bidi('ينقل فقط الملف التنفيذي المفرود؛ البرامج الكبيرة تفشل في الإقلاع وتظهر رسائل خطأ (Missing DLL / Registry keys) لغياب المكتبات التابعة ومدخلات السجل.') + '</div>' +
@@ -429,8 +431,9 @@
 
                             // Card 3: Proper uninstall vs delete
                             '<div class="win-card" style="background:var(--win-surface-subtle);border-radius:6px;padding:10px 12px;border:1px solid var(--win-border-card)">' +
-                                '<div style="font-weight:700;font-size:12.5px;color:#DC2626;margin-bottom:4px">' +
-                                    bidi('🛡️ 3. لماذا يجب إلغاء تثبيت البرامج من "الإعدادات" وتجنب الحذف اليدوي (Delete)؟') +
+                                '<div style="font-weight:700;font-size:12.5px;color:#DC2626;margin-bottom:4px;display:flex;align-items:center;gap:6px">' +
+                                    (global.Win11Icons ? global.Win11Icons.get('shield', 15) : '') +
+                                    '<span>' + bidi('3. لماذا يجب إلغاء تثبيت البرامج من "الإعدادات" وتجنب الحذف اليدوي (Delete)؟') + '</span>' +
                                 '</div>' +
                                 '<div style="font-size:12px;color:var(--win-text-primary);line-height:1.6">' +
                                     '• <strong>' + bidi('خطأ شائع:') + '</strong> ' + bidi('حذف مجلد البرنامج بزر Delete يزيل فقط الملفات الظاهرة، ويترك بقايا معطوبة في سجل النظام (Registry) واختصارات مكسورة تثقل إقلاع الحاسوب مع مرور الوقت.') + '<br>' +

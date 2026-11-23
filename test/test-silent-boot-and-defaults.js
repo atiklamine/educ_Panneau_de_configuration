@@ -115,7 +115,7 @@ assert(html.includes('/ 20.00'), 'Must contain / 20.00');
 // Section B table: column attempts must NOT contain "0 (معطل)"
 assert(!html.includes('0 (معطّل)'), 'Must not contain squeezed 0 (معطّل)');
 assert(!html.includes('0 (معطل)'), 'Must not contain squeezed 0 (معطل)');
-assert(html.includes('معطّل ✘'), 'Must contain clean badge معطّل ✘');
+assert(html.includes('معطّل') && html.includes('is-skipped'), 'Must contain clean badge for opted-out');
 console.log('[PASS] Report grade LTR isolation and clean attempts/status confirmed.');
 
 console.log('\n=========================================');

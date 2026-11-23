@@ -200,9 +200,18 @@ html[dir="rtl"] #pedagogy-hud {
     opacity: 0.85;
 }
 .hud-step-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
     font-weight: 700;
     font-size: 13px;
+    line-height: 1;
+}
+.hud-step-icon svg {
+    display: block;
 }
 .hud-step-item.is-done .hud-step-icon {
     color: #107C41;
@@ -238,6 +247,26 @@ html[dir="rtl"] #pedagogy-hud {
     background: var(--win-surface-card);
     font-size: 12px;
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+.hud-task-tab bdi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    line-height: 1;
+}
+.hud-tab-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+.hud-tab-icon svg {
+    display: block;
 }
 .hud-task-tab.is-active {
     background: var(--win-accent);

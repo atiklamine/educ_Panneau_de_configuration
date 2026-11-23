@@ -541,8 +541,8 @@
                                                 '<span>' + bidi(sub.labelAr) + '</span>' +
                                             '</label>' +
                                             '<div style="display:inline-flex;gap:2px">' +
-                                                '<button type="button" class="win-btn win-btn-secondary" data-subtask-up="' + tkIdx + ':' + si + '" style="min-height:20px;padding:1px 6px;font-size:10.5px"' + (si === 0 || tcItem.enabled === false ? ' disabled' : '') + ' title="تحريك لأعلى">▲</button>' +
-                                                '<button type="button" class="win-btn win-btn-secondary" data-subtask-dn="' + tkIdx + ':' + si + '" style="min-height:20px;padding:1px 6px;font-size:10.5px"' + (si === subOrder.length - 1 || tcItem.enabled === false ? ' disabled' : '') + ' title="تحريك لأسفل">▼</button>' +
+                                                '<button type="button" class="win-btn win-btn-secondary" data-subtask-up="' + tkIdx + ':' + si + '" style="min-height:20px;padding:1px 6px;font-size:10.5px"' + (si === 0 || tcItem.enabled === false ? ' disabled' : '') + ' title="تحريك لأعلى">' + (global.Win11Icons ? global.Win11Icons.get('chevronUp', 11) : '▲') + '</button>' +
+                                                '<button type="button" class="win-btn win-btn-secondary" data-subtask-dn="' + tkIdx + ':' + si + '" style="min-height:20px;padding:1px 6px;font-size:10.5px"' + (si === subOrder.length - 1 || tcItem.enabled === false ? ' disabled' : '') + ' title="تحريك لأسفل">' + (global.Win11Icons ? global.Win11Icons.get('chevronDown', 11) : '▼') + '</button>' +
                                             '</div>' +
                                         '</div>';
                                 }
@@ -564,8 +564,8 @@
                                         '<label style="display:inline-flex;align-items:center;gap:4px"><span>' + bidi('المعامل:') + '</span>' +
                                             '<input type="number" class="win-input" data-task-coef="' + tkIdx + '" data-task-w="' + tkIdx + '" value="' + esc(curCoef) + '" min="1" max="20" step="1" style="width:58px;min-height:26px;padding:2px 6px" dir="ltr"' + (tcItem.enabled === false ? ' disabled' : '') + '>' +
                                         '</label>' +
-                                        '<button type="button" class="win-btn win-btn-secondary" data-task-up="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === 0 ? ' disabled' : '') + '>▲</button>' +
-                                        '<button type="button" class="win-btn win-btn-secondary" data-task-dn="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === cfg.tasks_config.length - 1 ? ' disabled' : '') + '>▼</button>' +
+                                        '<button type="button" class="win-btn win-btn-secondary" data-task-up="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === 0 ? ' disabled' : '') + '>' + (global.Win11Icons ? global.Win11Icons.get('chevronUp', 12) : '▲') + '</button>' +
+                                        '<button type="button" class="win-btn win-btn-secondary" data-task-dn="' + tkIdx + '" style="min-height:24px;padding:2px 8px"' + (tkIdx === cfg.tasks_config.length - 1 ? ' disabled' : '') + '>' + (global.Win11Icons ? global.Win11Icons.get('chevronDown', 12) : '▼') + '</button>' +
                                     '</div>' +
                                     subtasksHtml +
                                 '</div>';
@@ -663,7 +663,7 @@
                                                     '<input type="checkbox" class="tc-editq-dist-active" ' + (isEdActive ? 'checked' : '') + '> ' +
                                                     '<span>' + bidi('مفعّل') + '</span>' +
                                                 '</label>' +
-                                                '<button type="button" class="win-btn win-btn-danger tc-editq-del-dist" style="min-height:24px;padding:1px 6px;font-size:11px;" title="' + esc('حذف هذا المموّه') + '">🗑️</button>' +
+                                                '<button type="button" class="win-btn win-btn-danger tc-editq-del-dist" style="min-height:24px;padding:1px 6px;font-size:11px;" title="' + esc('حذف هذا المموّه') + '">' + (global.Win11Icons ? global.Win11Icons.get('trash', 12) : 'حذف') + '</button>' +
                                             '</div>';
                                     }
 
@@ -672,11 +672,11 @@
                                             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">' +
                                                 '<div style="display:flex;align-items:center;gap:8px;">' +
                                                     '<span class="win-badge" style="background:#DBEAFE;color:#1E40AF;font-weight:700;font-size:11px;">' + bidi(qTaskTitle) + '</span>' +
-                                                    '<strong style="color:var(--win-accent);font-size:13px;">✏️ ' + bidi('إعادة صياغة السؤال والمموهات — تحرير شامل') + '</strong>' +
+                                                    '<strong style="color:var(--win-accent);font-size:13px;display:inline-flex;align-items:center;gap:6px;">' + (global.Win11Icons ? global.Win11Icons.get('edit', 14) : '') + '<span>' + bidi('إعادة صياغة السؤال والمموهات — تحرير شامل') + '</span></strong>' +
                                                 '</div>' +
                                                 '<div style="display:flex;align-items:center;gap:6px;">' +
-                                                    (!qObj.isCustom ? '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-revert" style="min-height:22px;padding:2px 8px;font-size:11px;">↺ ' + bidi('استعادة الأصل') + '</button>' : '') +
-                                                    '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-cancel" style="min-height:22px;padding:2px 8px;font-size:11px;">✕ ' + bidi('إلغاء') + '</button>' +
+                                                    (!qObj.isCustom ? '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-revert" style="min-height:22px;padding:2px 8px;font-size:11px;">' + (global.Win11Icons ? global.Win11Icons.get('revert', 12) + ' ' : '') + bidi('استعادة الأصل') + '</button>' : '') +
+                                                    '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-cancel" style="min-height:22px;padding:2px 8px;font-size:11px;">' + (global.Win11Icons ? global.Win11Icons.get('winClose', 10) + ' ' : '') + bidi('إلغاء') + '</button>' +
                                                 '</div>' +
                                             '</div>' +
                                             '<div class="tc-field-grid" style="margin-bottom:8px;">' +
@@ -689,17 +689,17 @@
                                                 '<textarea class="win-input" id="tc-editq-text" rows="3" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;">' + esc(qObj.questionAr || '') + '</textarea>' +
                                             '</div>' +
                                             '<div style="margin-bottom:8px;">' +
-                                                '<label style="display:block;margin-bottom:4px;"><strong>✔ ' + bidi('الإجابة الصحيحة النموذجية:') + '</strong></label>' +
+                                                '<label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' + (global.Win11Icons ? global.Win11Icons.get('check', 13) : '') + '<strong>' + bidi('الإجابة الصحيحة النموذجية:') + '</strong></label>' +
                                                 '<textarea class="win-input" id="tc-editq-answer" rows="2" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;border:1.5px solid #16A34A;background:#F0FDF4;">' + esc(qObj.correctAnswerAr || '') + '</textarea>' +
                                             '</div>' +
                                             '<div style="margin-bottom:8px;">' +
-                                                '<label style="display:block;margin-bottom:4px;"><strong>💡 ' + bidi('التلميح البيداغوجي الذكي:') + '</strong></label>' +
+                                                '<label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' + (global.Win11Icons ? global.Win11Icons.get('bulb', 13) : '') + '<strong>' + bidi('التلميح البيداغوجي الذكي:') + '</strong></label>' +
                                                 '<textarea class="win-input" id="tc-editq-hint" rows="2" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;">' + esc(qObj.hintAr || '') + '</textarea>' +
                                             '</div>' +
                                             '<div style="margin-bottom:8px;">' +
                                                 '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
                                                     '<strong>' + bidi('قائمة الخيارات والمموهات الخاطئة المتاحة في المخزن:') + '</strong>' +
-                                                    '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-add-dist" style="min-height:22px;padding:2px 8px;font-size:11px;">➕ ' + bidi('إضافة مموّه جديد') + '</button>' +
+                                                    '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-add-dist" style="min-height:22px;padding:2px 8px;font-size:11px;">' + (global.Win11Icons ? global.Win11Icons.get('plus', 12) + ' ' : '') + bidi('إضافة مموّه جديد') + '</button>' +
                                                 '</div>' +
                                                 '<div id="tc-editq-dist-list" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;border:1px solid var(--win-border-control);border-radius:4px;padding:6px;background:#F8FAFC;">' +
                                                     editDistRowsHtml +
@@ -707,7 +707,7 @@
                                             '</div>' +
                                             '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">' +
                                                 '<button type="button" class="win-btn win-btn-secondary" id="tc-editq-cancel-btn">' + bidi('إلغاء التعديل') + '</button>' +
-                                                '<button type="button" class="win-btn win-btn-accent" id="tc-editq-save-btn" style="font-weight:700;">💾 ' + bidi('حفظ التعديلات في بنك الأسئلة') + '</button>' +
+                                                '<button type="button" class="win-btn win-btn-accent" id="tc-editq-save-btn" style="font-weight:700;">' + (global.Win11Icons ? global.Win11Icons.get('save', 13) + ' ' : '') + bidi('حفظ التعديلات في بنك الأسئلة') + '</button>' +
                                             '</div>' +
                                         '</div>';
                                     continue;
@@ -734,7 +734,7 @@
                                                 (qObj.isCustomized ? ' <span class="win-badge" style="background:#FEF3C7;color:#92400E;font-size:10px;">' + bidi('مُعدّل الصياغة') + '</span>' : '') +
                                             '</div>' +
                                             '<div style="display:flex;align-items:center;gap:8px;">' +
-                                                '<button type="button" class="win-btn win-btn-secondary" data-q-edit="' + esc(qObj.id) + '" style="min-height:22px;padding:1px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px;">✏️ <span>' + bidi('تعديل الصياغة والمموهات') + '</span></button>' +
+                                                '<button type="button" class="win-btn win-btn-secondary" data-q-edit="' + esc(qObj.id) + '" style="min-height:22px;padding:1px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px;">' + (global.Win11Icons ? global.Win11Icons.get('edit', 12) + ' ' : '') + '<span>' + bidi('تعديل الصياغة والمموهات') + '</span></button>' +
                                                 '<label style="display:flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer;">' +
                                                     '<input type="checkbox" data-q-toggle="' + esc(qObj.id) + '" ' + (isQEnabled ? 'checked' : '') + '> ' +
                                                     '<span>' + bidi(isQEnabled ? 'مفعّل' : 'معطّل') + '</span>' +
@@ -745,8 +745,8 @@
                                         '<div style="font-weight:700;font-size:12.5px;color:#0F172A;margin-bottom:8px;line-height:1.5;">' +
                                             bidi(qObj.questionAr) +
                                         '</div>' +
-                                        '<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11.5px;color:#065F46;">' +
-                                            '<strong>' + bidi('✔ الإجابة الصحيحة:') + '</strong> ' + bidi(qObj.correctAnswerAr) +
+                                        '<div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11.5px;color:#065F46;display:flex;align-items:flex-start;gap:6px;">' +
+                                            (global.Win11Icons ? global.Win11Icons.get('check', 13) : '') + '<div><strong>' + bidi('الإجابة الصحيحة:') + '</strong> ' + bidi(qObj.correctAnswerAr) + '</div>' +
                                         '</div>' +
                                         '<details data-q-details="' + esc(qObj.id) + '" ' + (openDistractorCards[qObj.id] ? 'open' : '') + ' style="margin-bottom:8px;font-size:11.5px;">' +
                                             '<summary style="cursor:pointer;color:var(--win-accent);font-weight:700;">' + bidi('قائمة المموهات البديلة المتاحة في المخزن (' + dPool.length + ' مموهات) — انقر للإظهار والتعطيل/التفعيل') + '</summary>' +
@@ -754,8 +754,8 @@
                                                 distractorsListHtml +
                                             '</div>' +
                                         '</details>' +
-                                        '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;font-size:11.5px;color:#475569;">' +
-                                            '<strong>' + bidi('💡 التلميح البيداغوجي الذكي:') + '</strong> ' + bidi(qObj.hintAr || '') +
+                                        '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;font-size:11.5px;color:#475569;display:flex;align-items:flex-start;gap:6px;">' +
+                                            (global.Win11Icons ? global.Win11Icons.get('bulb', 13) : '') + '<div><strong>' + bidi('التلميح البيداغوجي الذكي:') + '</strong> ' + bidi(qObj.hintAr || '') + '</div>' +
                                         '</div>' +
                                     '</div>';
                             }
@@ -768,7 +768,7 @@
                                 '<div class="tc-section-card" style="border:1.5px solid var(--win-accent);background:#F0F7FF;margin-bottom:12px;padding:12px 14px;">' +
                                     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
                                         '<strong style="color:var(--win-accent);font-size:13px;">' + bidi('إضافة سؤال تقويمي جديد إلى بنك الأسئلة') + '</strong>' +
-                                        '<button type="button" class="win-btn win-btn-secondary" id="tc-addq-cancel" style="min-height:22px;padding:2px 8px;font-size:11px;">✕ ' + bidi('إلغاء') + '</button>' +
+                                        '<button type="button" class="win-btn win-btn-secondary" id="tc-addq-cancel" style="min-height:22px;padding:2px 8px;font-size:11px;">' + (global.Win11Icons ? global.Win11Icons.get('winClose', 10) + ' ' : '') + bidi('إلغاء') + '</button>' +
                                     '</div>' +
                                     '<div class="tc-field-grid" style="margin-bottom:8px;">' +
                                         '<label><strong>' + bidi('المهمة / المرحلة:') + '</strong>' +
@@ -798,7 +798,7 @@
                                         '<input class="win-input" id="tc-addq-hint" placeholder="تلميح توجيهي دون ذكر كلمات الإجابة الصريحة...">' +
                                     '</label>' +
                                     '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
-                                        '<button type="button" class="win-btn win-btn-accent" id="tc-addq-submit" style="padding:4px 14px;font-weight:700;">' + bidi('✔ إضافة السؤال وحفظه') + '</button>' +
+                                        '<button type="button" class="win-btn win-btn-accent" id="tc-addq-submit" style="padding:4px 14px;font-weight:700;">' + (global.Win11Icons ? global.Win11Icons.get('check', 13) + ' ' : '') + bidi('إضافة السؤال وحفظه') + '</button>' +
                                     '</div>' +
                                 '</div>';
                         }
@@ -825,9 +825,10 @@
                                         '<span>' + bidi('إظهار ملاحظة «تقييم بدون أسئلة» في التقرير النهائي عند تعطيل الأسئلة') + '</span>' +
                                     '</label>' +
                                 '</div>' +
-                                '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:8px 12px;font-size:12px;color:#475569;line-height:1.5;">' +
-                                    'ℹ <strong>' + bidi('نظام مكافحة التخمين وتدرج العلامات:') + '</strong> ' +
-                                    bidi('يتم اختيار سؤال واحد عشوائياً لكل مهمة من بنك الأسئلة، مع اختيار مموهات عشوائية وخلط مواقع الخيارات تماماً. تُمنح العلامة كاملة (100%) في المحاولة الأولى، ونصف العلامة (50%) في المحاولة الثانية، و0 نقطة في المحاولات اللاحقة مع إلزام التلميذ بالوصول للإجابة الصحيحة لمواصلة المحاكاة.') +
+                                '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:8px 12px;font-size:12px;color:#475569;line-height:1.5;display:flex;align-items:flex-start;gap:8px;">' +
+                                    (global.Win11Icons ? global.Win11Icons.get('info', 14) : '') +
+                                    '<div><strong>' + bidi('نظام مكافحة التخمين وتدرج العلامات:') + '</strong> ' +
+                                    bidi('يتم اختيار سؤال واحد عشوائياً لكل مهمة من بنك الأسئلة، مع اختيار مموهات عشوائية وخلط مواقع الخيارات تماماً. تُمنح العلامة كاملة (100%) في المحاولة الأولى، ونصف العلامة (50%) في المحاولة الثانية، و0 نقطة في المحاولات اللاحقة مع إلزام التلميذ بالوصول للإجابة الصحيحة لمواصلة المحاكاة.') + '</div>' +
                                 '</div>' +
                             '</div>' +
                             '<div class="tc-section-card">' +
@@ -847,7 +848,7 @@
                                         ) : '') +
                                         (!showAddQuestionForm ? (
                                             '<button type="button" class="win-btn win-btn-accent" id="tc-quiz-add-btn" style="min-height:26px;padding:2px 12px;font-size:12px;font-weight:700;">' +
-                                                '➕ ' + bidi('إضافة سؤال جديد') +
+                                                (global.Win11Icons ? global.Win11Icons.get('plus', 12) + ' ' : '') + bidi('إضافة سؤال جديد') +
                                             '</button>'
                                         ) : '') +
                                     '</div>' +
@@ -867,8 +868,8 @@
                                         '<input type="checkbox" data-tok-chk="' + tk + '"' + (tEntry.on ? ' checked' : '') + '>' +
                                         '<span>' + bidi(tEntry.def.label) + '</span>' +
                                     '</label>' +
-                                    '<button type="button" class="win-btn win-btn-secondary" data-tok-up="' + tk + '" style="min-height:24px;padding:2px 8px"' + (tk === 0 ? ' disabled' : '') + '>▲</button>' +
-                                    '<button type="button" class="win-btn win-btn-secondary" data-tok-dn="' + tk + '" style="min-height:24px;padding:2px 8px"' + (tk === tokenOrderState.length - 1 ? ' disabled' : '') + '>▼</button>' +
+                                    '<button type="button" class="win-btn win-btn-secondary" data-tok-up="' + tk + '" style="min-height:24px;padding:2px 8px"' + (tk === 0 ? ' disabled' : '') + '>' + (global.Win11Icons ? global.Win11Icons.get('chevronUp', 12) : '▲') + '</button>' +
+                                    '<button type="button" class="win-btn win-btn-secondary" data-tok-dn="' + tk + '" style="min-height:24px;padding:2px 8px"' + (tk === tokenOrderState.length - 1 ? ' disabled' : '') + '>' + (global.Win11Icons ? global.Win11Icons.get('chevronDown', 12) : '▼') + '</button>' +
                                 '</div>';
                         }
                         var fCheck = validateFilenamePattern(cfg.filename_template);
@@ -1492,7 +1493,7 @@
                                             '<input type="checkbox" class="tc-editq-dist-active" checked> ' +
                                             '<span>' + bidi('مفعّل') + '</span>' +
                                         '</label>' +
-                                        '<button type="button" class="win-btn win-btn-danger tc-editq-del-dist" style="min-height:24px;padding:1px 6px;font-size:11px;" title="' + esc('حذف هذا المموّه') + '">🗑️</button>';
+                                        '<button type="button" class="win-btn win-btn-danger tc-editq-del-dist" style="min-height:24px;padding:1px 6px;font-size:11px;" title="' + esc('حذف هذا المموّه') + '">' + (global.Win11Icons ? global.Win11Icons.get('trash', 12) : 'حذف') + '</button>';
                                     distListEl.appendChild(newRow);
                                     var delBtn = newRow.querySelector('.tc-editq-del-dist');
                                     if (delBtn) {
