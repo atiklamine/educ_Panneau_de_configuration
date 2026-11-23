@@ -25,6 +25,21 @@
         if (global.Win11Assessment && typeof global.Win11Assessment.resumeTimer === 'function') {
             global.Win11Assessment.resumeTimer();
         }
+        // Ensure Settings window remains cleanly docked to the left as in Picture 2
+        try {
+            if (global.Win11WM && typeof global.Win11WM.getWindow === 'function') {
+                var setWin = global.Win11WM.getWindow('settings');
+                if (setWin && !setWin.isMinimized && global.Win11SettingsApp && typeof global.Win11SettingsApp.getOptimalSettingsRect === 'function') {
+                    var area = global.Win11WM.getWorkArea();
+                    var optRect = global.Win11SettingsApp.getOptimalSettingsRect(area);
+                    setWin.rect.x = optRect.x;
+                    setWin.rect.y = optRect.y;
+                    setWin.rect.w = optRect.w;
+                    setWin.rect.h = optRect.h;
+                    if (typeof global.Win11WM.applyRect === 'function') global.Win11WM.applyRect(setWin);
+                }
+            }
+        } catch (eDock) { }
     }
 
     function formatLockDate(now, lang) {

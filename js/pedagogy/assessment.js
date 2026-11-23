@@ -1236,6 +1236,32 @@
         return true;
     }
 
+    var studentInfoHistory = {
+        initial: null,
+        modifications: []
+    };
+
+    function formatClockTime(dt) {
+        if (!dt) dt = new Date();
+        var hh = String(dt.getHours());
+        var mm = String(dt.getMinutes());
+        var ss = String(dt.getSeconds());
+        if (hh.length < 2) hh = '0' + hh;
+        if (mm.length < 2) mm = '0' + mm;
+        if (ss.length < 2) ss = '0' + ss;
+        return hh + ':' + mm + ':' + ss;
+    }
+
+    function formatDateIso(dt) {
+        if (!dt) dt = new Date();
+        var y = dt.getFullYear();
+        var m = String(dt.getMonth() + 1);
+        var d = String(dt.getDate());
+        if (m.length < 2) m = '0' + m;
+        if (d.length < 2) d = '0' + d;
+        return y + '/' + m + '/' + d;
+    }
+
     function syncConfiguredTasks() {
         var list = config.tasks_config;
         if (!Array.isArray(list) || list.length === 0) return tasks;
@@ -1708,6 +1734,7 @@
         updateConfig: saveConfig,
         getVault: function () { return infState.vault; },
         getStudent: function () { return student; },
+        getStudentHistory: function () { return studentInfoHistory; },
         getTasks: function () { return syncConfiguredTasks(); },
         getActiveTaskIndex: function () { return activeTaskIndex; },
         getActiveTaskId: function () {
@@ -1795,6 +1822,27 @@
             student.quizOptIn = (studentInfo && studentInfo.quizOptIn !== undefined) ? !!studentInfo.quizOptIn : true;
             student.activeSession = true;
             student.timeExpired = false;
+
+            // Audit Trail: Snapshot initial registration state
+            var nowStart = new Date();
+            studentInfoHistory = {
+                initial: {
+                    timestamp: formatClockTime(nowStart),
+                    date: formatDateIso(nowStart),
+                    elapsedSeconds: 0,
+                    elapsedFormatted: '00:00:00',
+                    lastName: student.lastName,
+                    firstName: student.firstName,
+                    fullName: student.fullName,
+                    classGroup: student.classGroup,
+                    pcNumber: student.pcNumber,
+                    mode: student.mode,
+                    quizOptIn: student.quizOptIn !== false
+                },
+                modifications: []
+            };
+            student.history = studentInfoHistory;
+
             mistakes = [];
             initPedagogyFlow();
             resetTimersOnly();
@@ -1811,12 +1859,112 @@
                 if (!lName) lName = nameParts[0] || '';
                 if (!fName) fName = nameParts.slice(1).join(' ') || '';
             }
+
+            // Ensure initial history exists
+            if (!studentInfoHistory || !studentInfoHistory.initial) {
+                var nowInit = new Date();
+                studentInfoHistory = {
+                    initial: {
+                        timestamp: formatClockTime(nowInit),
+                        date: formatDateIso(nowInit),
+                        elapsedSeconds: 0,
+                        elapsedFormatted: '00:00:00',
+                        lastName: student.lastName,
+                        firstName: student.firstName,
+                        fullName: student.fullName,
+                        classGroup: student.classGroup,
+                        pcNumber: student.pcNumber,
+                        mode: student.mode,
+                        quizOptIn: student.quizOptIn !== false
+                    },
+                    modifications: []
+                };
+            }
+
+            // Previous state snapshot
+            var prevLastName = student.lastName;
+            var prevFirstName = student.firstName;
+            var prevFullName = student.fullName;
+            var prevClassGroup = student.classGroup;
+            var prevPcNumber = student.pcNumber;
+            var prevQuizOptIn = student.quizOptIn !== false;
+
+            // Compute proposed new values
+            var nextLastName = lName || student.lastName;
+            var nextFirstName = fName || student.firstName;
+            var nextFullName = rawFull || (nextLastName + (nextFirstName ? ' ' + nextFirstName : ''));
+            var nextClassGroup = studentInfo.classGroup || student.classGroup;
+            var nextPcNumber = studentInfo.pcNumber || student.pcNumber;
+            var nextQuizOptIn = (studentInfo.quizOptIn !== undefined) ? !!studentInfo.quizOptIn : prevQuizOptIn;
+
+            // Detect granular changes
+            var fieldDiffs = [];
+            if (nextFullName !== prevFullName || nextLastName !== prevLastName || nextFirstName !== prevFirstName) {
+                fieldDiffs.push({
+                    field: 'fullName',
+                    labelAr: 'اللقب والاسم',
+                    oldVal: prevFullName,
+                    newVal: nextFullName
+                });
+            }
+            if (nextClassGroup !== prevClassGroup) {
+                fieldDiffs.push({
+                    field: 'classGroup',
+                    labelAr: 'الفوج التربوي',
+                    oldVal: prevClassGroup,
+                    newVal: nextClassGroup
+                });
+            }
+            if (nextPcNumber !== prevPcNumber) {
+                fieldDiffs.push({
+                    field: 'pcNumber',
+                    labelAr: 'رقم الجهاز / الحاسوب',
+                    oldVal: prevPcNumber,
+                    newVal: nextPcNumber
+                });
+            }
+            if (nextQuizOptIn !== prevQuizOptIn) {
+                fieldDiffs.push({
+                    field: 'quizOptIn',
+                    labelAr: 'تفعيل أسئلة الكفاءة',
+                    oldVal: prevQuizOptIn ? 'مفعلة' : 'معطلة',
+                    newVal: nextQuizOptIn ? 'مفعلة' : 'معطلة'
+                });
+            }
+
+            // Apply updates to student object
             if (lName) student.lastName = lName;
             if (fName) student.firstName = fName;
-            student.fullName = rawFull || (student.lastName + (student.firstName ? ' ' + student.firstName : ''));
+            student.fullName = nextFullName;
             if (studentInfo.classGroup) student.classGroup = studentInfo.classGroup;
             if (studentInfo.pcNumber) student.pcNumber = studentInfo.pcNumber;
             if (studentInfo.quizOptIn !== undefined) student.quizOptIn = !!studentInfo.quizOptIn;
+
+            // If any identity/session fields were modified, log to audit trail
+            if (fieldDiffs.length > 0) {
+                var nowEdit = new Date();
+                var curElapsed = getEffectiveElapsedSeconds();
+                var activeTasks = syncConfiguredTasks().filter(function (t) { return t.enabled !== false; });
+                var doneCount = 0;
+                for (var ti = 0; ti < activeTasks.length; ti++) {
+                    if (activeTasks[ti].completed) doneCount++;
+                }
+                var progPct = activeTasks.length > 0 ? Math.round((doneCount / activeTasks.length) * 100) : 0;
+                var editNum = studentInfoHistory.modifications.length + 1;
+
+                studentInfoHistory.modifications.push({
+                    editNumber: editNum,
+                    timestamp: formatClockTime(nowEdit),
+                    date: formatDateIso(nowEdit),
+                    elapsedSeconds: curElapsed,
+                    elapsedFormatted: formatDuration(curElapsed),
+                    progressPercent: progPct,
+                    doneTasksCount: doneCount,
+                    totalTasksCount: activeTasks.length,
+                    changes: fieldDiffs
+                });
+            }
+            student.history = studentInfoHistory;
             notify();
         },
         getOverallProgress: function () {
@@ -1870,6 +2018,11 @@
             student.fullName = 'Eleve Demo';
             student.mode = config.mode || 'training';
             student.timeExpired = false;
+            studentInfoHistory = {
+                initial: null,
+                modifications: []
+            };
+            student.history = studentInfoHistory;
             initPedagogyFlow();
             resetTimersOnly();
             startTickLoop();

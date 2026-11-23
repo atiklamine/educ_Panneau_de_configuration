@@ -653,13 +653,16 @@ namespace Win11SimHost
 
                     // Final Score
                     string scoreVal = "11.30";
-                    Match mScore = Regex.Match(html ?? "", @"<div class=""a4-tsc-grade""><bdi[^>]*>([^<]+)</bdi>");
-                    if (mScore.Success) scoreVal = CleanHtml(mScore.Groups[1].Value);
-                    else
+                    Match mScore = Regex.Match(html ?? "", @"class=""a4-score-earned""[^>]*>([0-9]+\.[0-9]{2})");
+                    if (!mScore.Success)
                     {
-                        Match mScore2 = Regex.Match(html ?? "", @"(\d+\.\d{2})\s*/\s*20");
-                        if (mScore2.Success) scoreVal = mScore2.Groups[1].Value;
+                        mScore = Regex.Match(html ?? "", @"class=""a4-tsc-grade""[^>]*>[\s\S]*?<bdi[^>]*>([0-9]+\.[0-9]{2})");
                     }
+                    if (!mScore.Success)
+                    {
+                        mScore = Regex.Match(html ?? "", @"(\d+\.\d{2})\s*/\s*20");
+                    }
+                    if (mScore.Success) scoreVal = CleanHtml(mScore.Groups[1].Value);
 
                     double scoreNum = 0;
                     double.TryParse(scoreVal, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out scoreNum);
@@ -695,19 +698,24 @@ namespace Win11SimHost
                     using (Font fScoreLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
                     using (Brush bScoreLbl = new SolidBrush(scoreTextColor))
                     {
-                        g.DrawString("العلامة النهائية المستحقة:", fScoreLbl, bScoreLbl, new RectangleF(640, 292, 510, 22), rtlCenter);
+                        g.DrawString("العلامة النهائية المستحقة:", fScoreLbl, bScoreLbl, new RectangleF(640, 292, 510, 20), rtlCenter);
                     }
-                    using (Font fScoreVal = new Font("Segoe UI", 26f, FontStyle.Bold))
+                    using (Font fScoreVal = new Font("Segoe UI", 24f, FontStyle.Bold))
                     using (Brush bScoreVal = new SolidBrush(scoreTextColor))
                     {
                         // STRICT LTR SO "11.30 / 20.00" IS NEVER REVERSED TO "20.00 / 11.30"!
-                        g.DrawString(scoreVal + " / 20.00", fScoreVal, bScoreVal, new RectangleF(640, 316, 510, 38), ltrCenter);
+                        g.DrawString(scoreVal + " / 20.00", fScoreVal, bScoreVal, new RectangleF(640, 314, 510, 30), ltrCenter);
+                    }
+                    using (Font fScoreClarifier = new Font("Segoe UI", 10f, FontStyle.Bold))
+                    using (Brush bScoreClarifier = new SolidBrush(scoreTextColor))
+                    {
+                        g.DrawString("(" + scoreVal + " من أصل 20.00)", fScoreClarifier, bScoreClarifier, new RectangleF(640, 344, 510, 18), rtlCenter);
                     }
                     using (Font fScoreBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
                     using (Brush bScoreBadge = new SolidBrush(scoreTextColor))
                     {
-                        string badgeMsg = isPass ? "✔ مستوفٍ لمعيار النجاح الرسمي" : "✘ دون المعدل المطلوب";
-                        g.DrawString(badgeMsg, fScoreBadge, bScoreBadge, new RectangleF(640, 356, 510, 20), rtlCenter);
+                        string badgeMsg = isPass ? "✔ مستوفٍ لمعيار النجاح — معتمد" : "✘ دون المعدل المطلوب";
+                        g.DrawString(badgeMsg, fScoreBadge, bScoreBadge, new RectangleF(640, 362, 510, 18), rtlCenter);
                     }
 
                     // Duration Box (Left: X = 80, W = 530)
@@ -720,17 +728,22 @@ namespace Win11SimHost
                     using (Font fDurLbl = new Font("Segoe UI", 11.5f, FontStyle.Bold))
                     using (Brush bBlueDark = new SolidBrush(Color.FromArgb(30, 64, 175)))
                     {
-                        g.DrawString("الوقت الإجمالي المستغرق:", fDurLbl, bBlueDark, new RectangleF(90, 292, 510, 22), rtlCenter);
+                        g.DrawString("الوقت الإجمالي المستغرق:", fDurLbl, bBlueDark, new RectangleF(90, 292, 510, 20), rtlCenter);
                     }
-                    using (Font fDurVal = new Font("Consolas", 26f, FontStyle.Bold))
+                    using (Font fDurVal = new Font("Consolas", 24f, FontStyle.Bold))
                     using (Brush bBlue = new SolidBrush(Color.FromArgb(37, 99, 235)))
                     {
-                        g.DrawString(durText, fDurVal, bBlue, new RectangleF(90, 316, 510, 38), ltrCenter);
+                        g.DrawString(durText, fDurVal, bBlue, new RectangleF(90, 314, 510, 30), ltrCenter);
+                    }
+                    using (Font fDurClarifier = new Font("Segoe UI", 10f, FontStyle.Bold))
+                    using (Brush bBlueClarifier = new SolidBrush(Color.FromArgb(30, 64, 175)))
+                    {
+                        g.DrawString("تم تثبيت وقت الإنجاز النهائي", fDurClarifier, bBlueClarifier, new RectangleF(90, 344, 510, 18), rtlCenter);
                     }
                     using (Font fDurBadge = new Font("Segoe UI", 9.5f, FontStyle.Bold))
                     using (Brush bBlueBadge = new SolidBrush(Color.FromArgb(30, 64, 175)))
                     {
-                        g.DrawString("تم توثيق وقت الجلسة التعليمية بدقة ✔", fDurBadge, bBlueBadge, new RectangleF(90, 356, 510, 20), rtlCenter);
+                        g.DrawString("✔ جلسة مكتملة وموثقة بيداغوجياً", fDurBadge, bBlueBadge, new RectangleF(90, 362, 510, 18), rtlCenter);
                     }
 
                     // Section B: Parse Table Rows from HTML
@@ -1042,8 +1055,95 @@ namespace Win11SimHost
                         }
                     }
 
-                    // Signature & Seal (Anchored at Y = 1530)
-                    int ySig = 1530;
+                    // Section D: Audit & Identity Modification Log (Anti-Cheating)
+                    bool hasAuditSection = (html ?? "").IndexOf("a4-section-d", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (hasAuditSection)
+                    {
+                        curY += 12;
+                        using (Brush bgSecD = new SolidBrush(Color.FromArgb(255, 251, 235)))
+                        using (Pen pSecD = new Pen(Color.FromArgb(217, 119, 6), 1.2f))
+                        using (Brush bSecDText = new SolidBrush(Color.FromArgb(146, 64, 14)))
+                        using (Font fSecD = new Font("Segoe UI", 11.5f, FontStyle.Bold))
+                        {
+                            g.FillRectangle(bgSecD, 80, curY, 1080, 26);
+                            g.DrawRectangle(pSecD, 80, curY, 1080, 26);
+                            using (Brush bAmberBar = new SolidBrush(Color.FromArgb(217, 119, 6)))
+                            {
+                                g.FillRectangle(bAmberBar, 1156, curY, 4, 26);
+                            }
+                            g.DrawString("القسم (د): سجل تدقيق وتعديل بيانات الهوية والجلسة (نظام مكافحة الانتحال والتحقق الأمني)", fSecD, bSecDText, new RectangleF(90, curY + 2, 1060, 22), rtlRight);
+                        }
+                        curY += 30;
+
+                        // Parse audit rows from HTML
+                        Match mTableD = Regex.Match(html ?? "", @"<table class=""a4-audit-table"">([\s\S]*?)<\/table>");
+                        if (mTableD.Success)
+                        {
+                            MatchCollection dRows = Regex.Matches(mTableD.Groups[1].Value, @"<tr[^>]*>([\s\S]*?)<\/tr>");
+                            bool isHeader = true;
+                            foreach (Match dr in dRows)
+                            {
+                                string rowHtml = dr.Groups[1].Value;
+                                if (isHeader)
+                                {
+                                    using (Brush bgH = new SolidBrush(Color.FromArgb(248, 250, 252)))
+                                    using (Pen pH = new Pen(Color.FromArgb(203, 213, 225), 1f))
+                                    using (Font fH = new Font("Segoe UI", 9.5f, FontStyle.Bold))
+                                    using (Brush bH = new SolidBrush(Color.FromArgb(51, 65, 85)))
+                                    {
+                                        g.FillRectangle(bgH, 80, curY, 1080, 22);
+                                        g.DrawRectangle(pH, 80, curY, 1080, 22);
+                                        g.DrawString("المرحلة", fH, bH, new RectangleF(1050, curY + 2, 100, 20), rtlCenter);
+                                        g.DrawString("توقيت النظام", fH, bH, new RectangleF(930, curY + 2, 110, 20), rtlCenter);
+                                        g.DrawString("وقت المحاكاة", fH, bH, new RectangleF(810, curY + 2, 110, 20), rtlCenter);
+                                        g.DrawString("نسبة الإنجاز", fH, bH, new RectangleF(680, curY + 2, 120, 20), rtlCenter);
+                                        g.DrawString("البيان المعدل", fH, bH, new RectangleF(530, curY + 2, 140, 20), rtlCenter);
+                                        g.DrawString("تفاصيل التغيير (سابق ➔ جديد)", fH, bH, new RectangleF(90, curY + 2, 430, 20), rtlRight);
+                                    }
+                                    curY += 24;
+                                    isHeader = false;
+                                    continue;
+                                }
+
+                                MatchCollection tds = Regex.Matches(rowHtml, @"<td[^>]*>([\s\S]*?)<\/td>");
+                                if (tds.Count >= 6)
+                                {
+                                    string cStage = CleanHtml(tds[0].Groups[1].Value);
+                                    string cClock = CleanHtml(tds[1].Groups[1].Value);
+                                    string cElapsed = CleanHtml(tds[2].Groups[1].Value);
+                                    string cProg = CleanHtml(tds[3].Groups[1].Value);
+                                    string cField = CleanHtml(tds[4].Groups[1].Value);
+                                    string cDetail = CleanHtml(tds[5].Groups[1].Value);
+
+                                    bool isInit = cStage.IndexOf("أولي", StringComparison.OrdinalIgnoreCase) >= 0;
+                                    Color rowBg = isInit ? Color.FromArgb(248, 250, 252) : Color.White;
+
+                                    using (Brush bgR = new SolidBrush(rowBg))
+                                    using (Pen pR = new Pen(Color.FromArgb(226, 232, 240), 1f))
+                                    using (Font fR = new Font("Segoe UI", 9f, FontStyle.Regular))
+                                    using (Font fRBold = new Font("Segoe UI", 9f, FontStyle.Bold))
+                                    using (Brush bDarkR = new SolidBrush(Color.FromArgb(15, 23, 42)))
+                                    using (Brush bAmber = new SolidBrush(Color.FromArgb(180, 83, 9)))
+                                    using (Brush bBlue = new SolidBrush(Color.FromArgb(37, 99, 235)))
+                                    {
+                                        g.FillRectangle(bgR, 80, curY, 1080, 22);
+                                        g.DrawRectangle(pR, 80, curY, 1080, 22);
+
+                                        g.DrawString(cStage, fRBold, isInit ? bDarkR : bAmber, new RectangleF(1050, curY + 2, 100, 20), rtlCenter);
+                                        g.DrawString(cClock, fRBold, bAmber, new RectangleF(930, curY + 2, 110, 20), ltrCenter);
+                                        g.DrawString(cElapsed, fRBold, bAmber, new RectangleF(810, curY + 2, 110, 20), ltrCenter);
+                                        g.DrawString(cProg, fR, bBlue, new RectangleF(680, curY + 2, 120, 20), rtlCenter);
+                                        g.DrawString(cField, fRBold, bDarkR, new RectangleF(530, curY + 2, 140, 20), rtlCenter);
+                                        g.DrawString(cDetail, fR, bDarkR, new RectangleF(90, curY + 2, 430, 20), rtlRight);
+                                    }
+                                    curY += 23;
+                                }
+                            }
+                        }
+                    }
+
+                    // Signature & Seal (Anchored dynamically or at least Y = 1530)
+                    int ySig = Math.Max(1530, curY + 16);
                     using (Pen pSig = new Pen(Color.FromArgb(100, 116, 139), 1.5f))
                     {
                         pSig.DashStyle = DashStyle.Dash;

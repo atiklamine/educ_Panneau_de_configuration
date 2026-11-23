@@ -1213,12 +1213,14 @@
                     '<div class="a4-top-summary-card">' +
                         '<div class="a4-tsc-score ' + (isPassed ? 'is-pass' : 'is-fail') + '">' +
                             '<div class="a4-tsc-title">' + bidi('العلامة النهائية المستحقة:') + '</div>' +
-                            '<div class="a4-tsc-grade" dir="ltr" style="direction:ltr !important;"><bdi dir="ltr">' + finalScoreStr + ' <span class="a4-tsc-out">/ 20.00</span></bdi></div>' +
+                            '<div class="a4-tsc-grade" dir="ltr" style="direction:ltr !important;"><bdi dir="ltr"><span class="a4-score-earned">' + finalScoreStr + '</span> <span class="a4-tsc-out">/ 20.00</span></bdi></div>' +
+                            '<div class="a4-tsc-clarifier" style="font-size:11px;font-weight:700;color:' + (isPassed ? '#15803D' : '#B45309') + ';margin-top:1px;">(' + finalScoreStr + ' من أصل 20.00)</div>' +
                             '<div class="a4-tsc-badge"><span class="a4-pass-badge ' + (isPassed ? 'is-pass' : 'is-fail') + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + passBadgeIcon + ' <span>' + bidi(passBadgeText) + '</span> — <strong>' + bidi(scores.appreciation || 'متوسط') + '</strong></span></div>' +
                         '</div>' +
                         '<div class="a4-tsc-time">' +
                             '<div class="a4-tsc-title">' + bidi('الوقت الإجمالي المستغرق:') + '</div>' +
                             '<div class="a4-tsc-grade"><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></div>' +
+                            '<div class="a4-tsc-clarifier" style="font-size:11px;font-weight:700;color:#1D4ED8;margin-top:1px;">' + bidi('تم تثبيت وقت الإنجاز النهائي') + '</div>' +
                             '<div class="a4-tsc-badge"><span class="a4-badge is-done" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + timeBadgeIcon + ' <span>' + bidi(timeBadgeText) + '</span></span></div>' +
                         '</div>' +
                     '</div>';
@@ -1267,6 +1269,112 @@
                 '</table>' +
             '</div>';
 
+        // ==========================================
+        // SECTION D: AUDIT & IDENTITY MODIFICATION LOG
+        // STRICT GUARANTEE: Only rendered if student information was modified during the active session!
+        // ==========================================
+        var sectionDHtml = '';
+        var stuHistory = (stu && stu.history) || (global.Win11Assessment && typeof global.Win11Assessment.getStudentHistory === 'function' ? global.Win11Assessment.getStudentHistory() : null);
+        var hasModifications = !!(stuHistory && stuHistory.modifications && stuHistory.modifications.length > 0);
+
+        if (hasModifications) {
+            var initialSnap = stuHistory.initial || {
+                timestamp: '00:00:00',
+                date: dateFormatted.split('—')[0].trim(),
+                elapsedFormatted: '00:00:00',
+                fullName: stu.fullName || studentName,
+                classGroup: stu.classGroup || '1AS',
+                pcNumber: stu.pcNumber || '01',
+                quizOptIn: stu.quizOptIn !== false
+            };
+
+            var auditRowsHtml = '';
+
+            // Initial Registration Row
+            auditRowsHtml +=
+                '<tr class="a4-audit-initial-row">' +
+                    '<td style="text-align:center;"><span class="a4-stage-pill is-init">' + bidi('التسجيل الأولي') + '</span></td>' +
+                    '<td style="text-align:center;"><bdi dir="ltr">' + esc(initialSnap.timestamp) + '</bdi></td>' +
+                    '<td style="text-align:center;font-family:Consolas,monospace;"><bdi dir="ltr">00:00:00</bdi></td>' +
+                    '<td style="text-align:center;font-weight:600;color:#059669;"><bdi dir="ltr">0%</bdi> ' + bidi('(انطلاق الجلسة)') + '</td>' +
+                    '<td style="text-align:center;font-weight:700;color:#1E3A8A;">' + bidi('بيانات التسجيل الأصلية') + '</td>' +
+                    '<td style="font-size:10px;line-height:1.4;">' +
+                        '<div>' + bidi('الاسم: ') + '<strong>' + bidi(initialSnap.fullName) + '</strong> &nbsp;|&nbsp; ' + bidi('الفوج: ') + '<strong>' + bidi(initialSnap.classGroup) + '</strong> &nbsp;|&nbsp; ' + bidi('الجهاز: ') + '<bdi dir="ltr">#' + esc(initialSnap.pcNumber) + '</bdi></div>' +
+                    '</td>' +
+                '</tr>';
+
+            // Modification Rows
+            for (var m = 0; m < stuHistory.modifications.length; m++) {
+                var mod = stuHistory.modifications[m];
+                var modStageLabel = 'التعديل رقم ' + (mod.editNumber || (m + 1));
+                var changesList = mod.changes || [];
+                var changesHtml = '';
+
+                for (var c = 0; c < changesList.length; c++) {
+                    var ch = changesList[c];
+                    changesHtml +=
+                        '<div style="margin:2px 0;">' +
+                            '<strong>' + bidi(ch.labelAr || ch.field) + ':</strong> ' +
+                            '<span class="a4-audit-old">' + bidi('سابق: ') + esc(ch.oldVal) + '</span> ' +
+                            '➔ <span class="a4-audit-new">' + bidi('جديد: ') + esc(ch.newVal) + '</span>' +
+                        '</div>';
+                }
+
+                var fieldSummary = changesList.map(function (c) { return c.labelAr; }).join('، ');
+
+                auditRowsHtml +=
+                    '<tr class="a4-audit-edit-row">' +
+                        '<td style="text-align:center;"><span class="a4-stage-pill is-edit">' + bidi(modStageLabel) + '</span></td>' +
+                        '<td style="text-align:center;font-weight:700;color:#B45309;"><bdi dir="ltr">' + esc(mod.timestamp) + '</bdi></td>' +
+                        '<td style="text-align:center;font-family:Consolas,monospace;font-weight:700;color:#B45309;"><bdi dir="ltr">' + esc(mod.elapsedFormatted) + '</bdi></td>' +
+                        '<td style="text-align:center;font-weight:700;color:#2563EB;">' +
+                            '<bdi dir="ltr">' + mod.progressPercent + '%</bdi> ' +
+                            '<span style="font-size:9px;color:#64748B;">(' + mod.doneTasksCount + ' / ' + mod.totalTasksCount + ' مهام)</span>' +
+                        '</td>' +
+                        '<td style="text-align:center;font-weight:700;color:#78350F;">' + bidi(fieldSummary) + '</td>' +
+                        '<td style="line-height:1.45;">' + changesHtml + '</td>' +
+                    '</tr>';
+            }
+
+            sectionDHtml =
+                '<div class="a4-section-d">' +
+                    '<div class="a4-section-title a4-title-audit">' +
+                        '<span>' + bidi('القسم (د): سجل تدقيق وتعديل بيانات الهوية والجلسة (نظام مكافحة الانتحال والتحقق الأمني)') + '</span>' +
+                        '<span style="font-size:11px;color:#B45309;font-weight:700;">⚠️ ' + bidi('تم تسجيل ' + stuHistory.modifications.length + ' تعديل(ات) أثناء الجلسة') + '</span>' +
+                    '</div>' +
+                    '<div class="a4-audit-alert">' +
+                        '<div class="a4-audit-alert-icon">⚠️</div>' +
+                        '<div class="a4-audit-alert-text">' +
+                            '<strong>' + bidi('تنبيه بيداغوجي وأمني للأستاذ(ة) المشرف(ة):') + '</strong> ' +
+                            bidi('تم رصد تعديل على بيانات هوية التلميذ أو الفوج/الجهاز أثناء سير الجلسة العملية بعد انطلاق المحاكاة وإنجاز جزء من المهام. يُرجى مراجعة الجدول الزمني أدناه للتحقق من عدم انتحال الهوية أو تبديل الحسابات بين التلاميذ.') +
+                        '</div>' +
+                    '</div>' +
+                    '<table class="a4-audit-table">' +
+                        '<colgroup>' +
+                            '<col style="width:13%;">' +
+                            '<col style="width:14%;">' +
+                            '<col style="width:14%;">' +
+                            '<col style="width:17%;">' +
+                            '<col style="width:16%;">' +
+                            '<col style="width:26%;">' +
+                        '</colgroup>' +
+                        '<thead>' +
+                            '<tr>' +
+                                '<th style="width:13%;text-align:center;">' + bidi('المرحلة') + '</th>' +
+                                '<th style="width:14%;text-align:center;">' + bidi('توقيت النظام') + '</th>' +
+                                '<th style="width:14%;text-align:center;">' + bidi('وقت المحاكاة') + '</th>' +
+                                '<th style="width:17%;text-align:center;">' + bidi('نسبة الإنجاز عند التعديل') + '</th>' +
+                                '<th style="width:16%;text-align:center;">' + bidi('البيان المعدل') + '</th>' +
+                                '<th style="width:26%;text-align:right;">' + bidi('تفاصيل التغيير (سابق ➔ جديد)') + '</th>' +
+                            '</tr>' +
+                        '</thead>' +
+                        '<tbody>' +
+                            auditRowsHtml +
+                        '</tbody>' +
+                    '</table>' +
+                '</div>';
+        }
+
         return (
             '<div class="a4-report-sheet" dir="rtl" lang="ar">' +
                 // Header
@@ -1293,6 +1401,7 @@
                 topSummaryCardHtml +
                 sectionBHtml +
                 mathBreakdownHtml +
+                sectionDHtml +
 
                 // Teacher Observations & Official Seal
                 '<div class="a4-footer-sig">' +
@@ -1537,15 +1646,19 @@
 
             ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = isPassed ? '#166534' : '#991B1B';
-            ctx.fillText('العلامة الإجمالية المستحقة:', 252, 204);
+            ctx.fillText('العلامة النهائية المستحقة:', 252, 202);
 
             // Draw Score strictly LTR
             ctx.save();
             ctx.direction = 'ltr';
-            ctx.font = 'bold 26px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 23px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = isPassed ? '#15803D' : '#DC2626';
-            ctx.fillText(finalScoreStr + ' / 20.00', 252, 240);
+            ctx.fillText(finalScoreStr + ' / 20.00', 252, 229);
             ctx.restore();
+
+            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = isPassed ? '#15803D' : '#DC2626';
+            ctx.fillText('(' + finalScoreStr + ' من أصل 20.00)', 252, 248);
 
             // Card 2: Duration Card (445, 182, 350, 76)
             ctx.fillStyle = '#EFF6FF';
@@ -1556,14 +1669,18 @@
 
             ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#1E40AF';
-            ctx.fillText('الوقت الإجمالي المستغرق:', 620, 204);
+            ctx.fillText('الوقت الإجمالي المستغرق:', 620, 202);
 
             ctx.save();
             ctx.direction = 'ltr';
-            ctx.font = 'bold 24px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 22px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#1D4ED8';
-            ctx.fillText(totalDurationStr, 620, 240);
+            ctx.fillText(totalDurationStr, 620, 229);
             ctx.restore();
+
+            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#1D4ED8';
+            ctx.fillText('تم تثبيت وقت الإنجاز النهائي', 620, 248);
 
             // Card 3: Completion / Mode Card (815, 182, 345, 76)
             ctx.fillStyle = '#F8FAFC';
@@ -1893,8 +2010,102 @@
                 curY += 32;
             }
 
-            // 6. Signature & Seal + Teacher Observations (Anchored at Y = 1530)
-            var ySig = 1530;
+            // Section D: Audit & Identity Modification Log (Canvas fallback)
+            var stuHistory = (stu && stu.history) || (global.Win11Assessment && typeof global.Win11Assessment.getStudentHistory === 'function' ? global.Win11Assessment.getStudentHistory() : null);
+            var hasModifications = !!(stuHistory && stuHistory.modifications && stuHistory.modifications.length > 0);
+
+            if (hasModifications) {
+                curY += 10;
+                // Header bar
+                ctx.fillStyle = '#FFFBEB';
+                ctx.fillRect(80, curY, 1080, 26);
+                ctx.strokeStyle = '#D97706';
+                ctx.lineWidth = 1.2;
+                ctx.strokeRect(80, curY, 1080, 26);
+
+                ctx.fillStyle = '#D97706';
+                ctx.fillRect(1156, curY, 4, 26);
+
+                ctx.fillStyle = '#92400E';
+                ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText('القسم (د): سجل تدقيق وتعديل بيانات الهوية والجلسة (نظام مكافحة الانتحال والتحقق الأمني)', 1140, curY + 18);
+
+                ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('⚠️ تم تسجيل ' + stuHistory.modifications.length + ' تعديل(ات) أثناء الجلسة', 95, curY + 18);
+                curY += 30;
+
+                // Table Header
+                ctx.fillStyle = '#F8FAFC';
+                ctx.fillRect(80, curY, 1080, 24);
+                ctx.strokeStyle = '#CBD5E1';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(80, curY, 1080, 24);
+
+                ctx.fillStyle = '#334155';
+                ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('المرحلة', 1100, curY + 16);
+                ctx.fillText('توقيت النظام', 980, curY + 16);
+                ctx.fillText('وقت المحاكاة', 860, curY + 16);
+                ctx.fillText('نسبة الإنجاز', 720, curY + 16);
+                ctx.fillText('البيان المعدل', 560, curY + 16);
+                ctx.textAlign = 'right';
+                ctx.fillText('تفاصيل التغيير (سابق ➔ جديد)', 420, curY + 16);
+                curY += 24;
+
+                // Initial Registration row
+                var initSnap = stuHistory.initial || {};
+                ctx.fillStyle = '#F1F5F9';
+                ctx.fillRect(80, curY, 1080, 22);
+                ctx.strokeStyle = '#E2E8F0';
+                ctx.strokeRect(80, curY, 1080, 22);
+
+                ctx.fillStyle = '#475569';
+                ctx.font = '9.5px "Segoe UI", Tahoma, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('التسجيل الأولي', 1100, curY + 15);
+                ctx.fillText(initSnap.timestamp || '00:00:00', 980, curY + 15);
+                ctx.fillText('00:00:00', 860, curY + 15);
+                ctx.fillText('0% (انطلاق)', 720, curY + 15);
+                ctx.fillText('بيانات أصلية', 560, curY + 15);
+                ctx.textAlign = 'right';
+                var initDesc = 'الاسم: ' + (initSnap.fullName || stu.fullName) + ' | فوج: ' + (initSnap.classGroup || stu.classGroup) + ' | جهاز #' + (initSnap.pcNumber || stu.pcNumber);
+                ctx.fillText(initDesc, 420, curY + 15);
+                curY += 22;
+
+                // Modification rows
+                for (var mi = 0; mi < Math.min(3, stuHistory.modifications.length); mi++) {
+                    var mItem = stuHistory.modifications[mi];
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(80, curY, 1080, 22);
+                    ctx.strokeStyle = '#E2E8F0';
+                    ctx.strokeRect(80, curY, 1080, 22);
+
+                    ctx.fillStyle = '#B45309';
+                    ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('تعديل ' + (mItem.editNumber || (mi + 1)), 1100, curY + 15);
+                    ctx.fillText(mItem.timestamp, 980, curY + 15);
+                    ctx.fillText(mItem.elapsedFormatted, 860, curY + 15);
+                    ctx.fillStyle = '#2563EB';
+                    ctx.fillText(mItem.progressPercent + '% (' + mItem.doneTasksCount + '/' + mItem.totalTasksCount + ')', 720, curY + 15);
+
+                    var fLabels = (mItem.changes || []).map(function (c) { return c.labelAr; }).join('، ');
+                    ctx.fillStyle = '#78350F';
+                    ctx.fillText(fLabels, 560, curY + 15);
+
+                    var diffSummary = (mItem.changes || []).map(function (c) { return c.labelAr + ': [' + c.oldVal + ' ➔ ' + c.newVal + ']'; }).join(' | ');
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = '#0F172A';
+                    ctx.fillText(diffSummary, 420, curY + 15);
+                    curY += 22;
+                }
+            }
+
+            // 6. Signature & Seal + Teacher Observations
+            var ySig = Math.max(1530, curY + 16);
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = '#64748B';
             ctx.setLineDash([6, 6]);

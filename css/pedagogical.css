@@ -623,6 +623,11 @@ html[dir="ltr"] .hud-resize-corner {
     color: #64748B;
     font-weight: 700;
 }
+.a4-tsc-clarifier {
+    font-size: 11px;
+    font-weight: 700;
+    margin: 1px 0 3px 0;
+}
 .a4-tsc-badge {
     margin-top: 3px;
 }
@@ -837,6 +842,7 @@ html[dir="ltr"] .hud-resize-corner {
         break-inside: avoid;
     }
     .a4-section-c,
+    .a4-section-d,
     .a4-footer-sig {
         page-break-inside: avoid;
         break-inside: avoid;
@@ -844,6 +850,105 @@ html[dir="ltr"] .hud-resize-corner {
 }
 #print-report-container {
     display: none;
+}
+
+/* Section D: Audit & Identity Modification Log (Anti-Cheating / Impersonation Prevention) */
+.a4-section-d {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+.a4-title-audit {
+    border-right-color: #D97706 !important;
+    background: #FFFBEB !important;
+    color: #92400E !important;
+}
+.a4-audit-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #FEF3C7;
+    border: 1px solid #F59E0B;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin: 4px 0 6px 0;
+    font-size: 10.5px;
+    color: #78350F;
+    line-height: 1.45;
+}
+.a4-audit-alert-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.a4-audit-alert-text {
+    flex: 1;
+}
+.a4-audit-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse;
+    margin: 4px 0 6px 0;
+    font-size: 10px;
+}
+.a4-audit-table th,
+.a4-audit-table td {
+    border: 1px solid #CBD5E1;
+    padding: 4px 5px;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.a4-audit-table th {
+    background: #F8FAFC;
+    color: #334155;
+    font-weight: 700;
+    font-size: 9.5px;
+    text-align: center;
+}
+.a4-audit-initial-row {
+    background: #F8FAFC;
+}
+.a4-audit-edit-row {
+    background: #FFFFFF;
+}
+.a4-stage-pill {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 9.5px;
+    white-space: nowrap;
+}
+.a4-stage-pill.is-init {
+    background: #E2E8F0;
+    color: #334155;
+    border: 1px solid #CBD5E1;
+}
+.a4-stage-pill.is-edit {
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FCD34D;
+}
+.a4-audit-old {
+    display: inline-block;
+    color: #DC2626;
+    text-decoration: line-through;
+    background: #FEE2E2;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    margin-bottom: 2px;
+}
+.a4-audit-new {
+    display: inline-block;
+    color: #15803D;
+    font-weight: 700;
+    background: #DCFCE7;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9.5px;
 }
 
 /* Strict Active Task Highlighting & Locked States */
