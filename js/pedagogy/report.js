@@ -1439,10 +1439,12 @@
                     ) : (
                         '<div class="a4-header-grid no-logo">' +
                             '<div class="a4-header-right" style="text-align:right;">' +
-                                '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong> &nbsp;|&nbsp; الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
+                                '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong></div>' +
+                                '<div>الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
                             '</div>' +
                             '<div class="a4-header-left" style="text-align:left;" dir="ltr">' +
-                                '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong> &nbsp;|&nbsp; Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
+                                '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong></div>' +
+                                '<div>Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
                             '</div>' +
                         '</div>'
                     )) +

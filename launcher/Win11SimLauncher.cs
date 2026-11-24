@@ -574,6 +574,10 @@ namespace Win11SimHost
                     ltrRight.Alignment = StringAlignment.Far;
                     ltrRight.LineAlignment = StringAlignment.Center;
 
+                    StringFormat ltrLeft = new StringFormat();
+                    ltrLeft.Alignment = StringAlignment.Near;
+                    ltrLeft.LineAlignment = StringAlignment.Center;
+
                     // 1. Republic Header
                     using (Font f1 = new Font("Segoe UI", 15f, FontStyle.Bold))
                     using (Brush b1 = new SolidBrush(Color.FromArgb(15, 23, 42)))
@@ -646,12 +650,12 @@ namespace Win11SimHost
                         float destY = 86f + ((maxH - destH) / 2f);
                         g.DrawImage(logoImg, destX, destY, destW, destH);
 
-                        // Left Box: Année scolaire & Niveau (LTR, X = 80 to 540)
+                        // Left Box: Année scolaire & Niveau (LTR, X = 80 to 540, left-aligned)
                         using (Font fGridLtr = new Font("Segoe UI", 10.5f, FontStyle.Regular))
                         using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
                         {
-                            g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 460, 24), ltrRight);
-                            g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 114, 460, 24), ltrRight);
+                            g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 460, 24), ltrLeft);
+                            g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 114, 460, 24), ltrLeft);
                         }
                     }
                     else
@@ -666,12 +670,12 @@ namespace Win11SimHost
                             g.DrawString("الأستاذ المشرف: " + teachName, fGridReg, bGridText, new RectangleF(620, 115, 540, 25), rtlRight);
                         }
 
-                        // Left Box: Année scolaire & Niveau (LTR, X = 80 to 620, Width = 540)
+                        // Left Box: Année scolaire & Niveau (LTR, X = 80 to 620, Width = 540, left-aligned)
                         using (Font fGridLtr = new Font("Segoe UI", 11f, FontStyle.Regular))
                         using (Brush bGridText = new SolidBrush(Color.FromArgb(51, 65, 85)))
                         {
-                            g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 540, 25), ltrRight);
-                            g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 115, 540, 25), ltrRight);
+                            g.DrawString("Année scolaire: " + acadYear, fGridLtr, bGridText, new RectangleF(80, 88, 540, 25), ltrLeft);
+                            g.DrawString("Niveau: " + levelName, fGridLtr, bGridText, new RectangleF(80, 115, 540, 25), ltrLeft);
                         }
                     }
 

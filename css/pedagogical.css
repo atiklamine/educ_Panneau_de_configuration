@@ -17,9 +17,15 @@
     border: 1px solid var(--win-border-window);
     box-shadow: var(--win-shadow-window);
     z-index: 850;
-    display: none;
+    display: none !important;
     flex-direction: column;
     overflow: hidden;
+}
+#pedagogy-hud.is-open {
+    display: flex !important;
+}
+#pedagogy-hud:not(.is-open) {
+    display: none !important;
 }
 #pedagogy-hud.is-active,
 #pedagogy-hud:focus-within {
@@ -28,9 +34,6 @@
 html[dir="rtl"] #pedagogy-hud {
     left: auto;
     right: 96px;
-}
-#pedagogy-hud.is-open {
-    display: flex !important;
 }
 #pedagogy-hud.is-maximized {
     left: 8px !important;

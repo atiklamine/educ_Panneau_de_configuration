@@ -10,14 +10,27 @@
     var lastRenderedStepSig = '';
 
     function buildHudStateSig(tasks, activeIdx, currentIdx, scores) {
-        var tk = tasks[currentIdx] || tasks[0];
-        if (!tk) return '';
-        var steps = Array.isArray(tk.subSteps) ? tk.subSteps : [];
+        var curTk = tasks[currentIdx] || tasks[0];
+        var actTk = tasks[activeIdx] || tasks[0];
+        if (!curTk) return '';
+        var curSteps = Array.isArray(curTk.subSteps) ? curTk.subSteps : [];
+        var actSteps = (actTk && Array.isArray(actTk.subSteps)) ? actTk.subSteps : [];
         var sFlags = '';
-        for (var i = 0; i < steps.length; i++) {
-            sFlags += steps[i].ok ? '1' : (steps[i].skipped ? 's' : '0');
+        for (var i = 0; i < curSteps.length; i++) {
+            sFlags += (curSteps[i].ok || curSteps[i].completed) ? '1' : (curSteps[i].skipped ? 's' : '0');
         }
-        return activeIdx + '|' + currentIdx + '|' + (tk.completed ? 1 : 0) + '|' + (tk.skipped ? 1 : 0) + '|' + tk.earnedPoints + '|' + sFlags + '|' + scores.net.toFixed(2);
+        var actFlags = '';
+        for (var j = 0; j < actSteps.length; j++) {
+            actFlags += (actSteps[j].ok || actSteps[j].completed) ? '1' : (actSteps[j].skipped ? 's' : '0');
+        }
+        var overallDone = 0;
+        for (var oi = 0; oi < tasks.length; oi++) {
+            if (tasks[oi].completed) overallDone++;
+        }
+        return activeIdx + '|' + currentIdx + '|' + (curTk.completed ? 1 : 0) + '|' + (curTk.skipped ? 1 : 0) + '|' +
+            (curTk.doneStepsCount || 0) + '|' + (curTk.progressPercent || 0) + '|' +
+            (actTk ? ((actTk.doneStepsCount || 0) + '|' + (actTk.progressPercent || 0) + '|' + actTk.earnedPoints) : '') + '|' +
+            curTk.earnedPoints + '|' + sFlags + '|' + actFlags + '|' + overallDone + '|' + scores.net.toFixed(2);
     }
     var hudInitialized = false;
     var activeHintTaskId = null;
@@ -30,7 +43,15 @@
 
     function isOpen() {
         var el = getEl();
-        return !!(el && el.classList.contains('is-open'));
+        return !!(el && el.classList.contains('is-open') && el.style.display !== 'none');
+    }
+
+    function close() {
+        var el = getEl();
+        if (!el) return;
+        el.classList.remove('is-open');
+        el.classList.remove('is-active');
+        el.style.display = 'none';
     }
 
     function getTaskField(task, fieldPrefix) {
@@ -52,7 +73,13 @@
         renderQueued = true;
         var run = function () {
             renderQueued = false;
-            if (isOpen()) renderContent();
+            if (isOpen()) {
+                try {
+                    renderContent();
+                } catch (renderErr) {
+                    console.error('HUD render error:', renderErr);
+                }
+            }
         };
         if (typeof global.requestAnimationFrame === 'function') {
             global.requestAnimationFrame(run);
@@ -403,7 +430,7 @@
         }
         el.querySelector('#hud-close-btn').onclick = function (e) {
             e.stopPropagation();
-            el.classList.remove('is-open');
+            close();
         };
         var editInfoBtn = el.querySelector('#hud-edit-info-btn');
         if (editInfoBtn) {
@@ -627,8 +654,9 @@
     }
 
     function updateLiveStatsOnly() {
+        if (!isOpen()) return;
         var el = getEl();
-        if (!el || !el.classList.contains('is-open')) return;
+        if (!el) return;
         var allTasks = global.Win11Assessment.getTasks();
         var tasks = allTasks.filter(function (item) { return item.enabled !== false; });
         if (tasks.length === 0) tasks = allTasks;
@@ -671,7 +699,6 @@
 
     function open() {
         initOnce();
-        renderContent();
         var el = getEl();
         if (el) {
             el.classList.add('is-open');
@@ -697,15 +724,16 @@
                 }
             } catch (posErr) { }
         }
+        renderContent();
     }
 
     function toggle() {
         if (isOpen()) {
-            getEl().classList.remove('is-open');
+            close();
         } else {
             open();
         }
     }
 
-    global.Win11HUD = { open: open, toggle: toggle, isOpen: isOpen, refresh: renderContent, toggleMaximize: toggleMaximize };
+    global.Win11HUD = { open: open, close: close, toggle: toggle, isOpen: isOpen, refresh: renderContent, toggleMaximize: toggleMaximize };
 })(window);

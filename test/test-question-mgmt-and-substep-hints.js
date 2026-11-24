@@ -118,7 +118,7 @@ var fullDoc = report.buildStandaloneHtmlDoc();
 assert(fullDoc.indexOf('<colgroup>') !== -1, 'Report must contain colgroup');
 assert(fullDoc.indexOf('width:26%') !== -1, 'Colgroup must contain refined width 26%');
 assert(fullDoc.indexOf('width:8%') !== -1, 'Colgroup must contain earned width 8%');
-assert(fullDoc.indexOf('overflow:hidden !important;') !== -1, 'Table cells must have overflow hidden');
+assert(fullDoc.indexOf('overflow-wrap:break-word !important;') !== -1, 'Table cells must have overflow-wrap:break-word');
 console.log('✔ Report table formatting verified successfully.');
 
 console.log('\nALL UNIT TESTS PASSED SUCCESSFULLY!');
