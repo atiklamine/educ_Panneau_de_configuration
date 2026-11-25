@@ -700,14 +700,29 @@ namespace Win11SimHost
                     }
 
                     // Extract student info
-                    string stuName = "عمورن فخر الدين";
-                    Match mName = Regex.Match(html ?? "", @"اسم ولقب التلميذ:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
-                    if (mName.Success) stuName = CleanHtml(mName.Groups[1].Value);
-                    else
+                    string stuLastName = "عمورن";
+                    string stuFirstName = "فخر الدين";
+                    Match mLn = Regex.Match(html ?? "", @"اللقب:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
+                    if (mLn.Success) stuLastName = CleanHtml(mLn.Groups[1].Value).Trim();
+                    Match mFn = Regex.Match(html ?? "", @"الاسم:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
+                    if (mFn.Success) stuFirstName = CleanHtml(mFn.Groups[1].Value).Trim();
+                    if ((!mLn.Success && !mFn.Success) || (string.IsNullOrEmpty(stuLastName) && string.IsNullOrEmpty(stuFirstName)))
                     {
-                        Match mName2 = Regex.Match(html ?? "", @"بطاقة تقويم الأعمال التطبيقية - ([^<\n]+)");
-                        if (mName2.Success) stuName = CleanHtml(mName2.Groups[1].Value);
+                        Match mName = Regex.Match(html ?? "", @"اسم ولقب التلميذ(ة)?:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
+                        string rawName = mName.Success ? CleanHtml(mName.Groups[1].Value).Trim() : "";
+                        if (string.IsNullOrEmpty(rawName))
+                        {
+                            Match mName2 = Regex.Match(html ?? "", @"بطاقة تقويم الأعمال التطبيقية - ([^<\n]+)");
+                            if (mName2.Success) rawName = CleanHtml(mName2.Groups[1].Value).Trim();
+                        }
+                        if (!string.IsNullOrEmpty(rawName))
+                        {
+                            string[] parts = rawName.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length >= 2) { stuLastName = parts[0]; stuFirstName = string.Join(" ", parts, 1, parts.Length - 1); }
+                            else { stuLastName = rawName; stuFirstName = ""; }
+                        }
                     }
+                    string stuName = (stuLastName + " " + stuFirstName).Trim();
 
                     string className = "السنة الأولى ثانوي";
                     Match mClass = Regex.Match(html ?? "", @"الفوج التربوي ورقم الجهاز:[\s\S]*?<strong>([^<]+)</strong>");
@@ -879,7 +894,7 @@ namespace Win11SimHost
                     using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
                     using (Brush bDark = new SolidBrush(Color.FromArgb(15, 23, 42)))
                     {
-                        g.DrawString("اسم ولقب التلميذ(ة): " + stuName + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fLabel, bDark, new RectangleF(100, 230, 1040, 28), rtlRight);
+                        g.DrawString("اللقب: " + stuLastName + "      |      الاسم: " + stuFirstName + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fLabel, bDark, new RectangleF(100, 230, 1040, 28), rtlRight);
                         g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText + "      |      حالة الجلسة: " + sessionProgressText, fLabel, bDark, new RectangleF(100, 264, 1040, 28), rtlRight);
                     }
 
@@ -1000,7 +1015,7 @@ namespace Win11SimHost
                         g.DrawString("المحاولات", fTh, bTh, new RectangleF(cX_Att, curY, cW_Att, thHeight), rtlCenter);
                         g.DrawString("الوزن", fTh, bTh, new RectangleF(cX_Max, curY, cW_Max, thHeight), ltrCenter);
                         g.DrawString("الممنوحة", fTh, bTh, new RectangleF(cX_Earn, curY, cW_Earn, thHeight), ltrCenter);
-                        g.DrawString("الخصم", fTh, bTh, new RectangleF(cX_Ded, curY, cW_Ded, thHeight), ltrCenter);
+                        g.DrawString("الخصم / غير المستوفاة", fTh, bTh, new RectangleF(cX_Ded, curY, cW_Ded, thHeight), ltrCenter);
                         g.DrawString("الملاحظات وتفاصيل الإنجاز", fTh, bTh, new RectangleF(cX_Notes, curY, cW_Notes, thHeight), rtlRight);
                     }
                     curY += thHeight;
@@ -1141,12 +1156,12 @@ namespace Win11SimHost
 
                     if (mathSteps.Count == 0)
                     {
-                        mathSteps.Add(new NativeMathStep { Num = "1", Label = "مجموع معاملات المهام العملية النشطة:", Value = "17.00 نقطة", Sub = "تم استيفاء المهام العملية المطلوبة" });
-                        mathSteps.Add(new NativeMathStep { Num = "2", Label = "مجموع معاملات الأسئلة التقويمية:", Value = "6.00 نقاط", Sub = "الأسئلة التقويمية المرافقة للمهام" });
-                        mathSteps.Add(new NativeMathStep { Num = "3", Label = "المجموع الكلي لأوزان التقييم (المقام):", Value = "23.00 نقطة", Sub = "المعاملات الإجمالية المطلوبة" });
-                        mathSteps.Add(new NativeMathStep { Num = "4", Label = "مجموع النقاط المكتسبة (البسط):", Value = "13.00 نقطة", Sub = "مجموع نقاط المهام والأسئلة الممنوحة" });
-                        mathSteps.Add(new NativeMathStep { Num = "5", Label = "تطبيق القاعدة الثلاثية الرسمية:", Value = "11.30 / 20", Sub = "(13.00 ÷ 23.00) × 20 = 11.30" });
-                        mathSteps.Add(new NativeMathStep { Num = "6", Label = "العلامة النهائية المستحقة:", Value = scoreVal + " / 20", Sub = "العلامة الرسمية بعد معالجة الخصومات" });
+                        mathSteps.Add(new NativeMathStep { Num = "1", Label = "مجموع معاملات المهام العملية:", Value = "17.00 / 17.00", Sub = "مجموع النقاط المكتسبة من الخطوات العملية المنجزة" });
+                        mathSteps.Add(new NativeMathStep { Num = "2", Label = "مجموع معاملات الأسئلة التقويمية:", Value = "0.00 / 6.00", Sub = "عدم استيفاء الأسئلة التقويمية مع إدراج أوزانها في المقام" });
+                        mathSteps.Add(new NativeMathStep { Num = "3", Label = "مجموع النقاط المحصلة من المعاملات:", Value = "17.00 / 23.00", Sub = "مجموع النقاط المكتسبة من المعاملات المطلوبة" });
+                        mathSteps.Add(new NativeMathStep { Num = "4", Label = "تطبيق القاعدة الثلاثية الرسمية (من 20):", Value = scoreVal + " / 20.00", Sub = "(17.00 ÷ 23.00) × 20 = " + scoreVal });
+                        mathSteps.Add(new NativeMathStep { Num = "5", Label = "الخصومات الجزائية المباشرة من العلامة:", Value = "0.00 نقطة", Sub = "أداء نظامي سليم بدون أي خصومات جزائية" });
+                        mathSteps.Add(new NativeMathStep { Num = "6", Label = "العلامة النهائية المعتمدة المستحقة:", Value = scoreVal + " / 20.00", Sub = "العلامة الرسمية المعتمدة المستحقة للتقويم" });
                     }
 
                     // Draw Math Steps Grid
@@ -1164,11 +1179,12 @@ namespace Win11SimHost
                         for (int sIdx = 0; sIdx < mathSteps.Count; sIdx++)
                         {
                             NativeMathStep step = mathSteps[sIdx];
-                            bool isFormula = (sIdx == 4);
-                            bool isFinal = (sIdx == 5);
+                            bool isFormula = (sIdx == 3);
+                            bool isPenalty = (sIdx == 4 && (step.Value ?? "").IndexOf("-") >= 0);
+                            bool isFinal = (sIdx == 5 || sIdx == mathSteps.Count - 1);
 
-                            Color stepBg = isFinal ? Color.FromArgb(240, 253, 244) : (isFormula ? Color.FromArgb(240, 249, 255) : Color.FromArgb(248, 250, 252));
-                            Color stepBorderCol = isFinal ? Color.FromArgb(187, 247, 208) : (isFormula ? Color.FromArgb(186, 230, 253) : Color.FromArgb(226, 232, 240));
+                            Color stepBg = isFinal ? Color.FromArgb(240, 253, 244) : (isPenalty ? Color.FromArgb(254, 242, 242) : (isFormula ? Color.FromArgb(240, 249, 255) : Color.FromArgb(248, 250, 252)));
+                            Color stepBorderCol = isFinal ? Color.FromArgb(187, 247, 208) : (isPenalty ? Color.FromArgb(254, 202, 202) : (isFormula ? Color.FromArgb(186, 230, 253) : Color.FromArgb(226, 232, 240)));
 
                             using (Brush bStepBg = new SolidBrush(stepBg))
                             using (Pen pStepBox = new Pen(stepBorderCol, 1.2f))
@@ -1185,7 +1201,7 @@ namespace Win11SimHost
                             g.DrawString(step.Label, fStepLbl, bStepText, new RectangleF(650, curY, 474, mathStepHeight), rtlRight);
 
                             // Step Value (STRICT LTR if contains '/' so numerator/denominator is never inverted to e.g. 20/14.78)
-                            Brush valBrush = isFinal ? new SolidBrush(Color.FromArgb(21, 128, 61)) : bStepText;
+                            Brush valBrush = isFinal ? new SolidBrush(Color.FromArgb(21, 128, 61)) : (isPenalty ? new SolidBrush(Color.FromArgb(220, 38, 38)) : bStepText);
                             bool valHasSlash = (step.Value ?? "").IndexOf("/") >= 0;
                             g.DrawString(step.Value, fStepVal, valBrush, new RectangleF(450, curY, 190, mathStepHeight), valHasSlash ? ltrCenter : rtlCenter);
 

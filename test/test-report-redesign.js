@@ -148,7 +148,8 @@ assert(reportHtml && reportHtml.length > 500, 'Report HTML must not be empty');
 
 console.log('--- TEST 2: VERIFY SECTION A (HEADER & STUDENT INFO) ---');
 assert(reportHtml.includes('القسم (أ): بيانات التلميذ والجلسة التقويمية'), 'Must contain Section A title');
-assert(reportHtml.includes('بوزيان إكرام'), 'Must contain student full name');
+assert(reportHtml.includes('اللقب:') && reportHtml.includes('بوزيان'), 'Must contain student last name');
+assert(reportHtml.includes('الاسم:') && reportHtml.includes('إكرام'), 'Must contain student first name');
 assert(reportHtml.includes('1AS_ST_G1'), 'Must contain class group');
 assert(reportHtml.includes('#04'), 'Must contain PC number');
 assert(reportHtml.includes('أستاذ مادة المعلوماتية'), 'Must contain teacher name from inf.dll');
@@ -258,8 +259,8 @@ assert(reportOptOutHtml.includes('معطّل'), 'Section B must show opted out s
 assert(reportOptOutHtml.includes('0.00') && reportOptOutHtml.includes('(0%)'), 'Section B must show 0.00 earned');
 assert(reportOptOutHtml.includes('-1.00'), 'Section B must show deduction for opted out quiz');
 // Section C must show pedagogical warning alert:
-assert(reportOptOutHtml.includes('تنبيه بيداغوجي:'), 'Section C must show warning alert when student opted out');
-assert(reportOptOutHtml.includes('تم تصفير نقاط الأسئلة وخصمها بالكامل'), 'Section C must explain zeroing and deduction');
+assert(reportOptOutHtml.includes('تنبيه بيداغوجي'), 'Section C must show warning alert when student opted out');
+assert(reportOptOutHtml.includes('قام التلميذ بإلغاء تفعيل الأسئلة التقويمية') && reportOptOutHtml.includes('المقام الكلي'), 'Section C must explain zeroing and denominator weight inclusion');
 
 // Restore clean state
 stu.quizOptIn = true;

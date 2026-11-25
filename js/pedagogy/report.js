@@ -971,7 +971,7 @@
                     qNameText = 'سؤال تقويم الكفاءة المرحلية (' + tk.titleAr + ')';
                     qAttemptsCellHtml = '<span style="color:#64748B;">-</span>';
                     qEarnedCellHtml = '<bdi dir="ltr">0.00</bdi><div style="font-size:8.5px;color:#64748B;line-height:1;">(0%)</div>';
-                    qNotes = 'تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (' + qMax.toFixed(2) + ' نقطة).';
+                    qNotes = 'تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ عدم منح نقطة السؤال (0.00 من ' + qMax.toFixed(2) + ') مع إدراج معامله في المقام (انظر القسم ج).';
                 } else {
                     if (qDeduct > 0) totalDeductionsInTable += qDeduct;
                     qStatusCls = (qRes && qRes.answeredCorrectly) ? 'is-done' : (isSkip ? 'is-skipped' : 'is-skipped');
@@ -1050,17 +1050,18 @@
                 '<tr style="background:#FFF5F5;color:#991B1B;">' +
                     '<td style="text-align:center;font-weight:700;">-</td>' +
                     '<td><strong>خصومات عامة (مخالفة تسلسل المهام النشطة)</strong></td>' +
-                    '<td style="text-align:center;"><span class="a4-type-badge is-penalty">مخالفة نظام</span></td>' +
-                    '<td style="text-align:center;"><span class="a4-badge is-fail">خصم نقاط</span></td>' +
+                    '<td style="text-align:center;"><span class="a4-type-badge is-penalty">خصم جزائي مباشر</span></td>' +
+                    '<td style="text-align:center;"><span class="a4-badge is-fail">خصم من الرصيد</span></td>' +
                     '<td style="text-align:center;">-</td>' +
                     '<td style="text-align:center;">-</td>' +
                     '<td style="text-align:center;">-</td>' +
                     '<td style="text-align:center;font-weight:700;color:#DC2626;"><bdi dir="ltr">-' + pen.toFixed(2) + '</bdi></td>' +
-                    '<td style="font-size:11px;line-height:1.45;">' + bidi(penaltyReason) + '</td>' +
+                    '<td style="font-size:11px;line-height:1.45;">' + bidi('خصم جزائي مباشر يُطرح من العلامة النهائية بعد القاعدة الثلاثية (انظر تفصيل الخطوة 5 و6 في القسم ج): ' + penaltyReason) + '</td>' +
                 '</tr>';
         }
 
         // Table Footer Row
+        var totalUnearnedWeight = Math.max(0, grandTotalMax - grandTotalEarned);
         var tableFooterHtml =
             '<tr style="background:#F8FAFC;font-weight:700;border-top:2px solid #CBD5E1;">' +
                 '<td colspan="5" style="text-align:left;padding:6px 10px;font-size:11.5px;">' + bidi('المجموع الكلي لمعاملات ونقاط المهام والأسئلة:') + '</td>' +
@@ -1068,7 +1069,8 @@
                 '<td style="text-align:center;color:#1E3A8A;font-size:12.5px;"><bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi></td>' +
                 '<td style="text-align:center;color:#DC2626;"><bdi dir="ltr">-' + totalDeductionsInTable.toFixed(2) + '</bdi></td>' +
                 '<td style="font-size:11px;color:#334155;padding:6px 10px;">' +
-                    bidi('استيفاء ') + '<bdi dir="ltr"><strong>' + grandTotalEarned.toFixed(2) + '</strong></bdi>' + bidi(' من أصل ') + '<bdi dir="ltr"><strong>' + grandTotalMax.toFixed(2) + '</strong></bdi>' + bidi(' نقطة مطلوبة') +
+                    bidi('تحصيل ') + '<bdi dir="ltr"><strong>' + grandTotalEarned.toFixed(2) + '</strong></bdi>' + bidi(' من أصل ') + '<bdi dir="ltr"><strong>' + grandTotalMax.toFixed(2) + '</strong></bdi>' + bidi(' نقطة معامل (فارق غير مستوفى: ') + '<bdi dir="ltr"><strong>' + totalUnearnedWeight.toFixed(2) + '</strong></bdi>' + bidi(' نقطة)') +
+                    (pen > 0 ? (bidi(' &nbsp;|&nbsp; خصومات جزائية مباشرة: ') + '<bdi dir="ltr" style="color:#DC2626;"><strong>-' + pen.toFixed(2) + '</strong></bdi>' + bidi(' نقطة')) : '') +
                 '</td>' +
             '</tr>';
 
@@ -1088,8 +1090,8 @@
         } else if (isQuizOptedOut) {
             quizDisabledNoticeHtml =
                 '<div class="a4-quiz-disabled-notice is-warning" style="background:#FEF2F2;border-right-color:#DC2626;color:#991B1B;">' +
-                    '<strong>' + bidi('تنبيه بيداغوجي:') + '</strong> ' +
-                    bidi('قام التلميذ بإلغاء تفعيل الأسئلة التقويمية عند بدء الجلسة؛ تم تصفير نقاط الأسئلة وخصمها بالكامل من العلامة الإجمالية (أقصى علامة ممكنة: ') +
+                    '<strong>' + bidi('تنبيه بيداغوجي وتوضيح سلم التنقيط:') + '</strong> ' +
+                    bidi('قام التلميذ بإلغاء تفعيل الأسئلة التقويمية عند بدء الجلسة؛ تم احتساب معاملات الأسئلة (' + quizMax.toFixed(2) + ' نقاط) ضمن المقام الكلي (' + grandTotalMax.toFixed(2) + ' نقطة) مع منح 0.00 للتلميذ عنها في البسط، وبذلك أصبحت أقصى علامة ممكنة وفق القاعدة الثلاثية هي (' + practicalMax.toFixed(2) + ' ÷ ' + grandTotalMax.toFixed(2) + ') × 20 = ') +
                     '<bdi dir="ltr"><strong>' + maxPossibleScore.toFixed(2) + '</strong></bdi>/20).' +
                 '</div>';
         }
@@ -1107,7 +1109,7 @@
                             '<span class="a4-step-num">1</span>' +
                             '<span class="a4-step-lbl">' + bidi('مجموع معاملات المهام العملية:') + '</span>' +
                             '<span class="a4-step-val"><bdi dir="ltr"><strong>' + practicalMax.toFixed(2) + '</strong></bdi> ' + bidi('نقطة') + '</span>' +
-                            '<span class="a4-step-sub">(' + bidi('حصلت على:') + ' <bdi dir="ltr"><strong>' + practicalEarned.toFixed(2) + '</strong></bdi>)</span>' +
+                            '<span class="a4-step-sub">(' + bidi('حصلت على:') + ' <bdi dir="ltr"><strong>' + practicalEarned.toFixed(2) + '</strong></bdi> ' + bidi('من أصل') + ' <bdi dir="ltr">' + practicalMax.toFixed(2) + '</bdi> ' + bidi('معامل عملي') + ')</span>' +
                         '</div>' +
 
                         '<div class="a4-math-step">' +
@@ -1116,10 +1118,10 @@
                             '<span class="a4-step-val"><bdi dir="ltr"><strong>' + (showQuizzes ? quizMax.toFixed(2) : '0.00') + '</strong></bdi> ' + bidi('نقطة') + '</span>' +
                             '<span class="a4-step-sub">' +
                                 (isQuizGloballyDisabled
-                                    ? bidi('معطّلة بناءً على رغبة الأستاذ')
+                                    ? bidi('معطّلة بناءً على رغبة الأستاذ (غير مدرجة في المجموع)')
                                     : (isQuizOptedOut
-                                        ? ('<span style="color:#DC2626;">' + bidi('حصلت على: 0.00 (معطّل بطلب التلميذ)') + '</span>')
-                                        : (bidi('حصلت على:') + ' <bdi dir="ltr"><strong>' + quizEarned.toFixed(2) + '</strong></bdi>'))) +
+                                        ? ('<span style="color:#DC2626;">' + bidi('حصلت على: 0.00 (معطّل بطلب التلميذ؛ معاملات الأسئلة مدرجة في المقام)') + '</span>')
+                                        : (bidi('حصلت على:') + ' <bdi dir="ltr"><strong>' + quizEarned.toFixed(2) + '</strong></bdi> ' + bidi('من أصل') + ' <bdi dir="ltr">' + quizMax.toFixed(2) + '</bdi> ' + bidi('بحسب المحاولات')))) +
                             '</span>' +
                         '</div>' +
 
@@ -1130,7 +1132,7 @@
                             '<span class="a4-step-sub">(' +
                                 (isQuizGloballyDisabled
                                     ? ('<bdi dir="ltr">' + practicalEarned.toFixed(2) + '</bdi> ' + bidi('عملي (فقط)'))
-                                    : ('<bdi dir="ltr">' + practicalEarned.toFixed(2) + '</bdi> ' + bidi('عملي') + ' + <bdi dir="ltr">' + quizEarned.toFixed(2) + '</bdi> ' + bidi('أسئلة') + ' = <bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi>')) +
+                                    : ('<bdi dir="ltr">' + practicalEarned.toFixed(2) + '</bdi> ' + bidi('عملي') + ' + <bdi dir="ltr">' + quizEarned.toFixed(2) + '</bdi> ' + bidi('أسئلة') + ' = <bdi dir="ltr"><strong>' + grandTotalEarned.toFixed(2) + '</strong></bdi> ' + bidi('من أصل') + ' <bdi dir="ltr"><strong>' + grandTotalMax.toFixed(2) + '</strong></bdi> ' + bidi('معامل إجمالي'))) +
                             ')</span>' +
                         '</div>' +
 
@@ -1138,14 +1140,25 @@
                             '<span class="a4-step-num">4</span>' +
                             '<span class="a4-step-lbl">' + bidi('العلامة قبل الخصم (من 20):') + '</span>' +
                             '<span class="a4-step-val" style="color:#0284C7;"><bdi dir="ltr"><strong>' + baseScoreOutOf20.toFixed(2) + ' / 20</strong></bdi></span>' +
-                            '<span class="a4-step-sub">' + bidi('القاعدة الثلاثية: (') + '<bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi> ÷ <bdi dir="ltr">' + grandTotalMax.toFixed(2) + '</bdi>' + bidi(') × 20') + '</span>' +
+                            '<span class="a4-step-sub">' + bidi('القاعدة الثلاثية: (') + '<bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi> ÷ <bdi dir="ltr">' + grandTotalMax.toFixed(2) + '</bdi>' + bidi(') × 20 = ') + '<bdi dir="ltr"><strong>' + baseScoreOutOf20.toFixed(2) + '</strong></bdi> ' + bidi('من 20') + '</span>' +
                         '</div>' +
 
                         '<div class="a4-math-step">' +
                             '<span class="a4-step-num">5</span>' +
                             '<span class="a4-step-lbl">' + bidi('مجموع الخصومات:') + '</span>' +
                             '<span class="a4-step-val" style="color:' + (pen > 0 ? '#DC2626' : '#15803D') + ';"><bdi dir="ltr"><strong>' + (pen > 0 ? ('-' + pen.toFixed(2)) : '0.00') + '</strong></bdi> ' + bidi('نقطة') + '</span>' +
-                            '<span class="a4-step-sub">' + (pen > 0 ? bidi('مخالفات تسلسل المهام النشطة') : bidi('أداء نظامي سليم بدون خصومات')) + '</span>' +
+                            '<span class="a4-step-sub">' + (pen > 0 ? bidi('خصومات جزائية مباشرة عن مخالفات تسلسل المهام تُطرح من علامة الـ 20') : bidi('أداء نظامي سليم بدون أي خصومات جزائية')) + '</span>' +
+                        '</div>' +
+
+                        '<div class="a4-math-step final-formula">' +
+                            '<span class="a4-step-num" style="background:#15803D;">6</span>' +
+                            '<span class="a4-step-lbl" style="color:#166534;font-weight:700;">' + bidi('العلامة النهائية المعتمدة المستحقة:') + '</span>' +
+                            '<span class="a4-step-val" style="color:#15803D;font-size:13.5px;"><bdi dir="ltr"><strong>' + finalScoreStr + ' / 20.00</strong></bdi></span>' +
+                            '<span class="a4-step-sub" style="color:#14532D;">' +
+                                (pen > 0
+                                    ? (bidi('حساب النتيجة: ') + '<bdi dir="ltr">' + baseScoreOutOf20.toFixed(2) + '</bdi> ' + bidi('(العلامة الأولية)') + ' - <bdi dir="ltr">' + pen.toFixed(2) + '</bdi> ' + bidi('(الخصم الجزائي)') + ' = <bdi dir="ltr"><strong>' + finalScoreStr + '</strong> / 20.00</bdi>')
+                                    : (bidi('تطابق تام مع علامة القاعدة الثلاثية: ') + '<bdi dir="ltr"><strong>' + finalScoreStr + '</strong> / 20.00</bdi>' + bidi(' (دون أي خصومات جزائية)'))) +
+                            '</span>' +
                         '</div>' +
                     '</div>' +
                 '</div>' +
@@ -1214,9 +1227,13 @@
                 '<table class="a4-info-table">' +
                     '<tbody>' +
                         '<tr>' +
-                            '<td style="width:36%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('اسم ولقب التلميذ:') + '</div>' +
-                                '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(studentName) + '</div>' +
+                            '<td style="width:18%;">' +
+                                '<div class="a4-cell-lbl">' + bidi('اللقب:') + '</div>' +
+                                '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.lastName || '—') + '</div>' +
+                            '</td>' +
+                            '<td style="width:18%;">' +
+                                '<div class="a4-cell-lbl">' + bidi('الاسم:') + '</div>' +
+                                '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.firstName || '—') + '</div>' +
                             '</td>' +
                             '<td style="width:32%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('الفوج التربوي ورقم الجهاز:') + '</div>' +
@@ -1228,15 +1245,15 @@
                             '</td>' +
                         '</tr>' +
                         '<tr>' +
-                            '<td>' +
+                            '<td colspan="2" style="width:36%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('المشرف البيداغوجي والمؤسسة (inf.dll):') + '</div>' +
                                 '<div class="a4-cell-val"><strong>' + bidi(cfg.teacher_name) + '</strong> &nbsp;|&nbsp; <span>' + bidi(cfg.institution_name) + '</span></div>' +
                             '</td>' +
-                            '<td>' +
+                            '<td style="width:32%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('تاريخ وتوقيت الإنجاز:') + '</div>' +
                                 '<div class="a4-cell-val"><bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></div>' +
                             '</td>' +
-                            '<td>' +
+                            '<td style="width:32%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('حالة إنجاز الجلسة والتقدم:') + '</div>' +
                                 '<div class="a4-cell-val">' + sessionProgressBadgeHtml + '</div>' +
                             '</td>' +
@@ -1299,7 +1316,7 @@
                             '<th style="width:6.5%;text-align:center;">' + bidi('المحاولات') + '</th>' +
                             '<th style="width:8%;text-align:center;">' + bidi('المعامل الأقصى') + '</th>' +
                             '<th style="width:8%;text-align:center;">' + bidi('الممنوحة') + '</th>' +
-                            '<th style="width:7%;text-align:center;">' + bidi('الخصم') + '</th>' +
+                            '<th style="width:7%;text-align:center;">' + bidi('الخصم / غير المستوفاة') + '</th>' +
                             '<th style="width:23%;text-align:right;">' + bidi('الملاحظات وتفاصيل الإنجاز') + '</th>' +
                         '</tr>' +
                     '</thead>' +
@@ -1796,8 +1813,9 @@
             ctx.textAlign = 'right';
             ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#0F172A';
-            var sFullName = ((stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || 'تلميذ')).trim();
-            ctx.fillText('اسم التلميذ(ة): ' + sFullName + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      رقم الجهاز: ' + (stu.pcNumber || '01'), 1140, 296);
+            var sLastName = (stu.lastName || '—').trim();
+            var sFirstName = (stu.firstName || stu.fullName || '—').trim();
+            ctx.fillText('اللقب: ' + sLastName + '      |      الاسم: ' + sFirstName + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      رقم الجهاز: #' + (stu.pcNumber || '01'), 1140, 296);
 
             ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#475569';
@@ -2049,11 +2067,12 @@
             curY += 32;
 
             var mathSteps = [
-                { num: '1', lbl: 'مجموع النقاط العملية المستحقة:', val: practicalEarned.toFixed(2) + ' / ' + practicalMax.toFixed(2), sub: 'مجموع النقاط المكتسبة من الخطوات العملية المنجزة', bg: '#F8FAFC' },
-                { num: '2', lbl: 'مجموع نقاط الأسئلة التقويمية:', val: (showQuizzes ? (quizEarned.toFixed(2) + ' / ' + quizMax.toFixed(2)) : 'معطلة من الأستاذ'), sub: (showQuizzes ? 'نقاط الأسئلة بحسب عدد المحاولات المستهلكة' : 'تم اعتماد تقييم المهام العملية فقط'), bg: '#F8FAFC' },
-                { num: '3', lbl: 'المجموع الإجمالي الخام المكتسب:', val: grandTotalEarned.toFixed(2) + ' / ' + grandTotalMax.toFixed(2), sub: 'مجموع النقاط العملية + نقاط الأسئلة التقويمية', bg: '#F8FAFC' },
-                { num: '4', lbl: 'تطبيق القاعدة الثلاثية الرسمية (على 20):', val: baseScoreOutOf20.toFixed(2) + ' / 20.00', sub: '(' + grandTotalEarned.toFixed(2) + ' ÷ ' + grandTotalMax.toFixed(2) + ') × 20', bg: '#F0F9FF' },
-                { num: '5', lbl: 'خصم استهلاك التلميحات المساعدة:', val: '-' + pen.toFixed(2) + ' نقطة', sub: 'خصم بيداغوجي وفق معايير سلم التنقيط', bg: '#FEF2F2' }
+                { num: '1', lbl: 'مجموع معاملات المهام العملية:', val: practicalEarned.toFixed(2) + ' / ' + practicalMax.toFixed(2), sub: 'مجموع النقاط المكتسبة من الخطوات العملية المنجزة', bg: '#F8FAFC' },
+                { num: '2', lbl: 'مجموع معاملات الأسئلة التقويمية:', val: (showQuizzes ? (quizEarned.toFixed(2) + ' / ' + quizMax.toFixed(2)) : 'معطلة من الأستاذ'), sub: (showQuizzes ? 'نقاط الأسئلة بحسب عدد المحاولات المستهلكة' : 'تم اعتماد تقييم المهام العملية فقط'), bg: '#F8FAFC' },
+                { num: '3', lbl: 'مجموع النقاط المحصلة من المعاملات:', val: grandTotalEarned.toFixed(2) + ' / ' + grandTotalMax.toFixed(2), sub: 'مجموع النقاط العملية + نقاط الأسئلة التقويمية', bg: '#F8FAFC' },
+                { num: '4', lbl: 'تطبيق القاعدة الثلاثية الرسمية (من 20):', val: baseScoreOutOf20.toFixed(2) + ' / 20.00', sub: '(' + grandTotalEarned.toFixed(2) + ' ÷ ' + grandTotalMax.toFixed(2) + ') × 20 = ' + baseScoreOutOf20.toFixed(2), bg: '#F0F9FF' },
+                { num: '5', lbl: 'الخصومات الجزائية المباشرة من العلامة:', val: (pen > 0 ? ('-' + pen.toFixed(2)) : '0.00') + ' نقطة', sub: (pen > 0 ? 'خصم جزائي مباشر عن مخالفات تسلسل المهام' : 'أداء نظامي سليم بدون أي خصومات'), bg: pen > 0 ? '#FEF2F2' : '#F8FAFC' },
+                { num: '6', lbl: 'العلامة النهائية المعتمدة المستحقة:', val: finalScoreStr + ' / 20.00', sub: (pen > 0 ? (baseScoreOutOf20.toFixed(2) + ' - ' + pen.toFixed(2) + ' = ' + finalScoreStr) : 'مطابقة للقاعدة الثلاثية دون خصم'), bg: '#F0FDF4' }
             ];
 
             for (var mIdx = 0; mIdx < mathSteps.length; mIdx++) {
