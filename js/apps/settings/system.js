@@ -27,7 +27,12 @@
                 desc: t('settings.system.nightLightDesc'),
                 checked: st.nightLight,
                 permAction: 'system.display',
-                onChange: function (v) { global.Win11State.set({ nightLight: v }); }
+                onChange: function (v) {
+                    if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                        global.Win11Assessment.recordUnrequestedChange('ضوء الليل Night Light');
+                    }
+                    global.Win11State.set({ nightLight: v });
+                }
             }));
             ctx.container.appendChild(ctx.ui.groupLabel(t('settings.system.scale')));
             ctx.container.appendChild(ctx.ui.rowSelect({
@@ -106,7 +111,12 @@
                 desc: t('settings.system.notifDesc'),
                 checked: st.dnd,
                 permAction: 'system.notifications',
-                onChange: function (v) { global.Win11State.set({ dnd: v }); }
+                onChange: function (v) {
+                    if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                        global.Win11Assessment.recordUnrequestedChange('وضع عدم الإزعاج DND');
+                    }
+                    global.Win11State.set({ dnd: v });
+                }
             }));
             return;
         }
@@ -140,7 +150,12 @@
                 title: t('quick.batterySaver'),
                 checked: st.batterySaver,
                 permAction: 'system.power',
-                onChange: function (v) { global.Win11State.set({ batterySaver: v }); }
+                onChange: function (v) {
+                    if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                        global.Win11Assessment.recordUnrequestedChange('توفير شحن البطارية Battery Saver');
+                    }
+                    global.Win11State.set({ batterySaver: v });
+                }
             }));
             return;
         }
@@ -165,7 +180,12 @@
                 title: t('settings.system.snapWindows'),
                 desc: t('settings.system.snapWindowsDesc'),
                 checked: st.snapWindowsEnabled,
-                onChange: function (v) { global.Win11State.set({ snapWindowsEnabled: v }); }
+                onChange: function (v) {
+                    if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                        global.Win11Assessment.recordUnrequestedChange('محاذاة النوافذ Snap Windows');
+                    }
+                    global.Win11State.set({ snapWindowsEnabled: v });
+                }
             }));
             return;
         }

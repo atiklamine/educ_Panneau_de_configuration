@@ -17,7 +17,12 @@
             value: st.textScale,
             unit: '%',
             permAction: 'accessibility.change',
-            onChange: function (v) { global.Win11State.set({ textScale: v }, 'theme:changed'); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('حجم النص (إمكانية الوصول)');
+                }
+                global.Win11State.set({ textScale: v }, 'theme:changed');
+            }
         }));
         ctx.container.appendChild(ctx.ui.rowToggle({
             icon: 'palette',
@@ -25,7 +30,12 @@
             desc: t('settings.accessibility.highContrastDesc'),
             checked: st.highContrast,
             permAction: 'accessibility.change',
-            onChange: function (v) { global.Win11State.set({ highContrast: v }, 'theme:changed'); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('التباين العالي (إمكانية الوصول)');
+                }
+                global.Win11State.set({ highContrast: v }, 'theme:changed');
+            }
         }));
         ctx.container.appendChild(ctx.ui.rowToggle({
             icon: 'sliders',
@@ -33,7 +43,12 @@
             desc: t('settings.accessibility.reducedMotionDesc'),
             checked: st.reducedMotion,
             permAction: 'accessibility.change',
-            onChange: function (v) { global.Win11State.set({ reducedMotion: v }, 'theme:changed'); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('تقليل الحركة (إمكانية الوصول)');
+                }
+                global.Win11State.set({ reducedMotion: v }, 'theme:changed');
+            }
         }));
         ctx.container.appendChild(ctx.ui.rowLink({
             icon: 'mouse',

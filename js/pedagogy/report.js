@@ -1332,65 +1332,50 @@
         var pcNum = global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01'));
 
         // ==========================================
-        // SECTION A: HEADER & STUDENT INFO
+        // SECTION A: STUDENT INFO BOX (MATCHING IMAGE 1)
         // ==========================================
         var isMultiStudent = Array.isArray(stu.participants) && stu.participants.length > 1;
-        var participantValHtml = '';
-        var participantCellLabel = '';
+        var studentBoxHtml = '';
 
         if (isMultiStudent) {
-            participantCellLabel = 'المشاركون في العمل التطبيقي (اللقب والاسم):';
-            participantValHtml = stu.participants.map(function (p, idx) {
+            var pListStr = stu.participants.map(function (p, idx) {
                 var l = String(p.lastName || '—').trim().toUpperCase();
                 var f = String(p.firstName || '—').trim().toUpperCase();
-                return (idx + 1) + ') <span style="color:#64748B;font-size:10px;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(l) + '</strong> &nbsp;|&nbsp; <span style="color:#64748B;font-size:10px;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(f) + '</strong>';
-            }).join('<br>');
+                return (idx + 1) + ') <span style="color:#64748B;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(l) + '</strong> &nbsp;<span style="color:#64748B;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(f) + '</strong>';
+            }).join(' &nbsp;&nbsp;|&nbsp;&nbsp; ');
+
+            studentBoxHtml =
+                '<div class="a4-student-box">' +
+                    '<div class="sr-only" style="display:none;">' + bidi('القسم (أ): بيانات التلميذ والجلسة التقويمية') + '</div>' +
+                    '<div class="a4-student-line1">' +
+                        '<span>' + bidi('المشاركون في العمل التطبيقي: ') + pListStr + '</span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('الفوج: ') + '<strong>' + bidi(stu.classGroup) + '</strong></span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('الجهاز: ') + '<strong><bdi dir="ltr">#' + pcNum + '</bdi></strong></span>' +
+                    '</div>' +
+                    '<div class="a4-student-line2">' +
+                        '<span>' + bidi('النشاط: ') + '<strong>' + bidi(sessionLabel) + '</strong>' + (isMultiStudent ? (' <span style="font-size:10.5px;color:#0284C7;font-weight:700;">(' + bidi('عمل مشترك') + ')</span>') : '') + '</span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('تاريخ الإنجاز: ') + '<bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('حالة الجلسة: ') + sessionProgressBadgeHtml + '</span>' +
+                    '</div>' +
+                '</div>';
         } else {
-            participantCellLabel = 'اسم ولقب التلميذ(ة):';
             var sL = String(stu.lastName || '—').trim().toUpperCase();
             var sF = String(stu.firstName || stu.fullName || '—').trim().toUpperCase();
-            participantValHtml = '<span style="color:#64748B;font-size:11px;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(sL) + '</strong> &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#64748B;font-size:11px;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(sF) + '</strong>';
+            studentBoxHtml =
+                '<div class="a4-student-box">' +
+                    '<div class="sr-only" style="display:none;">' + bidi('القسم (أ): بيانات التلميذ والجلسة التقويمية') + '</div>' +
+                    '<div class="a4-student-line1">' +
+                        '<span>' + bidi('اسم ولقب التلميذ(ة): ') + '<span style="color:#64748B;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(sL) + '</strong> &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#64748B;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(sF) + '</strong></span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('الفوج: ') + '<strong>' + bidi(stu.classGroup) + '</strong></span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('الجهاز: ') + '<strong><bdi dir="ltr">#' + pcNum + '</bdi></strong></span>' +
+                    '</div>' +
+                    '<div class="a4-student-line2">' +
+                        '<span>' + bidi('النشاط: ') + '<strong>' + bidi(sessionLabel) + '</strong>' + (isMultiStudent ? (' <span style="font-size:10.5px;color:#0284C7;font-weight:700;">(' + bidi('عمل مشترك') + ')</span>') : '') + '</span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('تاريخ الإنجاز: ') + '<bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></span>' +
+                        ' &nbsp;&nbsp;|&nbsp;&nbsp; <span>' + bidi('حالة الجلسة: ') + sessionProgressBadgeHtml + '</span>' +
+                    '</div>' +
+                '</div>';
         }
-
-        var sectionAHtml =
-            '<div class="a4-section-a">' +
-                '<div class="a4-section-title">' +
-                    '<span>' + bidi('القسم (أ): بيانات التلميذ والجلسة التقويمية') + '</span>' +
-                    '<span style="font-size:11px;color:#475569;font-weight:normal;">' + bidi('بيانات رسمية معتمدة') + '</span>' +
-                '</div>' +
-                '<table class="a4-info-table">' +
-                    '<tbody>' +
-                        '<tr>' +
-                            '<td style="width:36%;vertical-align:top;">' +
-                                '<div class="a4-cell-lbl">' + bidi(participantCellLabel) + '</div>' +
-                                '<div class="a4-cell-val" style="font-size:' + (isMultiStudent ? '11px' : '13px') + ';font-weight:700;color:#0F172A;line-height:1.45;">' + participantValHtml + '</div>' +
-                            '</td>' +
-                            '<td style="width:32%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('الفوج التربوي ورقم الجهاز:') + '</div>' +
-                                '<div class="a4-cell-val"><strong>' + bidi(stu.classGroup) + '</strong> &nbsp;|&nbsp; <span>حاسوب <bdi dir="ltr">#' + pcNum + '</bdi></span></div>' +
-                            '</td>' +
-                            '<td style="width:32%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('طبيعة النشاط ونمط المحاكاة:') + '</div>' +
-                                '<div class="a4-cell-val"><strong>' + bidi(sessionLabel) + '</strong>' + (isMultiStudent ? (' <span style="font-size:10.5px;color:#0284C7;font-weight:700;">(' + bidi('عمل مشترك') + ')</span>') : '') + '</div>' +
-                            '</td>' +
-                        '</tr>' +
-                        '<tr>' +
-                            '<td style="width:36%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('المشرف البيداغوجي والمؤسسة (inf.dll):') + '</div>' +
-                                '<div class="a4-cell-val"><strong>' + bidi(cfg.teacher_name) + '</strong> &nbsp;|&nbsp; <span>' + bidi(cfg.institution_name) + '</span></div>' +
-                            '</td>' +
-                            '<td style="width:32%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('تاريخ وتوقيت الإنجاز:') + '</div>' +
-                                '<div class="a4-cell-val"><bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></div>' +
-                            '</td>' +
-                            '<td style="width:32%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('حالة إنجاز الجلسة والتقدم:') + '</div>' +
-                                '<div class="a4-cell-val">' + sessionProgressBadgeHtml + '</div>' +
-                            '</td>' +
-                        '</tr>' +
-                    '</tbody>' +
-                '</table>' +
-            '</div>';
 
         // ==========================================
         // TOP SCORE & DURATION HIGHLIGHT CARD
@@ -1624,7 +1609,7 @@
                     '</div>' +
                 '</div>' +
 
-                sectionAHtml +
+                studentBoxHtml +
                 topSummaryCardHtml +
                 sectionBHtml +
                 mathBreakdownHtml +
@@ -1667,6 +1652,9 @@
             '.a4-banner{text-align:center;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 12px;}\n' +
             '.a4-banner-title{font-size:15px;font-weight:800;color:#1E3A8A;}\n' +
             '.a4-banner-sub{font-size:11.5px;color:#475569;margin-top:2px;}\n' +
+            '.a4-student-box{background:#F1F5F9;border:1.2px solid #CBD5E1;border-radius:6px;padding:8px 14px;margin:8px 0 10px 0;font-size:12px;color:#0F172A;line-height:1.6;box-sizing:border-box;}\n' +
+            '.a4-student-line1{margin-bottom:4px;font-size:12px;color:#0F172A;}\n' +
+            '.a4-student-line2{font-size:11.5px;color:#334155;}\n' +
             '.a4-section-title{font-size:12.5px;font-weight:700;color:#1E3A8A;background:#F1F5F9;border:1px solid #CBD5E1;border-right:4px solid #1E3A8A;padding:4px 10px;margin:10px 0 6px 0;border-radius:4px;display:flex;align-items:center;justify-content:space-between;}\n' +
             '.a4-info-table{width:100%;border-collapse:collapse;margin:4px 0 8px 0;font-size:11px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:6px;overflow:hidden;}\n' +
             '.a4-info-table td{padding:5px 8px;border:1px solid #CBD5E1;vertical-align:middle;text-align:right;}\n' +
@@ -1685,7 +1673,7 @@
             '.a4-pass-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;}\n' +
             '.a4-pass-badge.is-pass{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;}\n' +
             '.a4-pass-badge.is-fail{background:#FEE2E2;color:#B91C1C;border:1px solid #FCA5A5;}\n' +
-            '.a4-top-summary-card{display:flex;gap:10px;margin:8px 0 10px 0;align-items:stretch;box-sizing:border-box;}\n' +
+            '.a4-top-summary-card{display:flex;gap:10px;margin:8px 0 12px 0;align-items:stretch;box-sizing:border-box;}\n' +
             '.a4-tsc-score{flex:1 1 50%;background:#F0FDF4;border:2px solid #16A34A;border-radius:6px;padding:8px 10px;text-align:center;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;}\n' +
             '.a4-tsc-score.is-fail{background:#FFFBEB;border-color:#D97706;}\n' +
             '.a4-tsc-time{flex:1 1 50%;background:#EFF6FF;border:2px solid #2563EB;border-radius:6px;padding:8px 10px;text-align:center;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;}\n' +
@@ -1695,11 +1683,11 @@
             '.a4-tsc-time.is-partial .a4-tsc-grade{color:#B45309;}\n' +
             '.a4-tsc-time.is-fail{background:#FEF2F2;border-color:#DC2626;}\n' +
             '.a4-tsc-time.is-fail .a4-tsc-grade{color:#DC2626;}\n' +
-            '.a4-tsc-title{font-size:11.5px;font-weight:700;color:#475569;margin-bottom:2px;}\n' +
-            '.a4-tsc-grade{font-size:26px;font-weight:900;color:#15803D;line-height:1.15;margin:2px 0;}\n' +
+            '.a4-tsc-title{font-size:12px;font-weight:700;color:#475569;margin-bottom:2px;}\n' +
+            '.a4-tsc-grade{font-size:28px;font-weight:900;color:#15803D;line-height:1.15;margin:2px 0;}\n' +
             '.a4-tsc-score.is-fail .a4-tsc-grade{color:#B45309;}\n' +
-            '.a4-tsc-time .a4-tsc-grade{color:#1D4ED8;font-family:Consolas,monospace;}\n' +
-            '.a4-tsc-out{font-size:14px;color:#64748B;font-weight:700;}\n' +
+            '.a4-tsc-time .a4-tsc-grade{color:#1D4ED8;font-family:Consolas,monospace;font-size:28px;font-weight:900;}\n' +
+            '.a4-tsc-out{font-size:16px;color:#64748B;font-weight:700;}\n' +
             '.a4-tsc-badge{margin-top:3px;}\n' +
             '.a4-report-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;border-spacing:0 !important;margin:6px 0 8px 0;font-size:11px;box-sizing:border-box !important;}\n' +
             '.a4-report-table col{box-sizing:border-box !important;}\n' +
@@ -1866,58 +1854,95 @@
             ctx.textAlign = 'center';
             ctx.fillStyle = '#0F172A';
             ctx.font = 'bold 16px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية', 620, 72);
+            ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية', 620, 68);
 
-            ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#475569';
             var instStr = (cfg.institution_name || 'ثانوية الشهيد قورين محمد الأغواط');
             var teachStr = (cfg.teacher_name || 'أستاذ مادة المعلوماتية');
-            ctx.fillText('المؤسسة: ' + instStr + '      |      الأستاذ المشرف: ' + teachStr, 620, 98);
+            ctx.textAlign = 'right';
+            ctx.fillText('المؤسسة: ' + instStr, 1140, 92);
+            ctx.fillText('الأستاذ المشرف: ' + teachStr, 1140, 110);
 
-            // Main Title Banner
+            ctx.textAlign = 'left';
+            ctx.fillText('Année scolaire: ' + (cfg.academic_year || '2026 / 2027'), 100, 92);
+            ctx.fillText('Niveau: ' + (cfg.target_level || 'السنة أولى ثانوي'), 100, 110);
+
+            // Main Title Banner (Y = 124..178)
             ctx.fillStyle = '#F8FAFC';
-            ctx.fillRect(80, 114, 1080, 58);
+            ctx.fillRect(80, 124, 1080, 54);
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = '#CBD5E1';
-            ctx.strokeRect(80, 114, 1080, 58);
+            ctx.strokeRect(80, 124, 1080, 54);
 
+            ctx.textAlign = 'center';
             ctx.fillStyle = '#1E3A8A';
-            ctx.font = 'bold 20px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي', 620, 142);
+            ctx.font = 'bold 19px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي', 620, 147);
 
             ctx.fillStyle = '#475569';
-            ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)', 620, 163);
+            ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)', 620, 168);
 
-            // 2. Top Summary Cards (Y = 182..258)
-            // Card 1: Score Card (80, 182, 345, 76)
-            ctx.fillStyle = isPassed ? '#F0FDF4' : '#FEF2F2';
-            ctx.fillRect(80, 182, 345, 76);
-            ctx.strokeStyle = isPassed ? '#16A34A' : '#DC2626';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(80, 182, 345, 76);
+            // 2. Section A: Student Metadata Box (Y = 186..254)
+            ctx.fillStyle = '#F1F5F9';
+            ctx.fillRect(80, 186, 1080, 68);
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.strokeRect(80, 186, 1080, 68);
 
-            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = isPassed ? '#166534' : '#991B1B';
-            ctx.fillText('العلامة النهائية المستحقة:', 252, 202);
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            var sLastName = (stu.lastName || '—').trim().toUpperCase();
+            var sFirstName = (stu.firstName || stu.fullName || '—').trim().toUpperCase();
+            var participantBanner = '';
+            if (stu.participants && Array.isArray(stu.participants) && stu.participants.length > 1) {
+                var pList = stu.participants.map(function (p, idx) {
+                    return (idx + 1) + ') اللقب: ' + (p.lastName || '—').trim().toUpperCase() + ' الاسم: ' + (p.firstName || '—').trim().toUpperCase();
+                }).join('   |   ');
+                participantBanner = 'المشاركون في العمل التطبيقي: ' + pList;
+            } else {
+                participantBanner = 'اسم ولقب التلميذ(ة):   اللقب: ' + sLastName + '   |   الاسم: ' + sFirstName;
+            }
+            ctx.fillText(participantBanner + '   |   الفوج: ' + (stu.classGroup || '1AS') + '   |   الجهاز: #' + (stu.pcNumber || '01'), 1140, 212);
 
-            // Draw Score strictly LTR
-            ctx.save();
-            ctx.direction = 'ltr';
-            ctx.font = 'bold 23px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = isPassed ? '#15803D' : '#DC2626';
-            ctx.fillText(finalScoreStr + ' / 20.00', 252, 229);
-            ctx.restore();
-
-            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = isPassed ? '#15803D' : '#DC2626';
-            ctx.fillText('(' + finalScoreStr + ' من أصل 20.00)', 252, 248);
-
+            ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#334155';
             var isAllDone = (enabledTasks.length > 0 && doneTasksCount === enabledTasks.length);
             var isZeroDone = (doneTasksCount === 0);
             var isPartDone = (!isAllDone && !isZeroDone);
+            var sessStatusStr = isAllDone ? 'مكتملة بالكامل (6/6 — 100%)' : (isPartDone ? ('غير مكتملة — منجزة جزئياً (' + completionPct + '%)') : 'غير منجزة (0%)');
+            ctx.fillText('النشاط: ' + (isExam ? 'امتحان رسمي' : 'نشاط تطبيقي تدريبي (استطلاع وتدريب)') + '   |   تاريخ الإنجاز: ' + dateFormatted + '   |   حالة الجلسة: ' + sessStatusStr, 1140, 238);
 
-            // Card 2: Duration Card (445, 182, 350, 76)
+            // 3. Top Summary Cards: Score Card (Right: 630..1160) & Duration Card (Left: 80..610) (Y = 262..352)
+            // Right Card: Score Card (X = 630, W = 530, Y = 262, H = 90)
+            ctx.fillStyle = isPassed ? '#F0FDF4' : '#FFFBEB';
+            ctx.fillRect(630, 262, 530, 90);
+            ctx.strokeStyle = isPassed ? '#16A34A' : '#D97706';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(630, 262, 530, 90);
+
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = isPassed ? '#166534' : '#92400E';
+            ctx.fillText('العلامة النهائية المستحقة:', 895, 281);
+
+            ctx.save();
+            ctx.direction = 'ltr';
+            ctx.font = '900 25px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = isPassed ? '#15803D' : '#B45309';
+            ctx.fillText(finalScoreStr + ' / 20.00', 895, 309);
+            ctx.restore();
+
+            ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = isPassed ? '#15803D' : '#B45309';
+            ctx.fillText('(' + finalScoreStr + ' من أصل 20.00)', 895, 327);
+
+            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText(isPassed ? '✔ مستوفٍ لمعيار النجاح — معتمد' : '✘ دون المعدل المطلوب', 895, 344);
+
+            // Left Card: Duration Card (X = 80, W = 530, Y = 262, H = 90)
             var durBg = isAllDone ? '#F0FDF4' : (isPartDone ? '#FFFBEB' : '#FEF2F2');
             var durBorder = isAllDone ? '#16A34A' : (isPartDone ? '#D97706' : '#DC2626');
             var durTextCol = isAllDone ? '#15803D' : (isPartDone ? '#B45309' : '#DC2626');
@@ -1927,79 +1952,36 @@
                 : (isPartDone
                     ? ('توقيت استخراج التقرير (غير مكتملة — بقيت ' + (enabledTasks.length - doneTasksCount) + ' مهام)')
                     : 'توقيت استخراج التقرير (لم تُنجز أي مهمة)');
+            var durBadgeTxt = isAllDone
+                ? '✔ جلسة مكتملة ومستوفاة لكافة المهام (6 / 6 مهام — 100%)'
+                : (isPartDone ? '⚠️ جلسة غير مكتملة جزئياً' : '✘ غير منجزة');
 
             ctx.fillStyle = durBg;
-            ctx.fillRect(445, 182, 350, 76);
+            ctx.fillRect(80, 262, 530, 90);
             ctx.strokeStyle = durBorder;
             ctx.lineWidth = 2;
-            ctx.strokeRect(445, 182, 350, 76);
+            ctx.strokeRect(80, 262, 530, 90);
 
             ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = durTextCol;
-            ctx.fillText(durTitle, 620, 202);
+            ctx.fillText(durTitle, 345, 281);
 
             ctx.save();
             ctx.direction = 'ltr';
-            ctx.font = 'bold 22px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = '900 25px Consolas, monospace';
             ctx.fillStyle = durTextCol;
-            ctx.fillText(totalDurationStr, 620, 229);
+            ctx.fillText(totalDurationStr, 345, 309);
             ctx.restore();
 
-            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = durTextCol;
-            ctx.fillText(durClarifier, 620, 248);
-
-            // Card 3: Completion / Mode Card (815, 182, 345, 76)
-            ctx.fillStyle = '#F8FAFC';
-            ctx.fillRect(815, 182, 345, 76);
-            ctx.strokeStyle = '#64748B';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(815, 182, 345, 76);
-
-            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#334155';
-            ctx.fillText('التقدم الكلي والنمط:', 987, 202);
-
-            ctx.font = 'bold 17px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = isAllDone ? '#15803D' : (isPartDone ? '#B45309' : '#DC2626');
-            var modeLbl = isExam ? 'امتحان رسمي' : 'استطلاع وتدريب';
-            ctx.fillText(completionPct + '% (' + modeLbl + ')', 987, 228);
+            ctx.fillText(durClarifier, 345, 327);
 
             ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = isAllDone ? '#15803D' : (isPartDone ? '#B45309' : '#DC2626');
-            var compBadgeTxt = isAllDone ? '✔ مكتملة (100%)' : (isPartDone ? '⚠️ غير مكتملة جزئياً' : '✘ غير منجزة');
-            ctx.fillText(compBadgeTxt, 987, 248);
+            ctx.fillText(durBadgeTxt, 345, 344);
 
-            // 3. Section A: Student Metadata Box (Y = 268..338)
-            ctx.fillStyle = '#F8FAFC';
-            ctx.fillRect(80, 268, 1080, 70);
-            ctx.lineWidth = 1.2;
-            ctx.strokeStyle = '#E2E8F0';
-            ctx.strokeRect(80, 268, 1080, 70);
-
-            ctx.textAlign = 'right';
-            ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#0F172A';
-            var sLastName = (stu.lastName || '—').trim().toUpperCase();
-            var sFirstName = (stu.firstName || stu.fullName || '—').trim().toUpperCase();
-            var participantBanner = '';
-            if (stu.participants && Array.isArray(stu.participants) && stu.participants.length > 1) {
-                var pList = stu.participants.map(function (p, idx) {
-                    return (idx + 1) + ') ' + (p.lastName || '—').trim().toUpperCase() + ' ' + (p.firstName || '—').trim().toUpperCase();
-                }).join('  |  ');
-                participantBanner = 'المشاركون: ' + pList;
-            } else {
-                participantBanner = 'اللقب: ' + sLastName + '      |      الاسم: ' + sFirstName;
-            }
-            ctx.fillText(participantBanner + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      رقم الجهاز: #' + (stu.pcNumber || '01'), 1140, 296);
-
-            ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#475569';
-            var sessStatusStr = isAllDone ? 'مكتملة بالكامل (100%)' : (isPartDone ? ('غير مكتملة — منجزة جزئياً (' + completionPct + '%)') : 'غير منجزة (0%)');
-            ctx.fillText('تاريخ الإنجاز: ' + dateFormatted + '      |      حالة الجلسة والتقدم: ' + sessStatusStr, 1140, 323);
-
-            // 4. Section B: Table Header (Y = 348..378)
-            var curY = 348;
+            // 4. Section B: Table Header (Y = 362..392)
+            var curY = 362;
             ctx.fillStyle = '#1E3A8A';
             ctx.fillRect(80, curY, 1080, 30);
             ctx.fillStyle = '#FFFFFF';
@@ -2008,7 +1990,7 @@
             ctx.fillText('القسم (ب): جدول التفصيل الدقيق للمهام العملية والأسئلة التقويمية', 1140, curY + 20);
             curY += 30;
 
-            // Column Headers (Y = 378..408)
+            // Column Headers (Y = 392..422)
             ctx.fillStyle = '#F1F5F9';
             ctx.fillRect(80, curY, 1080, 30);
             ctx.strokeStyle = '#CBD5E1';

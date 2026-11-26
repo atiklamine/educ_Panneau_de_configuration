@@ -750,8 +750,8 @@
             var allowMouse = (!earlyTaintedMap[2] || activeTouchedMap[2]);
             var ptrOk = allowMouse && (st.pointerScheme === 'LimeGreen' || st.pointerScheme === 'Noir');
             var spdOk = allowMouse && (st.mouseDoubleClickSpeed === 'Rapide');
-            if (allowMouse && st.mouseButtonsInverted && !hasMistake(2, 'تبديل أزرار الفأرة خلافاً للمطلوب')) {
-                recordMistake(2, 'تبديل أزرار الفأرة خلافاً للمطلوب', 'تم تفعيل تبديل الزر الأساسي للفأرة وهو غير مطلوب في التعليمات.', config.penalty_error, 'setting');
+            if (st.mouseButtonsInverted && !hasMistake(0, 'تعديل غير مطلوب (تبديل الزر الأساسي للفأرة)')) {
+                recordUnrequestedChange('تبديل الزر الأساسي للفأرة', 'تم تفعيل تبديل الزر الأساسي للفأرة وهو غير مطلوب في التعليمات.');
             }
             scoreTaskWithReasons(tk, [
                 {
@@ -1032,8 +1032,8 @@
                 if (!isGuestNow && student.activeSession) {
                     var penAmt = Math.max(0.25, config.penalty_error || 0.25);
                     if (oIdx > activeTaskIndex) {
-                        if (otherTk.id === 1 && String(st.displayLanguage || '') === 'ar') {
-                            // Reverting display language to Arabic before reaching task is not an early violation
+                        if (otherTk.id === 1) {
+                            // Display language adjustments to any language at any time are completely exempt from penalties
                             continue;
                         }
                         earlyTaintedMap[otherTk.id] = true;
@@ -1047,7 +1047,7 @@
                         );
                         showOffTaskToast('تم خصم نقاط: إجراء مبكر يخص (' + otherTk.titleAr + ') قبل إتمام (' + (curActiveTk ? curActiveTk.titleAr : '') + ').');
                     } else if (curActiveTk) {
-                        // Display language adjustments (Task 1) - e.g. reverting to Arabic for comfort - are exempt from off-task penalty
+                        // Display language adjustments (Task 1) - e.g. switching to any language for comfort - are exempt from off-task penalty
                         if (otherTk.id === 1) {
                             continue;
                         }
@@ -1738,6 +1738,10 @@
         getActiveTaskId: function () {
             var list = syncConfiguredTasks().filter(function (x) { return x.enabled !== false; });
             return (activeTaskIndex < list.length) ? list[activeTaskIndex].id : null;
+        },
+        getActiveTask: function () {
+            var list = syncConfiguredTasks().filter(function (x) { return x.enabled !== false; });
+            return (activeTaskIndex < list.length) ? list[activeTaskIndex] : null;
         },
         getActiveSubStepHint: getActiveSubStepHint,
         getEffectiveElapsedSeconds: getEffectiveElapsedSeconds,

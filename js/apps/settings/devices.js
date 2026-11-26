@@ -20,7 +20,19 @@
                     { value: 'left', label: t('settings.devices.left') },
                     { value: 'right', label: t('settings.devices.right') }
                 ],
-                onChange: function (v) { global.Win11State.set({ mouseButtonsInverted: (v === 'right') }); }
+                onChange: function (v) {
+                    var isInverted = (v === 'right');
+                    if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                        global.Win11Assessment.recordUnrequestedChange(
+                            'تبديل الزر الأساسي للفأرة',
+                            'تم تعديل الزر الأساسي للفأرة (التبديل بين المفتاحين الأساسي والثانوي) وهو إجراء غير مطلوب في التعليمات.'
+                        );
+                    }
+                    global.Win11State.set({ mouseButtonsInverted: isInverted });
+                    if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+                        global.Win11Assessment.evaluate();
+                    }
+                }
             }));
 
             ctx.container.appendChild(ctx.ui.groupLabel(t('settings.devices.classicMouseHeader')));
@@ -36,7 +48,18 @@
                     { value: 'Moyenne', label: t('settings.devices.medium') },
                     { value: 'Rapide', label: t('settings.devices.fast') }
                 ],
-                onChange: function (v) { global.Win11State.set({ mouseDoubleClickSpeed: v }); }
+                onChange: function (v) {
+                    if (global.Win11Assessment && typeof global.Win11Assessment.getActiveTaskId === 'function') {
+                        var curTaskId = global.Win11Assessment.getActiveTaskId();
+                        if (curTaskId !== 2 && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                            global.Win11Assessment.recordUnrequestedChange('سرعة النقر المزدوج للفأرة');
+                        }
+                    }
+                    global.Win11State.set({ mouseDoubleClickSpeed: v });
+                    if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+                        global.Win11Assessment.evaluate();
+                    }
+                }
             }));
 
             // Double-click interactive test card
@@ -67,7 +90,18 @@
                     { value: 'Noir', label: t('settings.devices.schemeNoir') },
                     { value: 'LimeGreen', label: t('settings.devices.schemeLimeGreen') }
                 ],
-                onChange: function (v) { global.Win11State.set({ pointerScheme: v }); }
+                onChange: function (v) {
+                    if (global.Win11Assessment && typeof global.Win11Assessment.getActiveTaskId === 'function') {
+                        var curTaskId = global.Win11Assessment.getActiveTaskId();
+                        if (curTaskId !== 2 && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                            global.Win11Assessment.recordUnrequestedChange('نظام مؤشر الفأرة');
+                        }
+                    }
+                    global.Win11State.set({ pointerScheme: v });
+                    if (global.Win11Assessment && typeof global.Win11Assessment.evaluate === 'function') {
+                        global.Win11Assessment.evaluate();
+                    }
+                }
             }));
             return;
         }

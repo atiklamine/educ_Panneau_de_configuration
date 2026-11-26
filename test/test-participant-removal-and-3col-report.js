@@ -59,16 +59,17 @@ global.Win11Assessment.startSession({
 
 var singleA4Html = global.Win11Report.buildA4Html();
 
-// Check 3-column table
-assert.ok(singleA4Html.indexOf('<td style="width:36%;vertical-align:top;">') !== -1, 'Row 1 Cell 1 must have width:36%');
-assert.ok(singleA4Html.indexOf('width:18%') === -1, 'Must NOT contain old 18% 4-column split');
-assert.ok(singleA4Html.indexOf('colspan="2"') === -1, 'Must NOT contain colspan="2" in info table');
+// Check restored student metadata box and highlight cards (matching Image 1)
+assert.ok(singleA4Html.indexOf('a4-student-box') !== -1, 'Must contain a4-student-box');
+assert.ok(singleA4Html.indexOf('a4-top-summary-card') !== -1, 'Must contain a4-top-summary-card');
+assert.ok(singleA4Html.indexOf('a4-tsc-score') !== -1, 'Must contain large score highlight card');
+assert.ok(singleA4Html.indexOf('a4-tsc-time') !== -1, 'Must contain large duration highlight card');
 assert.ok(singleA4Html.indexOf('اسم ولقب التلميذ(ة):') !== -1, 'Must have single student label');
 assert.ok(singleA4Html.indexOf('اللقب:') !== -1 && singleA4Html.indexOf('الاسم:') !== -1, 'Must display separate labels for surname and name');
 assert.ok(singleA4Html.indexOf('عرفة') !== -1 && singleA4Html.indexOf('ياسين') !== -1, 'Student name must appear');
-console.log('✓ TEST 1 PASSED: Single-student 3-column layout rendered cleanly without 4-col split.');
+console.log('✓ TEST 1 PASSED: Single-student restored layout rendered cleanly matching Image 1.');
 
-console.log('=== TEST 2: RESTORED 3-COLUMN REPORT LAYOUT (MULTI-STUDENTS) ===');
+console.log('=== TEST 2: RESTORED REPORT LAYOUT (MULTI-STUDENTS) ===');
 
 global.Win11Assessment.startSession({
     participants: [
@@ -82,13 +83,11 @@ global.Win11Assessment.startSession({
 });
 
 var multiA4Html = global.Win11Report.buildA4Html();
-assert.ok(multiA4Html.indexOf('<td style="width:36%;vertical-align:top;">') !== -1, 'Multi-student cell must maintain width:36%');
-assert.ok(multiA4Html.indexOf('width:18%') === -1, 'Must NOT contain old 18% 4-column split');
-assert.ok(multiA4Html.indexOf('colspan="2"') === -1, 'Must NOT contain colspan="2" in info table');
+assert.ok(multiA4Html.indexOf('a4-student-box') !== -1, 'Multi-student report must have a4-student-box');
 assert.ok(multiA4Html.indexOf('المشاركون في العمل التطبيقي') !== -1, 'Must have multi-participants label');
 assert.ok(multiA4Html.indexOf('ARFAOUI') !== -1 && multiA4Html.indexOf('MOKRANE') !== -1, 'First participant must appear uppercase');
 assert.ok(multiA4Html.indexOf('ATIK') !== -1 && multiA4Html.indexOf('MOHAMED LAMINE') !== -1, 'Second participant must appear uppercase');
-console.log('✓ TEST 2 PASSED: Multi-student 3-column layout comfortably accommodates enrolled participants.');
+console.log('✓ TEST 2 PASSED: Multi-student restored layout comfortably accommodates enrolled participants.');
 
 console.log('=== TEST 3: AUDIT TRAIL FOR PARTICIPANT REMOVAL MID-SIMULATION ===');
 
@@ -154,7 +153,7 @@ console.log('   Notice: ' + removalDiff.notice);
 var auditReportHtml = global.Win11Report.buildA4Html();
 assert.ok(auditReportHtml.indexOf('a4-section-d') !== -1, 'Section D must be rendered');
 assert.ok(auditReportHtml.indexOf('المشاركون المسجلون في البداية:') !== -1, 'Initial registration row must list initial participants');
-assert.ok(auditReportHtml.indexOf('حذف تلاميذ من المحاكاة (2)') !== -1, 'Modification table must list participant removal');
+assert.ok(auditReportHtml.indexOf('حذف تلاميذ من المحاكاة') !== -1, 'Modification table must list participant removal');
 assert.ok(auditReportHtml.indexOf('تم استبعاد/حذف') !== -1, 'Report must display the removal alert notice');
 assert.ok(auditReportHtml.indexOf('3 / 6 مهام') !== -1 || auditReportHtml.indexOf('3 من أصل 6') !== -1, 'Report must display the exact tasks completed at the moment of removal');
 
@@ -185,7 +184,31 @@ assert.strictEqual(addDiff.addedCount, 1);
 assert.ok(addDiff.notice.indexOf('تمت إضافة تلميذ مشارك') !== -1);
 console.log('✓ TEST 4 PASSED: Mid-simulation participant addition logged accurately.');
 
+console.log('=== TEST 5: UNREQUESTED MOUSE PRIMARY BUTTON INVERSION PENALTY ===');
+
+global.Win11Assessment.startSession({
+    lastName: 'عمراوي',
+    firstName: 'كمال',
+    classGroup: '1AS-01',
+    pcNumber: '05'
+});
+
+var beforeScores = global.Win11Assessment.getScores();
+assert.strictEqual(beforeScores.penalties, 0, 'No penalties initially');
+
+// Invert mouse buttons (unrequested setting change)
+global.Win11Assessment.recordUnrequestedChange('تبديل الزر الأساسي للفأرة');
+global.Win11State.set({ mouseButtonsInverted: true });
+global.Win11Assessment.evaluate();
+
+var afterScores = global.Win11Assessment.getScores();
+assert.ok(afterScores.penalties >= 0.25, 'Penalty must be recorded for mouse button inversion');
+var deductions = afterScores.deductionRows || [];
+var mouseDeduct = deductions.find(function (d) { return d.reason && d.reason.indexOf('تبديل الزر الأساسي للفأرة') !== -1; });
+assert.ok(mouseDeduct, 'Deduction row must mention primary mouse button switch');
+console.log('✓ TEST 5 PASSED: Mouse button inversion triggers immediate unrequested change penalty.');
+
 console.log('\n======================================================');
-console.log('ALL PARTICIPANT REMOVAL & 3-COL REPORT TESTS PASSED!');
+console.log('ALL PARTICIPANT REMOVAL, REPORT & MOUSE TESTS PASSED!');
 console.log('======================================================\n');
 process.exit(0);
