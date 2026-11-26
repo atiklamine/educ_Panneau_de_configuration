@@ -28,7 +28,12 @@
             desc: t('settings.privacy.locationDesc'),
             checked: st.privacy.location,
             permAction: 'privacy.security',
-            onChange: function (v) { global.Win11State.update(function (d) { d.privacy.location = v; }); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('أذونات الموقع Location');
+                }
+                global.Win11State.update(function (d) { d.privacy.location = v; });
+            }
         }));
         ctx.container.appendChild(ctx.ui.rowToggle({
             icon: 'navGaming',
@@ -36,7 +41,12 @@
             desc: t('settings.privacy.cameraDesc'),
             checked: st.privacy.camera,
             permAction: 'privacy.security',
-            onChange: function (v) { global.Win11State.update(function (d) { d.privacy.camera = v; }); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('أذونات الكاميرا Camera');
+                }
+                global.Win11State.update(function (d) { d.privacy.camera = v; });
+            }
         }));
         ctx.container.appendChild(ctx.ui.rowToggle({
             icon: 'volume',
@@ -44,7 +54,12 @@
             desc: t('settings.privacy.microphoneDesc'),
             checked: st.privacy.microphone,
             permAction: 'privacy.security',
-            onChange: function (v) { global.Win11State.update(function (d) { d.privacy.microphone = v; }); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('أذونات الميكروفون Microphone');
+                }
+                global.Win11State.update(function (d) { d.privacy.microphone = v; });
+            }
         }));
     });
 })(window);

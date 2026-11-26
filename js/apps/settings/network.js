@@ -32,6 +32,9 @@
             checked: st.wifiEnabled && !st.airplaneMode,
             permAction: 'network.wifi',
             onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('الشبكة اللاسلكية Wi-Fi');
+                }
                 global.Win11State.setWifiEnabled(v);
                 ctx.navigate('network', 'main');
             }
@@ -44,6 +47,9 @@
             checked: st.airplaneMode,
             permAction: 'network.admin',
             onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('نمط الطيران Airplane Mode');
+                }
                 global.Win11State.setAirplaneMode(v);
                 ctx.navigate('network', 'main');
             }
@@ -55,7 +61,12 @@
             desc: t('settings.network.vpnDesc'),
             checked: st.vpnEnabled,
             permAction: 'network.admin',
-            onChange: function (v) { global.Win11State.set({ vpnEnabled: v }); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('شبكة VPN');
+                }
+                global.Win11State.set({ vpnEnabled: v });
+            }
         }));
 
         ctx.container.appendChild(ctx.ui.rowToggle({
@@ -64,7 +75,12 @@
             desc: t('settings.network.proxyDesc'),
             checked: st.proxyEnabled,
             permAction: 'network.admin',
-            onChange: function (v) { global.Win11State.set({ proxyEnabled: v }); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('الخادم الوكيل Proxy');
+                }
+                global.Win11State.set({ proxyEnabled: v });
+            }
         }));
 
         var ethCard = document.createElement('div');

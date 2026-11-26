@@ -13,7 +13,12 @@
             desc: t('settings.gaming.gameModeDesc'),
             checked: st.gameMode,
             permAction: 'system.display',
-            onChange: function (v) { global.Win11State.set({ gameMode: v }); }
+            onChange: function (v) {
+                if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                    global.Win11Assessment.recordUnrequestedChange('وضع الألعاب Game Mode');
+                }
+                global.Win11State.set({ gameMode: v });
+            }
         }));
         ctx.container.appendChild(ctx.ui.rowLink({
             icon: 'folderOpen',

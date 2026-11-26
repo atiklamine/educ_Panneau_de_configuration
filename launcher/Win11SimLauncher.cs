@@ -711,10 +711,10 @@ namespace Win11SimHost
                         multiParticipantsText = Regex.Replace(multiParticipantsText, @"\s+", " ");
                     }
 
-                    Match mLn = Regex.Match(html ?? "", @"اللقب:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
-                    if (mLn.Success) stuLastName = CleanHtml(mLn.Groups[1].Value).Trim();
-                    Match mFn = Regex.Match(html ?? "", @"الاسم:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
-                    if (mFn.Success) stuFirstName = CleanHtml(mFn.Groups[1].Value).Trim();
+                    Match mLn = Regex.Match(html ?? "", @"اللقب:[\s\S]*?<div class=""a4-cell-val""[^>]*>([\s\S]*?)</div>");
+                    if (mLn.Success) stuLastName = CleanHtml(mLn.Groups[1].Value.Replace("<br>", " - ").Replace("<br/>", " - ")).Trim();
+                    Match mFn = Regex.Match(html ?? "", @"الاسم:[\s\S]*?<div class=""a4-cell-val""[^>]*>([\s\S]*?)</div>");
+                    if (mFn.Success) stuFirstName = CleanHtml(mFn.Groups[1].Value.Replace("<br>", " - ").Replace("<br/>", " - ")).Trim();
                     if ((!mLn.Success && !mFn.Success && string.IsNullOrEmpty(multiParticipantsText)) || (string.IsNullOrEmpty(stuLastName) && string.IsNullOrEmpty(stuFirstName) && string.IsNullOrEmpty(multiParticipantsText)))
                     {
                         Match mName = Regex.Match(html ?? "", @"اسم ولقب التلميذ(ة)?:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");

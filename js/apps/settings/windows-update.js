@@ -23,6 +23,9 @@
 
         hero.querySelector('#btn-check-upd').onclick = function () {
             var btn = this;
+            if (global.Win11Assessment && typeof global.Win11Assessment.recordUnrequestedChange === 'function') {
+                global.Win11Assessment.recordUnrequestedChange('تحديثات Windows', 'تشغيل فحص تحديثات النظام وهو إجراء غير مطلوب ضمن المهام التقويمية.');
+            }
             var runUpdate = function () {
                 var hl = hero.querySelector('#upd-headline');
                 btn.disabled = true;

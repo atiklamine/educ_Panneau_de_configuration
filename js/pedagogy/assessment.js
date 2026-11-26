@@ -580,6 +580,19 @@
         notify();
     }
 
+    function recordUnrequestedChange(settingLabel, detail) {
+        var lbl = settingLabel || 'إعدادات النظام';
+        var desc = detail || ('تعديل إعدادات «' + lbl + '» وهو إجراء غير مطلوب ضمن المهام التقويمية المحددة.');
+        recordMistake(0, 'تعديل غير مطلوب (' + lbl + ')', desc, 0.25, 'unrequested');
+        if (global.Win11Notifications && typeof global.Win11Notifications.showToast === 'function') {
+            global.Win11Notifications.showToast({
+                title: 'تنبيه بيداغوجي (خصم نقاط)',
+                message: 'تعديل «' + lbl + '» غير مطلوب في هذا النشاط. تم خصم 0.25 نقطة.',
+                icon: 'warning'
+            });
+        }
+    }
+
     function syncTaskTimer(task, hasActivity) {
         if ((hasActivity || task.earnedPoints > 0) && task.startedAt === null) {
             task.startedAt = student.elapsedSeconds;
@@ -1733,6 +1746,7 @@
         getSectionTimings: function () { return sectionTimings; },
         enterSection: enterSection,
         recordMistake: recordMistake,
+        recordUnrequestedChange: recordUnrequestedChange,
         evaluate: evaluate,
         skipActiveTask: skipActiveTask,
         skipSubStep: skipSubStep,

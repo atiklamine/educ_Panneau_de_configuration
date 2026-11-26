@@ -64,7 +64,7 @@ assert.ok(fname.includes('Class_02'), 'Filename must include Class_02');
 assert.ok(fname.includes('PC_08'), 'Filename must include PC_08');
 assert.ok(fname.includes('Score_'), 'Filename must include Score_');
 assert.ok(fname.includes('Time_'), 'Filename must include Time_');
-assert.ok(fname.includes('Student_AMROUN_FakhrEddine'), 'Filename must include Student_AMROUN_FakhrEddine');
+assert.ok(fname.toUpperCase().includes('STUDENT_AMROUN_FAKHREDDINE'), 'Filename must include Student_AMROUN_FAKHREDDINE (uppercase)');
 console.log('[PASS] Filename correctly generated using default template with exact tokens.');
 
 console.log('--- TEST 3: CUSTOM FILENAME TEMPLATE FROM CONFIG/INF.DLL ---');

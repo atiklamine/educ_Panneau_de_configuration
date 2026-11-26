@@ -48,8 +48,14 @@
             });
         }
 
-        var shuffledPool = shuffleArray(pool);
-        var chosenDistractors = shuffledPool.slice(0, Math.min(neededDistractors, shuffledPool.length));
+        var targetLen = (question.correctAnswerAr || '').length;
+        // Prioritize distractors whose character count closely matches the correct answer (anti-length guessing)
+        pool.sort(function (a, b) {
+            var diffA = Math.abs((a || '').length - targetLen);
+            var diffB = Math.abs((b || '').length - targetLen);
+            return (diffA - diffB) + (Math.random() * 8 - 4);
+        });
+        var chosenDistractors = pool.slice(0, Math.min(neededDistractors, pool.length));
 
         var combined = [];
         combined.push({

@@ -577,10 +577,35 @@
             }
             if (!prog) return;
             global.Win11Permissions.guard('apps.uninstall', function () {
-                try {
-                    launchUninstallWizard(prog);
-                } catch (err) {
-                    showOpError(err);
+                var confirmTitle = bidi('إلغاء تثبيت التطبيق');
+                var confirmMsg = bidi('هل أنت متأكد من رغبتك في إلغاء تثبيت «' + prog.name + '»؟ سيتم إلغاء تثبيت هذا التطبيق وكافة بياناته وإعداداته المرتبطة.');
+                if (global.Win11Dialogs && typeof global.Win11Dialogs.showCustom === 'function') {
+                    global.Win11Dialogs.showCustom({
+                        title: confirmTitle,
+                        message: confirmMsg,
+                        tone: 'warning',
+                        buttons: [
+                            { label: bidi('إلغاء التثبيت'), primary: true, value: true },
+                            { label: bidi('إلغاء الأمر'), primary: false, value: false }
+                        ],
+                        onClose: function (accepted) {
+                            if (accepted === true) {
+                                try {
+                                    launchUninstallWizard(prog);
+                                } catch (err) {
+                                    showOpError(err);
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    if (window.confirm('هل أنت متأكد من رغبتك في إلغاء تثبيت «' + prog.name + '»؟')) {
+                        try {
+                            launchUninstallWizard(prog);
+                        } catch (err) {
+                            showOpError(err);
+                        }
+                    }
                 }
             }, { targetLabel: prog.name });
         });

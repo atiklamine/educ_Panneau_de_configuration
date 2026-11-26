@@ -260,10 +260,18 @@
                     var stepRightHtml = '';
                     if (skippedStep) {
                         stepRightHtml = '<span class="win-badge win-badge-neutral" style="font-size:10.5px;flex-shrink:0">' + bidi(t('pedagogy.subStepSkippedBadge')) + ' (<bdi dir="ltr">0</bdi>)</span>';
-                    } else if (isNextTarget) {
-                        stepRightHtml = '<span class="win-badge win-badge-info" style="font-size:10.5px;flex-shrink:0">' + bidi('المطلوب حالياً') + '</span>';
-                    } else if (!doneStep && !isExamMode && isViewingActive && taskSteps.length > 1) {
-                        stepRightHtml = '<button type="button" class="win-btn win-btn-subtle hud-skip-step-btn" data-skip-task-id="' + task.id + '" data-skip-step-idx="' + si + '">' + bidi(t('pedagogy.skipSubStepBtn')) + '</button>';
+                    } else if (!doneStep && isViewingActive) {
+                        var skipBtnHtml = (!isExamMode && taskSteps.length > 1)
+                            ? '<button type="button" class="win-btn win-btn-subtle hud-skip-step-btn" data-skip-task-id="' + task.id + '" data-skip-step-idx="' + si + '">' + bidi(t('pedagogy.skipSubStepBtn')) + '</button>'
+                            : '';
+                        if (isNextTarget) {
+                            stepRightHtml = '<div style="display:inline-flex;align-items:center;gap:6px;flex-shrink:0;">' +
+                                '<span class="win-badge win-badge-info" style="font-size:10.5px;">' + bidi('المطلوب حالياً') + '</span>' +
+                                skipBtnHtml +
+                            '</div>';
+                        } else {
+                            stepRightHtml = skipBtnHtml;
+                        }
                     }
                     stepsHtml +=
                         '<li class="hud-step-item ' + liCls + '">' +

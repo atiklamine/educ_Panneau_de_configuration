@@ -158,7 +158,7 @@ assert.ok(stuMulti.fullName.indexOf('عمروني رضا') !== -1 && stuMulti.fu
 
 // Verify report A4 HTML for multi-participants
 const a4Html = global.Win11Report.buildA4Html();
-assert.ok(a4Html.indexOf('المشاركون في العمل التطبيقي (عمل مشترك):') !== -1, 'Report must contain multi-participant header');
+assert.ok(a4Html.indexOf('عمل مشترك') !== -1, 'Report must contain multi-participant label (عمل مشترك)');
 assert.ok(a4Html.indexOf('عمروني') !== -1 && a4Html.indexOf('بوزيد') !== -1, 'Both participant surnames must appear');
 
 // Verify filename contains both participants

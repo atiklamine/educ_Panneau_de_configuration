@@ -166,33 +166,35 @@
                 }
             },
             {
-                id: 'btn-print-direct',
-                label: 'طباعة',
-                primary: false,
-                onClick: function (closeDlg) {
-                    var printEl = document.getElementById('print-report-container');
-                    if (printEl) printEl.innerHTML = buildA4Html();
-                    var prevTitle = document.title;
-                    document.title = (filename || '1AS_Report').replace(/\.pdf$/i, '');
-                    setTimeout(function () {
-                        window.print();
-                        setTimeout(function () { document.title = prevTitle; }, 3000);
-                    }, 150);
-                    closeDlg(true);
-                }
-            },
-            {
                 id: 'btn-resume-sim-dlg',
                 label: 'مواصلة المحاكاة',
                 primary: false,
                 value: false
+            },
+            {
+                id: 'btn-new-sim-dlg',
+                label: 'محاكاة جديدة',
+                primary: false,
+                onClick: function (closeDlg) {
+                    closeDlg(true);
+                    confirmNewSimulation();
+                }
+            },
+            {
+                id: 'btn-exit-app-dlg',
+                label: 'خروج من البرنامج',
+                primary: false,
+                onClick: function (closeDlg) {
+                    closeDlg(true);
+                    confirmShutdown();
+                }
             }
         ];
 
         global.Win11Dialogs.showCustom({
             title: 'تأكيد استخراج وحفظ بطاقة التقييم',
             tone: 'info',
-            wide: false,
+            wide: true,
             renderBody: function (wrap) {
                 wrap.innerHTML =
                     '<div style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:4px 0">' +
@@ -279,9 +281,19 @@
         if (global.location && global.location.protocol && global.location.protocol.indexOf('http') === 0 && global.fetch) {
             var b64 = '';
             try {
-                b64 = global.btoa(unescape(encodeURIComponent(htmlContent)));
+                var u8 = generateReportPdfUint8();
+                if (u8 && u8.length > 0) {
+                    b64 = uint8ToBase64(u8);
+                }
             } catch (e) {
                 b64 = '';
+            }
+            if (!b64) {
+                try {
+                    b64 = global.btoa(unescape(encodeURIComponent(htmlContent)));
+                } catch (e2) {
+                    b64 = '';
+                }
             }
 
             global.fetch('/api/save-to-desktop', {
@@ -511,7 +523,7 @@
             .replace(/[^A-Za-z0-9.-]+/g, '_')
             .replace(/_+/g, '_')
             .replace(/^[_.-]+|[_.-]+$/g, '');
-        return cleaned || 'NA';
+        return (cleaned || 'NA').toUpperCase();
     }
 
     function formatFilenamePreviewHtml(fname) {
@@ -568,8 +580,8 @@
             '{device}': cleanFileToken(devNum),
             '{score}': scores.net.toFixed(2),
             '{time}': cleanFileToken(timeTok),
-            '{student_lastname}': nameParts.lastname,
-            '{student_firstname}': nameParts.firstname,
+            '{student_lastname}': (nameParts.lastname || 'NA').toUpperCase(),
+            '{student_firstname}': (nameParts.firstname || 'NA').toUpperCase(),
             '{date}': formatIsoDate(nowDt)
         };
 
@@ -1323,27 +1335,29 @@
         // SECTION A: HEADER & STUDENT INFO
         // ==========================================
         var isMultiStudent = Array.isArray(stu.participants) && stu.participants.length > 1;
-        var participantCellsHtml = '';
+        var lNameHtml = '';
+        var fNameHtml = '';
         if (isMultiStudent) {
-            var partsText = stu.participants.map(function (p, idx) {
-                return '<span style="display:inline-block;white-space:nowrap;margin-left:12px;"><strong>' + (idx + 1) + ') ' + bidi('اللقب:') + '</strong> ' + bidi(p.lastName || '—') + ' &nbsp; <strong>' + bidi('الاسم:') + '</strong> ' + bidi(p.firstName || '—') + '</span>';
-            }).join(' ');
-            participantCellsHtml =
-                '<td colspan="2" style="width:36%;">' +
-                    '<div class="a4-cell-lbl">' + bidi('المشاركون في العمل التطبيقي (عمل مشترك):') + '</div>' +
-                    '<div class="a4-cell-val" style="font-size:11px;font-weight:700;color:#0F172A;line-height:1.45;">' + partsText + '</div>' +
-                '</td>';
+            lNameHtml = stu.participants.map(function (p, idx) {
+                return (idx + 1) + ') ' + bidi(String(p.lastName || '—').trim().toUpperCase());
+            }).join('<br>');
+            fNameHtml = stu.participants.map(function (p, idx) {
+                return (idx + 1) + ') ' + bidi(String(p.firstName || '—').trim().toUpperCase());
+            }).join('<br>');
         } else {
-            participantCellsHtml =
-                '<td style="width:18%;">' +
-                    '<div class="a4-cell-lbl">' + bidi('اللقب:') + '</div>' +
-                    '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.lastName || '—') + '</div>' +
-                '</td>' +
-                '<td style="width:18%;">' +
-                    '<div class="a4-cell-lbl">' + bidi('الاسم:') + '</div>' +
-                    '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.firstName || '—') + '</div>' +
-                '</td>';
+            lNameHtml = bidi(String(stu.lastName || '—').trim().toUpperCase());
+            fNameHtml = bidi(String(stu.firstName || '—').trim().toUpperCase());
         }
+
+        var participantCellsHtml =
+            '<td style="width:18%;vertical-align:top;">' +
+                '<div class="a4-cell-lbl">' + bidi('اللقب:') + '</div>' +
+                '<div class="a4-cell-val" style="font-size:' + (isMultiStudent ? '11px' : '13.5px') + ';font-weight:700;color:#0F172A;line-height:1.45;">' + lNameHtml + '</div>' +
+            '</td>' +
+            '<td style="width:18%;vertical-align:top;">' +
+                '<div class="a4-cell-lbl">' + bidi('الاسم:') + '</div>' +
+                '<div class="a4-cell-val" style="font-size:' + (isMultiStudent ? '11px' : '13.5px') + ';font-weight:700;color:#0F172A;line-height:1.45;">' + fNameHtml + '</div>' +
+            '</td>';
 
         var sectionAHtml =
             '<div class="a4-section-a">' +
@@ -1568,9 +1582,9 @@
                                 '<div>الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
                             '</div>' +
                             '<div class="a4-header-logo" style="text-align:center;">' + logoHtml + '</div>' +
-                            '<div class="a4-header-left" style="text-align:left;" dir="ltr">' +
+                            '<div class="a4-header-left" style="text-align:left;direction:ltr;" dir="ltr">' +
                                 '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong></div>' +
-                                '<div>Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
+                                '<div>Niveau: <span dir="rtl" style="display:inline-block;"><strong>' + esc(cfg.target_level) + '</strong></span></div>' +
                             '</div>' +
                         '</div>'
                     ) : (
@@ -1579,9 +1593,9 @@
                                 '<div>المؤسسة: <strong>' + bidi(cfg.institution_name) + '</strong></div>' +
                                 '<div>الأستاذ المشرف: <strong>' + bidi(cfg.teacher_name) + '</strong></div>' +
                             '</div>' +
-                            '<div class="a4-header-left" style="text-align:left;" dir="ltr">' +
+                            '<div class="a4-header-left" style="text-align:left;direction:ltr;" dir="ltr">' +
                                 '<div>Année scolaire: <strong>' + esc(cfg.academic_year) + '</strong></div>' +
-                                '<div>Niveau: <strong>' + esc(cfg.target_level) + '</strong></div>' +
+                                '<div>Niveau: <span dir="rtl" style="display:inline-block;"><strong>' + esc(cfg.target_level) + '</strong></span></div>' +
                             '</div>' +
                         '</div>'
                     )) +
@@ -1748,7 +1762,21 @@
         return concatBuffers([header, o1, o2, o3, o4, o5, trailBytes]);
     }
 
-    function generateReportPdfBlob() {
+    function uint8ToBase64(u8) {
+        if (!u8 || !u8.length) return '';
+        var CHUNK = 0x8000;
+        var index = 0;
+        var len = u8.length;
+        var result = '';
+        while (index < len) {
+            var slice = u8.subarray(index, Math.min(index + CHUNK, len));
+            result += String.fromCharCode.apply(null, slice);
+            index += CHUNK;
+        }
+        return btoa(result);
+    }
+
+    function generateReportPdfUint8() {
         try {
             var canvas = document.createElement('canvas');
             canvas.width = 1240;
@@ -2377,7 +2405,16 @@
                 jpegBytes[bIdx] = binStr.charCodeAt(bIdx) & 0xFF;
             }
 
-            var pdfUint8 = buildPdfFromJpegBytes(jpegBytes, 1240, 1754);
+            return buildPdfFromJpegBytes(jpegBytes, 1240, 1754);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function generateReportPdfBlob() {
+        try {
+            var pdfUint8 = generateReportPdfUint8();
+            if (!pdfUint8) return null;
             return new Blob([pdfUint8], { type: 'application/pdf' });
         } catch (e) {
             return null;
