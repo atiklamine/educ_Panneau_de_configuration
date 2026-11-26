@@ -528,6 +528,12 @@
 
         reset: function () {
             purgeLegacyStudentPersistence();
+            if (global.Win11WM && typeof global.Win11WM.closeAllWindows === 'function') {
+                try { global.Win11WM.closeAllWindows(); } catch (eCls) { }
+            }
+            if (global.Win11Sessions && typeof global.Win11Sessions.resetAll === 'function') {
+                try { global.Win11Sessions.resetAll(); } catch (eSess) { }
+            }
             data = createDefaultData();
             var defLang = (global.Win11Assessment && global.Win11Assessment.getConfig && global.Win11Assessment.getConfig().ui_language_default) || 'ar';
             data.displayLanguage = defLang;

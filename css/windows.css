@@ -32,6 +32,8 @@
     position: absolute;
     display: flex;
     flex-direction: column;
+    background-color: var(--win-bg-mica-solid);
+    contain: layout style;
     border-radius: 8px;
     border: 1px solid var(--win-border-window);
     box-shadow: var(--win-shadow-inactive);

@@ -13,6 +13,8 @@
     height: calc(100vh - 50px - var(--netsupport-offset, 0px));
     min-width: 320px;
     min-height: 240px;
+    background-color: var(--win-bg-acrylic-solid, #F8FAFC);
+    contain: layout style;
     border-radius: 8px;
     border: 1px solid var(--win-border-window);
     box-shadow: var(--win-shadow-window);

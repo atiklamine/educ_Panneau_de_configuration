@@ -281,6 +281,11 @@
         return out;
     }
 
+    function resetAll() {
+        sessions = {};
+        activeUserKey = null;
+    }
+
     global.Win11Sessions = {
         init: init,
         ensureSession: ensureSession,
@@ -288,6 +293,7 @@
         resetGuestSession: resetGuestSession,
         deleteSession: deleteSession,
         updateSessionType: updateSessionType,
+        resetAll: resetAll,
         getActiveKey: function () { return activeUserKey; },
         getActiveSession: function () { return activeUserKey ? (sessions[activeUserKey] || null) : null; },
         getSession: function (username) { return sessions[normKey(username)] || null; },

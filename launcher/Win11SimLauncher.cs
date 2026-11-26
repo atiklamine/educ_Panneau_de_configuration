@@ -702,11 +702,20 @@ namespace Win11SimHost
                     // Extract student info
                     string stuLastName = "عمورن";
                     string stuFirstName = "فخر الدين";
+                    string multiParticipantsText = null;
+
+                    Match mParts = Regex.Match(html ?? "", @"المشاركون في العمل التطبيقي[\s\S]*?<div class=""a4-cell-val""[^>]*>([\s\S]*?)<\/div>");
+                    if (mParts.Success)
+                    {
+                        multiParticipantsText = CleanHtml(mParts.Groups[1].Value).Trim();
+                        multiParticipantsText = Regex.Replace(multiParticipantsText, @"\s+", " ");
+                    }
+
                     Match mLn = Regex.Match(html ?? "", @"اللقب:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
                     if (mLn.Success) stuLastName = CleanHtml(mLn.Groups[1].Value).Trim();
                     Match mFn = Regex.Match(html ?? "", @"الاسم:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
                     if (mFn.Success) stuFirstName = CleanHtml(mFn.Groups[1].Value).Trim();
-                    if ((!mLn.Success && !mFn.Success) || (string.IsNullOrEmpty(stuLastName) && string.IsNullOrEmpty(stuFirstName)))
+                    if ((!mLn.Success && !mFn.Success && string.IsNullOrEmpty(multiParticipantsText)) || (string.IsNullOrEmpty(stuLastName) && string.IsNullOrEmpty(stuFirstName) && string.IsNullOrEmpty(multiParticipantsText)))
                     {
                         Match mName = Regex.Match(html ?? "", @"اسم ولقب التلميذ(ة)?:[\s\S]*?<div class=""a4-cell-val""[^>]*>([^<]+)</div>");
                         string rawName = mName.Success ? CleanHtml(mName.Groups[1].Value).Trim() : "";
@@ -722,7 +731,7 @@ namespace Win11SimHost
                             else { stuLastName = rawName; stuFirstName = ""; }
                         }
                     }
-                    string stuName = (stuLastName + " " + stuFirstName).Trim();
+                    string stuName = !string.IsNullOrEmpty(multiParticipantsText) ? multiParticipantsText : (stuLastName + " " + stuFirstName).Trim();
 
                     string className = "السنة الأولى ثانوي";
                     Match mClass = Regex.Match(html ?? "", @"الفوج التربوي ورقم الجهاز:[\s\S]*?<strong>([^<]+)</strong>");
@@ -891,11 +900,20 @@ namespace Win11SimHost
                         g.DrawRectangle(pBox, 80, 220, 1080, 84);
                     }
 
-                    using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
                     using (Brush bDark = new SolidBrush(Color.FromArgb(15, 23, 42)))
                     {
-                        g.DrawString("اللقب: " + stuLastName + "      |      الاسم: " + stuFirstName + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fLabel, bDark, new RectangleF(100, 230, 1040, 28), rtlRight);
-                        g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText + "      |      حالة الجلسة: " + sessionProgressText, fLabel, bDark, new RectangleF(100, 264, 1040, 28), rtlRight);
+                        string participantDisplay = !string.IsNullOrEmpty(multiParticipantsText)
+                            ? ("المشاركون: " + multiParticipantsText)
+                            : ("اللقب: " + stuLastName + "      |      الاسم: " + stuFirstName);
+                        float pFontSize = (!string.IsNullOrEmpty(multiParticipantsText) && participantDisplay.Length > 65) ? 9.5f : 12f;
+                        using (Font fStu = new Font("Segoe UI", pFontSize, FontStyle.Bold))
+                        {
+                            g.DrawString(participantDisplay + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fStu, bDark, new RectangleF(100, 230, 1040, 28), rtlRight);
+                        }
+                        using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
+                        {
+                            g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText + "      |      حالة الجلسة: " + sessionProgressText, fLabel, bDark, new RectangleF(100, 264, 1040, 28), rtlRight);
+                        }
                     }
 
                     // Top Highlights: Score Card (Right) & Duration Card (Left)

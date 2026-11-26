@@ -191,11 +191,12 @@
                 if (global.Win11State && typeof global.Win11State.switchUser === 'function') {
                     global.Win11State.switchUser(selectedAcc.name);
                 }
+                // Close lock screen ONLY on successful authentication and user switch
+                close();
             } catch (err) {
                 if (global.console && typeof global.console.error === 'function') {
                     global.console.error('[LockScreen.attemptSignIn]', err);
                 }
-            } finally {
                 close();
             }
         }

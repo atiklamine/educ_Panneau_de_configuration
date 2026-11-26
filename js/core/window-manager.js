@@ -693,11 +693,23 @@
         }
     }
 
+    function closeAllWindows() {
+        var s = S();
+        if (!s || !s.windows) return;
+        var ids = Object.keys(s.windows);
+        for (var i = 0; i < ids.length; i++) {
+            try {
+                closeWindow(ids[i]);
+            } catch (eCl) { }
+        }
+    }
+
     global.addEventListener('resize', global.Win11Compat.debounce(refreshAllLayouts, 80));
 
     global.Win11WM = {
         open: openWindow,
         close: closeWindow,
+        closeAllWindows: closeAllWindows,
         focus: focusWindow,
         minimize: minimizeWindow,
         toggleMaximize: toggleMaximize,

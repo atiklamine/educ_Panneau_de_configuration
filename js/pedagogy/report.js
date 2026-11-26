@@ -551,6 +551,10 @@
         var nameParts = (stu.lastName && stu.firstName)
             ? { lastname: cleanFileToken(stu.lastName), firstname: cleanFileToken(stu.firstName) }
             : splitStudentName(stu.fullName);
+        if (stu.participants && Array.isArray(stu.participants) && stu.participants.length > 1) {
+            nameParts.lastname = stu.participants.map(function (p) { return cleanFileToken(p.lastName || ''); }).filter(Boolean).join('_');
+            nameParts.firstname = stu.participants.map(function (p) { return cleanFileToken(p.firstName || ''); }).filter(Boolean).join('_');
+        }
         var timeTok = (typeof global.Win11Assessment.formatDurationToken === 'function')
             ? global.Win11Assessment.formatDurationToken(stu.elapsedSeconds)
             : (String(stu.elapsedSeconds || 0) + 's');
@@ -679,12 +683,40 @@
                         if (errEl) errEl.innerHTML = bidi(t('pedagogy.invalidStudentFieldsMsg'));
                         return true;
                     }
+
+                    // Gather extra participants (if added)
+                    var allParticipants = [{ lastName: ln, firstName: fn }];
+                    var extraRows = document.querySelectorAll('.stu-extra-participant-row');
+                    var extraErr = false;
+                    for (var r = 0; r < extraRows.length; r++) {
+                        var eLnEl = extraRows[r].querySelector('.stu-extra-ln');
+                        var eFnEl = extraRows[r].querySelector('.stu-extra-fn');
+                        var eln = eLnEl ? eLnEl.value.trim() : '';
+                        var efn = eFnEl ? eFnEl.value.trim() : '';
+                        if (eln || efn) {
+                            if (eln.length < 2 || efn.length < 2 || !/[A-Za-z\u0600-\u06FF]/.test(eln + efn)) {
+                                extraErr = true;
+                                break;
+                            }
+                            allParticipants.push({ lastName: eln, firstName: efn });
+                        }
+                    }
+                    if (extraErr) {
+                        if (errEl) errEl.innerHTML = bidi('يرجى إدخال اللقب والاسم بشكل صحيح (حرفين على الأقل) لكل مشارك مضاف.');
+                        return true;
+                    }
+
+                    var combinedFull = allParticipants.map(function (p) {
+                        return ((p.lastName || '') + ' ' + (p.firstName || '')).trim();
+                    }).join(' + ');
+
                     if (isEditOnly) {
                         if (typeof global.Win11Assessment.updateStudentInfo === 'function') {
                             global.Win11Assessment.updateStudentInfo({
                                 lastName: ln,
                                 firstName: fn,
-                                fullName: ln + ' ' + fn,
+                                fullName: combinedFull,
+                                participants: allParticipants,
                                 classGroup: grpEl ? grpEl.value : '',
                                 pcNumber: pcEl ? pcEl.value : '01',
                                 quizOptIn: isQuizOptIn
@@ -705,7 +737,8 @@
                     global.Win11Assessment.startSession({
                         lastName: ln,
                         firstName: fn,
-                        fullName: ln + ' ' + fn,
+                        fullName: combinedFull,
+                        participants: allParticipants,
                         classGroup: grpEl ? grpEl.value : '',
                         pcNumber: pcEl ? pcEl.value : '01',
                         mode: modeChecked ? modeChecked.value : (cfg.mode || 'training'),
@@ -721,7 +754,7 @@
         }
 
         global.Win11Dialogs.showCustom({
-            title: isEditOnly ? (t('pedagogy.editInfoHeader') || 'تعديل بيانات التلميذ') : t('pedagogy.loginHeader'),
+            title: isEditOnly ? (t('pedagogy.editInfoHeader') || 'تعديل معلومات المشاركين في المحاكاة') : (t('pedagogy.loginHeader') || 'معلومات المشاركين في المحاكاة (عمل تطبيقي)'),
             tone: 'info',
             persistent: isMandatory,
             renderBody: function (wrap) {
@@ -748,14 +781,31 @@
                 var lockQuizNote = (isEditOnly && stu.activeSession) ? ('<div style="font-size:11px;color:var(--win-text-secondary);margin-top:4px;">' + bidi('لا يمكن تعديل خيار الأسئلة التقويمية أثناء الجلسة النشطة.') + '</div>') : '';
                 wrap.innerHTML =
                     '<div style="display:flex;flex-direction:column;gap:10px">' +
-                        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-                            '<div>' +
-                                '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('pedagogy.lastNameLabel')) + '</label>' +
-                                '<input type="text" id="stu-reg-lastname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.lastNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initLn) + '" autocomplete="off" data-lpignore="true" spellcheck="false" autocorrect="off">' +
+                        '<div style="border:1px solid var(--win-border-control);border-radius:6px;padding:8px 10px;background:var(--win-surface-subtle)">' +
+                            '<div style="font-weight:700;font-size:12.5px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">' +
+                                '<span>' + bidi('المشاركون في العمل التطبيقي (تلميذ فردي أو عمل مشترك):') + '</span>' +
+                                '<span style="font-size:11px;font-weight:normal;color:var(--win-text-secondary);">' + bidi('حد أقصى 3 تلاميذ لكل جهاز') + '</span>' +
                             '</div>' +
-                            '<div>' +
-                                '<label style="display:block;font-weight:600;margin-bottom:4px">' + bidi(t('pedagogy.firstNameLabel')) + '</label>' +
-                                '<input type="text" id="stu-reg-firstname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.firstNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initFn) + '" autocomplete="off" data-lpignore="true" spellcheck="false" autocorrect="off">' +
+                            '<div style="display:flex;flex-direction:column;gap:6px" id="stu-participants-list">' +
+                                '<div class="stu-participant-row" style="display:flex;flex-direction:column;gap:3px">' +
+                                    '<span style="font-size:11.5px;font-weight:600;color:var(--win-accent);">' + bidi('المشارك 1 (الأساسي):') + '</span>' +
+                                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+                                        '<div>' +
+                                            '<label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:2px">' + bidi(t('pedagogy.lastNameLabel')) + '</label>' +
+                                            '<input type="text" id="stu-reg-lastname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.lastNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initLn) + '" autocomplete="off" data-lpignore="true" spellcheck="false" autocorrect="off">' +
+                                        '</div>' +
+                                        '<div>' +
+                                            '<label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:2px">' + bidi(t('pedagogy.firstNameLabel')) + '</label>' +
+                                            '<input type="text" id="stu-reg-firstname" class="win-input" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.firstNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(initFn) + '" autocomplete="off" data-lpignore="true" spellcheck="false" autocorrect="off">' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
+                                '<div id="stu-extra-participants" style="display:flex;flex-direction:column;gap:6px;"></div>' +
+                            '</div>' +
+                            '<div style="margin-top:6px;">' +
+                                '<button type="button" id="stu-add-part-btn" class="win-btn win-btn-secondary" style="font-size:11.5px;padding:3px 10px;display:inline-flex;align-items:center;gap:4px;">' +
+                                    '<span>+</span> ' + bidi('إضافة تلميذ مشارك (عمل مشترك)') +
+                                '</button>' +
                             '</div>' +
                         '</div>' +
                         '<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">' +
@@ -797,6 +847,60 @@
                         '</div>' +
                         '<div id="stu-reg-err" style="color:var(--win-danger);font-size:12px;min-height:16px"></div>' +
                     '</div>';
+
+                // Handle dynamic addition of extra participants
+                var extraContainer = wrap.querySelector('#stu-extra-participants');
+                var addPartBtn = wrap.querySelector('#stu-add-part-btn');
+
+                function updateAddButtonVisibility() {
+                    if (!extraContainer || !addPartBtn) return;
+                    var currentRows = extraContainer.querySelectorAll('.stu-extra-participant-row').length;
+                    if (currentRows >= 2) { // 1 primary + 2 extra = 3 max
+                        addPartBtn.style.display = 'none';
+                    } else {
+                        addPartBtn.style.display = 'inline-flex';
+                    }
+                }
+
+                function addParticipantRow(extraLastName, extraFirstName) {
+                    if (!extraContainer) return;
+                    var rowIdx = extraContainer.querySelectorAll('.stu-extra-participant-row').length + 2;
+                    var row = document.createElement('div');
+                    row.className = 'stu-extra-participant-row';
+                    row.style.cssText = 'padding:6px 8px;border:1px dashed var(--win-border-control);border-radius:6px;background:rgba(0,103,192,0.03);display:flex;flex-direction:column;gap:3px;';
+                    row.innerHTML =
+                        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+                            '<span style="font-size:11.5px;font-weight:600;color:var(--win-accent);">' + bidi('المشارك ' + rowIdx + ':') + '</span>' +
+                            '<button type="button" class="win-btn win-btn-danger stu-part-del-btn" style="padding:1px 6px;font-size:11px;">' + bidi('حذف') + '</button>' +
+                        '</div>' +
+                        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+                            '<div>' +
+                                '<input type="text" class="win-input stu-extra-ln" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.lastNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(extraLastName || '') + '" autocomplete="off">' +
+                            '</div>' +
+                            '<div>' +
+                                '<input type="text" class="win-input stu-extra-fn" placeholder="' + global.Win11Compat.escapeHtml(t('pedagogy.firstNamePlaceholder')) + '" value="' + global.Win11Compat.escapeHtml(extraFirstName || '') + '" autocomplete="off">' +
+                            '</div>' +
+                        '</div>';
+                    row.querySelector('.stu-part-del-btn').onclick = function () {
+                        if (row.parentNode) row.parentNode.removeChild(row);
+                        updateAddButtonVisibility();
+                    };
+                    extraContainer.appendChild(row);
+                    updateAddButtonVisibility();
+                }
+
+                if (addPartBtn) {
+                    addPartBtn.onclick = function () {
+                        addParticipantRow('', '');
+                    };
+                }
+
+                // If editing and student already has extra participants:
+                if (stu.participants && Array.isArray(stu.participants) && stu.participants.length > 1) {
+                    for (var ep = 1; ep < stu.participants.length; ep++) {
+                        addParticipantRow(stu.participants[ep].lastName, stu.participants[ep].firstName);
+                    }
+                }
             },
             buttons: btns
         });
@@ -1218,6 +1322,29 @@
         // ==========================================
         // SECTION A: HEADER & STUDENT INFO
         // ==========================================
+        var isMultiStudent = Array.isArray(stu.participants) && stu.participants.length > 1;
+        var participantCellsHtml = '';
+        if (isMultiStudent) {
+            var partsText = stu.participants.map(function (p, idx) {
+                return '<span style="display:inline-block;white-space:nowrap;margin-left:12px;"><strong>' + (idx + 1) + ') ' + bidi('اللقب:') + '</strong> ' + bidi(p.lastName || '—') + ' &nbsp; <strong>' + bidi('الاسم:') + '</strong> ' + bidi(p.firstName || '—') + '</span>';
+            }).join(' ');
+            participantCellsHtml =
+                '<td colspan="2" style="width:36%;">' +
+                    '<div class="a4-cell-lbl">' + bidi('المشاركون في العمل التطبيقي (عمل مشترك):') + '</div>' +
+                    '<div class="a4-cell-val" style="font-size:11px;font-weight:700;color:#0F172A;line-height:1.45;">' + partsText + '</div>' +
+                '</td>';
+        } else {
+            participantCellsHtml =
+                '<td style="width:18%;">' +
+                    '<div class="a4-cell-lbl">' + bidi('اللقب:') + '</div>' +
+                    '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.lastName || '—') + '</div>' +
+                '</td>' +
+                '<td style="width:18%;">' +
+                    '<div class="a4-cell-lbl">' + bidi('الاسم:') + '</div>' +
+                    '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.firstName || '—') + '</div>' +
+                '</td>';
+        }
+
         var sectionAHtml =
             '<div class="a4-section-a">' +
                 '<div class="a4-section-title">' +
@@ -1227,21 +1354,14 @@
                 '<table class="a4-info-table">' +
                     '<tbody>' +
                         '<tr>' +
-                            '<td style="width:18%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('اللقب:') + '</div>' +
-                                '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.lastName || '—') + '</div>' +
-                            '</td>' +
-                            '<td style="width:18%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('الاسم:') + '</div>' +
-                                '<div class="a4-cell-val" style="font-size:13.5px;font-weight:700;color:#0F172A;">' + bidi(stu.firstName || '—') + '</div>' +
-                            '</td>' +
+                            participantCellsHtml +
                             '<td style="width:32%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('الفوج التربوي ورقم الجهاز:') + '</div>' +
                                 '<div class="a4-cell-val"><strong>' + bidi(stu.classGroup) + '</strong> &nbsp;|&nbsp; <span>حاسوب <bdi dir="ltr">#' + pcNum + '</bdi></span></div>' +
                             '</td>' +
                             '<td style="width:32%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('طبيعة النشاط ونمط المحاكاة:') + '</div>' +
-                                '<div class="a4-cell-val"><strong>' + bidi(sessionLabel) + '</strong></div>' +
+                                '<div class="a4-cell-val"><strong>' + bidi(sessionLabel) + '</strong>' + (isMultiStudent ? (' <span style="font-size:10.5px;color:#0284C7;font-weight:700;">(' + bidi('عمل مشترك') + ')</span>') : '') + '</div>' +
                             '</td>' +
                         '</tr>' +
                         '<tr>' +
@@ -1815,7 +1935,16 @@
             ctx.fillStyle = '#0F172A';
             var sLastName = (stu.lastName || '—').trim();
             var sFirstName = (stu.firstName || stu.fullName || '—').trim();
-            ctx.fillText('اللقب: ' + sLastName + '      |      الاسم: ' + sFirstName + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      رقم الجهاز: #' + (stu.pcNumber || '01'), 1140, 296);
+            var participantBanner = '';
+            if (stu.participants && Array.isArray(stu.participants) && stu.participants.length > 1) {
+                var pList = stu.participants.map(function (p, idx) {
+                    return (idx + 1) + ') ' + (p.lastName || '—') + ' ' + (p.firstName || '—');
+                }).join('  |  ');
+                participantBanner = 'المشاركون: ' + pList;
+            } else {
+                participantBanner = 'اللقب: ' + sLastName + '      |      الاسم: ' + sFirstName;
+            }
+            ctx.fillText(participantBanner + '      |      الفوج: ' + (stu.classGroup || '1AS') + '      |      رقم الجهاز: #' + (stu.pcNumber || '01'), 1140, 296);
 
             ctx.font = '13px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#475569';

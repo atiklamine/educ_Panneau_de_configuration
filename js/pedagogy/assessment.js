@@ -1790,6 +1790,17 @@
             notify();
         },
         startSession: function (studentInfo) {
+            // Strictly reset simulated OS state and close open windows so each session starts factory-clean
+            if (global.Win11Shell && typeof global.Win11Shell.closeAllFlyouts === 'function') {
+                try { global.Win11Shell.closeAllFlyouts(); } catch (eFly) { }
+            }
+            if (global.Win11WM && typeof global.Win11WM.closeAllWindows === 'function') {
+                try { global.Win11WM.closeAllWindows(); } catch (eWin) { }
+            }
+            if (global.Win11State && typeof global.Win11State.reset === 'function') {
+                try { global.Win11State.reset(); } catch (eRst) { }
+            }
+
             var lName = String((studentInfo && studentInfo.lastName) || '').trim();
             var fName = String((studentInfo && studentInfo.firstName) || '').trim();
             var rawFull = String((studentInfo && studentInfo.fullName) || '').trim();
@@ -1798,9 +1809,29 @@
                 if (!lName) lName = nameParts[0] || '';
                 if (!fName) fName = nameParts.slice(1).join(' ') || '';
             }
-            student.lastName = lName || 'Eleve';
-            student.firstName = fName || (rawFull ? '' : 'Demo');
-            student.fullName = rawFull || (student.lastName + (student.firstName ? ' ' + student.firstName : ''));
+
+            var parts = (studentInfo && Array.isArray(studentInfo.participants) && studentInfo.participants.length > 0)
+                ? studentInfo.participants.map(function (p) {
+                    return {
+                        lastName: String((p && p.lastName) || '').trim(),
+                        firstName: String((p && p.firstName) || '').trim()
+                    };
+                }).filter(function (p) { return p.lastName.length > 0 || p.firstName.length > 0; })
+                : [];
+            if (parts.length === 0) {
+                parts = [{
+                    lastName: lName || 'Eleve',
+                    firstName: fName || (rawFull ? '' : 'Demo')
+                }];
+            }
+            student.participants = parts;
+            student.isGroupWork = (parts.length > 1);
+            student.lastName = parts[0].lastName || 'Eleve';
+            student.firstName = parts[0].firstName || (rawFull ? '' : 'Demo');
+            student.fullName = parts.map(function (p) {
+                return ((p.lastName || '') + ' ' + (p.firstName || '')).trim();
+            }).filter(Boolean).join(' + ') || (student.lastName + (student.firstName ? ' ' + student.firstName : '')).trim();
+
             student.classGroup = (studentInfo && studentInfo.classGroup) || config.class_groups[0];
             student.pcNumber = (studentInfo && studentInfo.pcNumber) || config.default_device || '01';
             student.mode = (studentInfo && studentInfo.mode) || config.mode || 'training';
@@ -1819,6 +1850,8 @@
                     lastName: student.lastName,
                     firstName: student.firstName,
                     fullName: student.fullName,
+                    participants: student.participants.slice(),
+                    isGroupWork: student.isGroupWork,
                     classGroup: student.classGroup,
                     pcNumber: student.pcNumber,
                     mode: student.mode,
@@ -1843,6 +1876,27 @@
                 var nameParts = rawFull.split(/\s+/);
                 if (!lName) lName = nameParts[0] || '';
                 if (!fName) fName = nameParts.slice(1).join(' ') || '';
+            }
+
+            if (studentInfo.participants && Array.isArray(studentInfo.participants) && studentInfo.participants.length > 0) {
+                var updatedParts = studentInfo.participants.map(function (p) {
+                    return {
+                        lastName: String((p && p.lastName) || '').trim(),
+                        firstName: String((p && p.firstName) || '').trim()
+                    };
+                }).filter(function (p) { return p.lastName.length > 0 || p.firstName.length > 0; });
+                if (updatedParts.length > 0) {
+                    student.participants = updatedParts;
+                    student.isGroupWork = (updatedParts.length > 1);
+                    lName = updatedParts[0].lastName;
+                    fName = updatedParts[0].firstName;
+                    rawFull = updatedParts.map(function (p) {
+                        return ((p.lastName || '') + ' ' + (p.firstName || '')).trim();
+                    }).filter(Boolean).join(' + ');
+                }
+            } else if (lName || fName) {
+                student.participants = [{ lastName: lName || student.lastName, firstName: fName || student.firstName }];
+                student.isGroupWork = false;
             }
 
             // Ensure initial history exists
@@ -1979,10 +2033,13 @@
         startNewSimulation: function () {
             // Section 1.3: Retain student metadata & loaded inf.dll config; clear windows, settings, tasks & reset timers to 00:00:00
             if (global.Win11Shell && typeof global.Win11Shell.closeAllFlyouts === 'function') {
-                global.Win11Shell.closeAllFlyouts();
+                try { global.Win11Shell.closeAllFlyouts(); } catch (eFly) { }
+            }
+            if (global.Win11WM && typeof global.Win11WM.closeAllWindows === 'function') {
+                try { global.Win11WM.closeAllWindows(); } catch (eWin) { }
             }
             if (global.Win11State && typeof global.Win11State.reset === 'function') {
-                global.Win11State.reset();
+                try { global.Win11State.reset(); } catch (eRst) { }
             }
             mistakes = [];
             student.activeSession = true;
@@ -1994,8 +2051,14 @@
             notify();
         },
         resetDemoSession: function () {
+            if (global.Win11Shell && typeof global.Win11Shell.closeAllFlyouts === 'function') {
+                try { global.Win11Shell.closeAllFlyouts(); } catch (eFly) { }
+            }
+            if (global.Win11WM && typeof global.Win11WM.closeAllWindows === 'function') {
+                try { global.Win11WM.closeAllWindows(); } catch (eWin) { }
+            }
             if (global.Win11State && typeof global.Win11State.reset === 'function') {
-                global.Win11State.reset();
+                try { global.Win11State.reset(); } catch (eRst) { }
             }
             mistakes = [];
             student.lastName = 'Eleve';
