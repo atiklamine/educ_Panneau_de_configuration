@@ -73,7 +73,7 @@ global.Win11Assessment.saveConfig({
 });
 const customFname = global.Win11Report.formatSuggestedFilename('pdf');
 console.log('Generated custom filename:', customFname);
-assert.ok(customFname.startsWith('AMROUN_FakhrEddine_Score_'), 'Custom filename template must be respected');
+assert.ok(customFname.startsWith('AMROUN_FAKHREDDINE_Score_'), 'Custom filename template must be respected');
 assert.ok(customFname.includes('_PC_08.pdf'), 'Custom filename template must include PC_08 at end');
 console.log('[PASS] Custom template configured from inf.dll takes precedence over default.');
 

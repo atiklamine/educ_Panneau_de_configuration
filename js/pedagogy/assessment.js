@@ -1864,7 +1864,9 @@
                     lastName: student.lastName,
                     firstName: student.firstName,
                     fullName: student.fullName,
-                    participants: student.participants.slice(),
+                    participants: student.participants.map(function (p) {
+                        return { lastName: p.lastName || '', firstName: p.firstName || '' };
+                    }),
                     isGroupWork: student.isGroupWork,
                     classGroup: student.classGroup,
                     pcNumber: student.pcNumber,
@@ -1883,6 +1885,19 @@
         },
         updateStudentInfo: function (studentInfo) {
             if (!studentInfo) return;
+
+            // 1. Snapshot previous state BEFORE any mutations
+            var prevLastName = student.lastName || '';
+            var prevFirstName = student.firstName || '';
+            var prevFullName = student.fullName || '';
+            var prevClassGroup = student.classGroup || '';
+            var prevPcNumber = student.pcNumber || '';
+            var prevQuizOptIn = student.quizOptIn !== false;
+            var prevParticipants = Array.isArray(student.participants)
+                ? student.participants.map(function (p) { return { lastName: p.lastName || '', firstName: p.firstName || '' }; })
+                : [{ lastName: prevLastName, firstName: prevFirstName }];
+
+            // 2. Parse incoming student info & participants
             var lName = String(studentInfo.lastName || '').trim();
             var fName = String(studentInfo.firstName || '').trim();
             var rawFull = String(studentInfo.fullName || '').trim();
@@ -1892,26 +1907,33 @@
                 if (!fName) fName = nameParts.slice(1).join(' ') || '';
             }
 
+            var nextParticipants = [];
             if (studentInfo.participants && Array.isArray(studentInfo.participants) && studentInfo.participants.length > 0) {
-                var updatedParts = studentInfo.participants.map(function (p) {
+                nextParticipants = studentInfo.participants.map(function (p) {
                     return {
                         lastName: String((p && p.lastName) || '').trim(),
                         firstName: String((p && p.firstName) || '').trim()
                     };
                 }).filter(function (p) { return p.lastName.length > 0 || p.firstName.length > 0; });
-                if (updatedParts.length > 0) {
-                    student.participants = updatedParts;
-                    student.isGroupWork = (updatedParts.length > 1);
-                    lName = updatedParts[0].lastName;
-                    fName = updatedParts[0].firstName;
-                    rawFull = updatedParts.map(function (p) {
-                        return ((p.lastName || '') + ' ' + (p.firstName || '')).trim();
-                    }).filter(Boolean).join(' + ');
-                }
             } else if (lName || fName) {
-                student.participants = [{ lastName: lName || student.lastName, firstName: fName || student.firstName }];
-                student.isGroupWork = false;
+                nextParticipants = [{ lastName: lName || prevLastName, firstName: fName || prevFirstName }];
+            } else {
+                nextParticipants = prevParticipants.map(function (p) { return { lastName: p.lastName, firstName: p.firstName }; });
             }
+
+            if (nextParticipants.length === 0) {
+                nextParticipants = [{ lastName: prevLastName, firstName: prevFirstName }];
+            }
+
+            var nextLastName = nextParticipants[0].lastName || lName || prevLastName;
+            var nextFirstName = nextParticipants[0].firstName || fName || prevFirstName;
+            var nextFullName = rawFull || nextParticipants.map(function (p) {
+                return ((p.lastName || '') + ' ' + (p.firstName || '')).trim();
+            }).filter(Boolean).join(' + ') || (nextLastName + (nextFirstName ? ' ' + nextFirstName : ''));
+
+            var nextClassGroup = studentInfo.classGroup || prevClassGroup;
+            var nextPcNumber = studentInfo.pcNumber || prevPcNumber;
+            var nextQuizOptIn = (studentInfo.quizOptIn !== undefined) ? !!studentInfo.quizOptIn : prevQuizOptIn;
 
             // Ensure initial history exists
             if (!studentInfoHistory || !studentInfoHistory.initial) {
@@ -1922,43 +1944,134 @@
                         date: formatDateIso(nowInit),
                         elapsedSeconds: 0,
                         elapsedFormatted: '00:00:00',
-                        lastName: student.lastName,
-                        firstName: student.firstName,
-                        fullName: student.fullName,
-                        classGroup: student.classGroup,
-                        pcNumber: student.pcNumber,
+                        lastName: prevLastName,
+                        firstName: prevFirstName,
+                        fullName: prevFullName,
+                        participants: prevParticipants.map(function (p) { return { lastName: p.lastName, firstName: p.firstName }; }),
+                        classGroup: prevClassGroup,
+                        pcNumber: prevPcNumber,
                         mode: student.mode,
-                        quizOptIn: student.quizOptIn !== false
+                        quizOptIn: prevQuizOptIn
                     },
                     modifications: []
                 };
             }
 
-            // Previous state snapshot
-            var prevLastName = student.lastName;
-            var prevFirstName = student.firstName;
-            var prevFullName = student.fullName;
-            var prevClassGroup = student.classGroup;
-            var prevPcNumber = student.pcNumber;
-            var prevQuizOptIn = student.quizOptIn !== false;
+            // Task completion snapshot for audit note
+            var curElapsed = getEffectiveElapsedSeconds();
+            var curElapsedFormatted = formatDuration(curElapsed);
+            var activeTasks = syncConfiguredTasks().filter(function (t) { return t.enabled !== false; });
+            var doneCount = 0;
+            for (var ti = 0; ti < activeTasks.length; ti++) {
+                if (activeTasks[ti].completed) doneCount++;
+            }
+            var progPct = activeTasks.length > 0 ? Math.round((doneCount / activeTasks.length) * 100) : 0;
 
-            // Compute proposed new values
-            var nextLastName = lName || student.lastName;
-            var nextFirstName = fName || student.firstName;
-            var nextFullName = rawFull || (nextLastName + (nextFirstName ? ' ' + nextFirstName : ''));
-            var nextClassGroup = studentInfo.classGroup || student.classGroup;
-            var nextPcNumber = studentInfo.pcNumber || student.pcNumber;
-            var nextQuizOptIn = (studentInfo.quizOptIn !== undefined) ? !!studentInfo.quizOptIn : prevQuizOptIn;
+            function formatPartName(p) {
+                return (((p.lastName || '') + ' ' + (p.firstName || '')).trim()).toUpperCase();
+            }
+            function formatPartList(list) {
+                return list.map(function (p, idx) {
+                    return (idx + 1) + ') ' + formatPartName(p);
+                }).join(' | ');
+            }
 
-            // Detect granular changes
             var fieldDiffs = [];
-            if (nextFullName !== prevFullName || nextLastName !== prevLastName || nextFirstName !== prevFirstName) {
+
+            // Detect participant removal / addition / edits
+            var prevPartStr = formatPartList(prevParticipants);
+            var nextPartStr = formatPartList(nextParticipants);
+
+            if (nextParticipants.length < prevParticipants.length) {
+                // Students were REMOVED
+                var removedCount = prevParticipants.length - nextParticipants.length;
+                var removedNames = [];
+                for (var rpi = 0; rpi < prevParticipants.length; rpi++) {
+                    var prevPName = formatPartName(prevParticipants[rpi]);
+                    var stillExists = false;
+                    for (var npj = 0; npj < nextParticipants.length; npj++) {
+                        if (formatPartName(nextParticipants[npj]) === prevPName) {
+                            stillExists = true;
+                            break;
+                        }
+                    }
+                    if (!stillExists) {
+                        removedNames.push(prevPName);
+                    }
+                }
+                if (removedNames.length === 0) {
+                    for (var fallbackIdx = nextParticipants.length; fallbackIdx < prevParticipants.length; fallbackIdx++) {
+                        removedNames.push(formatPartName(prevParticipants[fallbackIdx]));
+                    }
+                }
+                var remLabel = (removedCount === 1) ? 'حذف تلميذ من المحاكاة (1)' : ('حذف تلاميذ من المحاكاة (' + removedCount + ')');
+                var remNotice = 'تم استبعاد/حذف ' + (removedCount === 1 ? 'تلميذ مشارك' : (removedCount + ' تلاميذ مشاركين')) +
+                    ' [' + removedNames.join('، ') + '] من المحاكاة بعد إنجاز ' +
+                    doneCount + ' من أصل ' + activeTasks.length + ' مهام (' + progPct + '%) عند التوقيت ' + curElapsedFormatted + '.';
+
                 fieldDiffs.push({
-                    field: 'fullName',
-                    labelAr: 'اللقب والاسم',
-                    oldVal: prevFullName,
-                    newVal: nextFullName
+                    field: 'participantsRemoved',
+                    labelAr: remLabel,
+                    oldVal: prevPartStr,
+                    newVal: nextPartStr,
+                    removedCount: removedCount,
+                    removedNames: removedNames,
+                    notice: remNotice,
+                    isRemoval: true
                 });
+            } else if (nextParticipants.length > prevParticipants.length) {
+                // Students were ADDED
+                var addedCount = nextParticipants.length - prevParticipants.length;
+                var addedNames = [];
+                for (var anpi = 0; anpi < nextParticipants.length; anpi++) {
+                    var nextPName = formatPartName(nextParticipants[anpi]);
+                    var wasPresent = false;
+                    for (var ppj = 0; ppj < prevParticipants.length; ppj++) {
+                        if (formatPartName(prevParticipants[ppj]) === nextPName) {
+                            wasPresent = true;
+                            break;
+                        }
+                    }
+                    if (!wasPresent) {
+                        addedNames.push(nextPName);
+                    }
+                }
+                var addLabel = (addedCount === 1) ? 'إضافة تلميذ للمحاكاة (1)' : ('إضافة تلاميذ للمحاكاة (' + addedCount + ')');
+                var addNotice = 'تمت إضافة ' + (addedCount === 1 ? 'تلميذ مشارك' : (addedCount + ' تلاميذ مشاركين')) +
+                    ' [' + addedNames.join('، ') + '] إلى المحاكاة بعد إنجاز ' +
+                    doneCount + ' من أصل ' + activeTasks.length + ' مهام (' + progPct + '%) عند التوقيت ' + curElapsedFormatted + '.';
+
+                fieldDiffs.push({
+                    field: 'participantsAdded',
+                    labelAr: addLabel,
+                    oldVal: prevPartStr,
+                    newVal: nextPartStr,
+                    addedCount: addedCount,
+                    addedNames: addedNames,
+                    notice: addNotice,
+                    isAddition: true
+                });
+            } else if (prevPartStr !== nextPartStr) {
+                // Same count but names modified
+                fieldDiffs.push({
+                    field: 'participantsModified',
+                    labelAr: 'تعديل أسماء المشاركين',
+                    oldVal: prevPartStr,
+                    newVal: nextPartStr,
+                    notice: 'تم تعديل بيانات المشاركين بعد إنجاز ' + doneCount + ' من أصل ' + activeTasks.length + ' مهام (' + progPct + '%) عند التوقيت ' + curElapsedFormatted + '.'
+                });
+            }
+
+            // Detect standard field changes (e.g. single student name change, classGroup, pcNumber, quizOptIn)
+            if (nextFullName !== prevFullName || nextLastName !== prevLastName || nextFirstName !== prevFirstName) {
+                if (fieldDiffs.length === 0 || prevParticipants.length <= 1) {
+                    fieldDiffs.push({
+                        field: 'fullName',
+                        labelAr: 'اللقب والاسم',
+                        oldVal: prevFullName,
+                        newVal: nextFullName
+                    });
+                }
             }
             if (nextClassGroup !== prevClassGroup) {
                 fieldDiffs.push({
@@ -1986,8 +2099,10 @@
             }
 
             // Apply updates to student object
-            if (lName) student.lastName = lName;
-            if (fName) student.firstName = fName;
+            student.participants = nextParticipants;
+            student.isGroupWork = (nextParticipants.length > 1);
+            student.lastName = nextLastName;
+            student.firstName = nextFirstName;
             student.fullName = nextFullName;
             if (studentInfo.classGroup) student.classGroup = studentInfo.classGroup;
             if (studentInfo.pcNumber) student.pcNumber = studentInfo.pcNumber;
@@ -1996,13 +2111,6 @@
             // If any identity/session fields were modified, log to audit trail
             if (fieldDiffs.length > 0) {
                 var nowEdit = new Date();
-                var curElapsed = getEffectiveElapsedSeconds();
-                var activeTasks = syncConfiguredTasks().filter(function (t) { return t.enabled !== false; });
-                var doneCount = 0;
-                for (var ti = 0; ti < activeTasks.length; ti++) {
-                    if (activeTasks[ti].completed) doneCount++;
-                }
-                var progPct = activeTasks.length > 0 ? Math.round((doneCount / activeTasks.length) * 100) : 0;
                 var editNum = studentInfoHistory.modifications.length + 1;
 
                 studentInfoHistory.modifications.push({
@@ -2010,7 +2118,7 @@
                     timestamp: formatClockTime(nowEdit),
                     date: formatDateIso(nowEdit),
                     elapsedSeconds: curElapsed,
-                    elapsedFormatted: formatDuration(curElapsed),
+                    elapsedFormatted: curElapsedFormatted,
                     progressPercent: progPct,
                     doneTasksCount: doneCount,
                     totalTasksCount: activeTasks.length,

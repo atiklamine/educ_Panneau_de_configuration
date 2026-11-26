@@ -1335,29 +1335,22 @@
         // SECTION A: HEADER & STUDENT INFO
         // ==========================================
         var isMultiStudent = Array.isArray(stu.participants) && stu.participants.length > 1;
-        var lNameHtml = '';
-        var fNameHtml = '';
+        var participantValHtml = '';
+        var participantCellLabel = '';
+
         if (isMultiStudent) {
-            lNameHtml = stu.participants.map(function (p, idx) {
-                return (idx + 1) + ') ' + bidi(String(p.lastName || '—').trim().toUpperCase());
-            }).join('<br>');
-            fNameHtml = stu.participants.map(function (p, idx) {
-                return (idx + 1) + ') ' + bidi(String(p.firstName || '—').trim().toUpperCase());
+            participantCellLabel = 'المشاركون في العمل التطبيقي (اللقب والاسم):';
+            participantValHtml = stu.participants.map(function (p, idx) {
+                var l = String(p.lastName || '—').trim().toUpperCase();
+                var f = String(p.firstName || '—').trim().toUpperCase();
+                return (idx + 1) + ') <span style="color:#64748B;font-size:10px;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(l) + '</strong> &nbsp;|&nbsp; <span style="color:#64748B;font-size:10px;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(f) + '</strong>';
             }).join('<br>');
         } else {
-            lNameHtml = bidi(String(stu.lastName || '—').trim().toUpperCase());
-            fNameHtml = bidi(String(stu.firstName || '—').trim().toUpperCase());
+            participantCellLabel = 'اسم ولقب التلميذ(ة):';
+            var sL = String(stu.lastName || '—').trim().toUpperCase();
+            var sF = String(stu.firstName || stu.fullName || '—').trim().toUpperCase();
+            participantValHtml = '<span style="color:#64748B;font-size:11px;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(sL) + '</strong> &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#64748B;font-size:11px;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(sF) + '</strong>';
         }
-
-        var participantCellsHtml =
-            '<td style="width:18%;vertical-align:top;">' +
-                '<div class="a4-cell-lbl">' + bidi('اللقب:') + '</div>' +
-                '<div class="a4-cell-val" style="font-size:' + (isMultiStudent ? '11px' : '13.5px') + ';font-weight:700;color:#0F172A;line-height:1.45;">' + lNameHtml + '</div>' +
-            '</td>' +
-            '<td style="width:18%;vertical-align:top;">' +
-                '<div class="a4-cell-lbl">' + bidi('الاسم:') + '</div>' +
-                '<div class="a4-cell-val" style="font-size:' + (isMultiStudent ? '11px' : '13.5px') + ';font-weight:700;color:#0F172A;line-height:1.45;">' + fNameHtml + '</div>' +
-            '</td>';
 
         var sectionAHtml =
             '<div class="a4-section-a">' +
@@ -1368,7 +1361,10 @@
                 '<table class="a4-info-table">' +
                     '<tbody>' +
                         '<tr>' +
-                            participantCellsHtml +
+                            '<td style="width:36%;vertical-align:top;">' +
+                                '<div class="a4-cell-lbl">' + bidi(participantCellLabel) + '</div>' +
+                                '<div class="a4-cell-val" style="font-size:' + (isMultiStudent ? '11px' : '13px') + ';font-weight:700;color:#0F172A;line-height:1.45;">' + participantValHtml + '</div>' +
+                            '</td>' +
                             '<td style="width:32%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('الفوج التربوي ورقم الجهاز:') + '</div>' +
                                 '<div class="a4-cell-val"><strong>' + bidi(stu.classGroup) + '</strong> &nbsp;|&nbsp; <span>حاسوب <bdi dir="ltr">#' + pcNum + '</bdi></span></div>' +
@@ -1379,7 +1375,7 @@
                             '</td>' +
                         '</tr>' +
                         '<tr>' +
-                            '<td colspan="2" style="width:36%;">' +
+                            '<td style="width:36%;">' +
                                 '<div class="a4-cell-lbl">' + bidi('المشرف البيداغوجي والمؤسسة (inf.dll):') + '</div>' +
                                 '<div class="a4-cell-val"><strong>' + bidi(cfg.teacher_name) + '</strong> &nbsp;|&nbsp; <span>' + bidi(cfg.institution_name) + '</span></div>' +
                             '</td>' +
@@ -1485,6 +1481,16 @@
 
             var auditRowsHtml = '';
 
+            var initPartsNotice = '';
+            if (initialSnap.participants && Array.isArray(initialSnap.participants) && initialSnap.participants.length > 0) {
+                var pListInit = initialSnap.participants.map(function (p, idx) {
+                    var pl = String(p.lastName || '—').trim().toUpperCase();
+                    var pf = String(p.firstName || '—').trim().toUpperCase();
+                    return (idx + 1) + ') ' + pl + ' ' + pf;
+                }).join(' &nbsp;|&nbsp; ');
+                initPartsNotice = '<div style="margin-top:3px;color:#1E3A8A;font-weight:600;">' + bidi('المشاركون المسجلون في البداية:') + ' ' + bidi(pListInit) + '</div>';
+            }
+
             // Initial Registration Row
             auditRowsHtml +=
                 '<tr class="a4-audit-initial-row">' +
@@ -1495,6 +1501,7 @@
                     '<td style="text-align:center;font-weight:700;color:#1E3A8A;">' + bidi('بيانات التسجيل الأصلية') + '</td>' +
                     '<td style="font-size:10px;line-height:1.4;">' +
                         '<div>' + bidi('الاسم: ') + '<strong>' + bidi(initialSnap.fullName) + '</strong> &nbsp;|&nbsp; ' + bidi('الفوج: ') + '<strong>' + bidi(initialSnap.classGroup) + '</strong> &nbsp;|&nbsp; ' + bidi('الجهاز: ') + '<bdi dir="ltr">#' + esc(initialSnap.pcNumber) + '</bdi></div>' +
+                        initPartsNotice +
                     '</td>' +
                 '</tr>';
 
@@ -1507,11 +1514,23 @@
 
                 for (var c = 0; c < changesList.length; c++) {
                     var ch = changesList[c];
+                    var noticeBox = '';
+                    if (ch.notice) {
+                        var noticeBg = ch.isRemoval ? '#FEF2F2' : '#F0F9FF';
+                        var noticeColor = ch.isRemoval ? '#DC2626' : '#0369A1';
+                        var noticeBorder = ch.isRemoval ? '#FECACA' : '#BAE6FD';
+                        noticeBox =
+                            '<div style="margin-top:4px;padding:4px 8px;border-radius:4px;background:' + noticeBg + ';border:1px solid ' + noticeBorder + ';color:' + noticeColor + ';font-size:10px;font-weight:700;line-height:1.4;">' +
+                                (ch.isRemoval ? '⚠️ ' : 'ℹ️ ') + bidi(ch.notice) +
+                            '</div>';
+                    }
+
                     changesHtml +=
-                        '<div style="margin:2px 0;">' +
+                        '<div style="margin:3px 0;">' +
                             '<strong>' + bidi(ch.labelAr || ch.field) + ':</strong> ' +
                             '<span class="a4-audit-old">' + bidi('سابق: ') + esc(ch.oldVal) + '</span> ' +
                             '➔ <span class="a4-audit-new">' + bidi('جديد: ') + esc(ch.newVal) + '</span>' +
+                            noticeBox +
                         '</div>';
                 }
 
@@ -1961,12 +1980,12 @@
             ctx.textAlign = 'right';
             ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#0F172A';
-            var sLastName = (stu.lastName || '—').trim();
-            var sFirstName = (stu.firstName || stu.fullName || '—').trim();
+            var sLastName = (stu.lastName || '—').trim().toUpperCase();
+            var sFirstName = (stu.firstName || stu.fullName || '—').trim().toUpperCase();
             var participantBanner = '';
             if (stu.participants && Array.isArray(stu.participants) && stu.participants.length > 1) {
                 var pList = stu.participants.map(function (p, idx) {
-                    return (idx + 1) + ') ' + (p.lastName || '—') + ' ' + (p.firstName || '—');
+                    return (idx + 1) + ') ' + (p.lastName || '—').trim().toUpperCase() + ' ' + (p.firstName || '—').trim().toUpperCase();
                 }).join('  |  ');
                 participantBanner = 'المشاركون: ' + pList;
             } else {
@@ -2361,7 +2380,10 @@
                     ctx.fillStyle = '#78350F';
                     ctx.fillText(fLabels, 560, curY + 15);
 
-                    var diffSummary = (mItem.changes || []).map(function (c) { return c.labelAr + ': [' + c.oldVal + ' ➔ ' + c.newVal + ']'; }).join(' | ');
+                    var diffSummary = (mItem.changes || []).map(function (c) {
+                        if (c.notice) return (c.isRemoval ? '⚠️ ' : '') + c.labelAr + ': ' + c.notice;
+                        return c.labelAr + ': [' + c.oldVal + ' ➔ ' + c.newVal + ']';
+                    }).join(' | ');
                     ctx.textAlign = 'right';
                     ctx.fillStyle = '#0F172A';
                     ctx.fillText(diffSummary, 420, curY + 15);
