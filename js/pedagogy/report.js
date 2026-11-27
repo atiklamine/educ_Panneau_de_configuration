@@ -1125,6 +1125,26 @@
         var studentName = (stu.lastName || '') + ' ' + (stu.firstName || stu.fullName || '');
         var pcNum = global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01'));
 
+        var stuHistory = (stu && stu.history) || (global.Win11Assessment && typeof global.Win11Assessment.getStudentHistory === 'function' ? global.Win11Assessment.getStudentHistory() : null);
+        var hasModifications = !!(stuHistory && stuHistory.modifications && stuHistory.modifications.length > 0);
+        var hasSecurityFreeze = false;
+        var freezeProgressPct = 0;
+        var freezeDoneCount = 0;
+        var freezeTotalCount = enabledTasks ? enabledTasks.length : 6;
+        if (hasModifications) {
+            for (var fmi = 0; fmi < stuHistory.modifications.length; fmi++) {
+                var fMod = stuHistory.modifications[fmi];
+                var hasRem = (fMod.changes || []).some(function (c) { return c.isRemoval || c.field === 'participantsRemoved'; });
+                if (hasRem || (fMod.doneTasksCount < fMod.totalTasksCount)) {
+                    hasSecurityFreeze = true;
+                    freezeProgressPct = fMod.progressPercent || 0;
+                    freezeDoneCount = fMod.doneTasksCount || 0;
+                    freezeTotalCount = fMod.totalTasksCount || freezeTotalCount;
+                    break;
+                }
+            }
+        }
+
         // ==========================================
         // 2. TOP SCORE & DURATION HIGHLIGHT BAR (HIGHLIGHTED AT VERY TOP BEFORE DETAILS)
         // ==========================================
@@ -1135,10 +1155,14 @@
 
         var durSubText = isAllDone
             ? 'تم تثبيت وقت الإنجاز النهائي لكافة المهام'
-            : timeClarifierText;
+            : (hasSecurityFreeze
+                ? 'تم تجميد الجلسة وتوقيف المحاكاة إثر تعديل الهوية'
+                : timeClarifierText);
         var durBadgeText = isAllDone
             ? ('✔ جلسة مكتملة ومستوفاة لكافة المهام (' + doneTasksCount + ' / ' + enabledTasks.length + ' مهام — 100%)')
-            : timeBadgeText;
+            : (hasSecurityFreeze
+                ? ('⚠️ جلسة موقوفة ومجمدة أمنياً عند نسبة (' + freezeProgressPct + '%) — إلغاء المهام المتبقية')
+                : timeBadgeText);
 
         var topSummaryCardHtml =
             '<div class="a4-top-summary-card" style="margin:8px 0 12px 0;">' +
@@ -1259,7 +1283,6 @@
                         ? (global.Win11Icons ? global.Win11Icons.get('skip', 11) : '>>')
                         : (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗')));
             var badgeLabel = isDone ? 'مكتملة' : (isPart ? 'منجزة جزئياً' : (isSkip ? 'تم تخطيها' : 'غير منجزة'));
-            var badgeHtml = '<span class="a4-badge ' + badgeCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + badgeIcon + ' <span>' + bidi(badgeLabel) + '</span></span>';
 
             var tkMax = Number(tk.maxPoints || tk.coefficient || 1);
             var tkEarned = Number(tk.earnedPoints || 0);
@@ -1267,7 +1290,12 @@
             if (tkDeduct > 0) totalDeductionsInTable += tkDeduct;
 
             var reasonTxt = '';
-            if (isDone) {
+            if (hasSecurityFreeze && !isDone && (i >= freezeDoneCount || tkEarned === 0)) {
+                badgeCls = 'is-fail';
+                badgeIcon = (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗');
+                badgeLabel = 'ملغاة أمنياً (تجميد)';
+                reasonTxt = 'ملغاة أمنياً — تم تجميد الجلسة وإلغاء استكمال النسبة المتبقية إثر تعديل الهوية عند (' + freezeProgressPct + '%).';
+            } else if (isDone) {
                 reasonTxt = 'تم إنجاز كافة خطوات المهمة بنجاح (' + tkMax.toFixed(2) + ' من ' + tkMax.toFixed(2) + ' نقطة).';
             } else if (isSkip) {
                 reasonTxt = 'تم تخطي المهمة بطلب من التلميذ؛ خصم كامل علامة المهمة (-' + tkMax.toFixed(2) + ' نقطة).';
@@ -1279,6 +1307,8 @@
             } else {
                 reasonTxt = 'لم يتم إنجاز الخطوات العملية المطلوبة للمهمة (خصم -' + tkMax.toFixed(2) + ' نقطة).';
             }
+
+            var badgeHtml = '<span class="a4-badge ' + badgeCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + badgeIcon + ' <span>' + bidi(badgeLabel) + '</span></span>';
 
             // Practical Task Row
             rowsHtml +=
@@ -1380,6 +1410,12 @@
                         var qIcon = (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗');
                         qStatusHtml = '<span class="a4-badge ' + qStatusCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">' + qIcon + ' <span>' + bidi(qStatusText) + '</span></span>';
                         qNotes = 'استنفاد المحاولات (0%).';
+                    } else if (hasSecurityFreeze && (i >= freezeDoneCount || qEarned === 0)) {
+                        qStatusCls = 'is-fail';
+                        qStatusText = 'ملغاة أمنياً';
+                        var qIcon = (global.Win11Icons ? global.Win11Icons.get('fail', 10) : '✗');
+                        qStatusHtml = '<span class="a4-badge ' + qStatusCls + '" style="display:inline-flex;align-items:center;justify-content:center;gap:4px;background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;">' + qIcon + ' <span>' + bidi(qStatusText) + '</span></span>';
+                        qNotes = 'ملغاة أمنياً إثر تجميد الجلسة وتوقيف المحاكاة لمنع الانتحال.';
                     } else if (isSkip) {
                         qStatusCls = 'is-skipped';
                         qStatusText = 'تم تخطيه';
@@ -1583,6 +1619,11 @@
                         '<div style="font-size:11px;color:#475569;">' + (pen > 0 ? ('<bdi dir="ltr">' + baseScoreOutOf20.toFixed(2) + ' - ' + pen.toFixed(2) + ' = </bdi><strong style="color:#15803D;"><bdi dir="ltr">' + finalScoreStr + ' / 20</bdi></strong>') : ('<strong style="color:#16A34A;">' + bidi('0.00 خصم (أداء نظامي سليم)') + '</strong> ➔ <bdi dir="ltr">' + finalScoreStr + ' / 20</bdi>')) + '</div>' +
                     '</div>' +
                 '</div>' +
+                (hasSecurityFreeze ? (
+                    '<div style="background:#FFF5F5;border:1px solid #FECACA;border-radius:4px;padding:6px 10px;margin-top:6px;color:#991B1B;font-size:11px;font-weight:700;line-height:1.45;">' +
+                        '⚠️ ' + bidi('تنبيه التدقيق والنزاهة: تعتمد العلامة حصرياً على المهام المنجزة قبل تجميد الجلسة عند النسبة (' + freezeProgressPct + '%)، وتُلغى المهام المتبقية (' + (100 - freezeProgressPct) + '%) بـ 0.00 نقطة لمنع منتحل الهوية من الاستفادة من رصيد الفوج الأصلي.') +
+                    '</div>'
+                ) : '') +
             '</div>';
 
         var mathBreakdownHtml =
@@ -1658,8 +1699,6 @@
         // Only rendered if student information was modified during active session!
         // ==========================================
         var sectionDHtml = '';
-        var stuHistory = (stu && stu.history) || (global.Win11Assessment && typeof global.Win11Assessment.getStudentHistory === 'function' ? global.Win11Assessment.getStudentHistory() : null);
-        var hasModifications = !!(stuHistory && stuHistory.modifications && stuHistory.modifications.length > 0);
 
         if (hasModifications) {
             var initialSnap = stuHistory.initial || {
@@ -1691,7 +1730,7 @@
                     '<td style="text-align:center;font-family:Consolas,monospace;"><bdi dir="ltr">00:00:00</bdi></td>' +
                     '<td style="text-align:center;font-weight:600;color:#059669;"><bdi dir="ltr">0%</bdi> ' + bidi('(انطلاق الجلسة)') + '</td>' +
                     '<td style="text-align:center;font-weight:700;color:#1E3A8A;">' + bidi('بيانات التسجيل الأصلية') + '</td>' +
-                    '<td style="font-size:10px;line-height:1.4;">' +
+                    '<td style="font-size:11.5px;line-height:1.45;">' +
                         '<div>' + bidi('الاسم: ') + '<strong>' + bidi(initialSnap.fullName) + '</strong> &nbsp;|&nbsp; ' + bidi('الفوج: ') + '<strong>' + bidi(initialSnap.classGroup) + '</strong> &nbsp;|&nbsp; ' + bidi('الجهاز: ') + '<bdi dir="ltr">#' + esc(initialSnap.pcNumber) + '</bdi></div>' +
                         initPartsNotice +
                     '</td>' +
@@ -1699,8 +1738,9 @@
 
             for (var m = 0; m < stuHistory.modifications.length; m++) {
                 var mod = stuHistory.modifications[m];
-                var modStageLabel = 'التعديل رقم ' + (mod.editNumber || (m + 1));
                 var changesList = mod.changes || [];
+                var isRem = changesList.some(function (c) { return c.isRemoval || c.field === 'participantsRemoved'; });
+                var modStageLabel = 'التعديل رقم ' + (mod.editNumber || (m + 1)) + (isRem ? ' [تجميد أمني]' : '');
                 var changesHtml = '';
 
                 for (var c = 0; c < changesList.length; c++) {
@@ -1711,7 +1751,7 @@
                         var noticeColor = ch.isRemoval ? '#DC2626' : '#0369A1';
                         var noticeBorder = ch.isRemoval ? '#FECACA' : '#BAE6FD';
                         noticeBox =
-                            '<div style="margin-top:4px;padding:4px 8px;border-radius:4px;background:' + noticeBg + ';border:1px solid ' + noticeBorder + ';color:' + noticeColor + ';font-size:10px;font-weight:700;line-height:1.4;">' +
+                            '<div style="margin-top:4px;padding:4px 8px;border-radius:4px;background:' + noticeBg + ';border:1px solid ' + noticeBorder + ';color:' + noticeColor + ';font-size:11px;font-weight:700;line-height:1.4;">' +
                                 (ch.isRemoval ? '⚠️ ' : 'ℹ️ ') + bidi(ch.notice) +
                             '</div>';
                     }
@@ -1723,23 +1763,50 @@
                             '➔ <span class="a4-audit-new">' + bidi('جديد: ') + esc(ch.newVal) + '</span>' +
                             noticeBox +
                         '</div>';
+
+                    if (ch.isRemoval) {
+                        changesHtml +=
+                            '<div style="margin-top:4px;padding:5px 8px;border-radius:4px;background:#FFF5F5;border:1px solid #FECACA;color:#991B1B;font-size:11px;font-weight:700;line-height:1.4;">' +
+                                '⚠️ ' + bidi('قرار أمني: تم تجميد الجلسة نهائياً عند نسبة (' + mod.progressPercent + '%) وإلغاء استكمال المهام المتبقية (' + (100 - mod.progressPercent) + '%) لمنع استغلال رصيد الفوج السابق.') +
+                            '</div>';
+                    }
                 }
 
-                var fieldSummary = changesList.map(function (c) { return c.labelAr; }).join('، ');
+                var fieldSummary = changesList.map(function (c) { return c.labelAr; }).join('، ') + (isRem ? ' [تجميد المحاكاة]' : '');
 
                 auditRowsHtml +=
                     '<tr class="a4-audit-edit-row">' +
-                        '<td style="text-align:center;"><span class="a4-stage-pill is-edit">' + bidi(modStageLabel) + '</span></td>' +
+                        '<td style="text-align:center;"><span class="a4-stage-pill is-edit" style="' + (isRem ? 'background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;' : '') + '">' + bidi(modStageLabel) + '</span></td>' +
                         '<td style="text-align:center;font-weight:700;color:#B45309;"><bdi dir="ltr">' + esc(mod.timestamp) + '</bdi></td>' +
                         '<td style="text-align:center;font-family:Consolas,monospace;font-weight:700;color:#B45309;"><bdi dir="ltr">' + esc(mod.elapsedFormatted) + '</bdi></td>' +
                         '<td style="text-align:center;font-weight:700;color:#2563EB;">' +
                             '<bdi dir="ltr">' + mod.progressPercent + '%</bdi> ' +
-                            '<span style="font-size:9px;color:#64748B;">(' + mod.doneTasksCount + ' / ' + mod.totalTasksCount + ' مهام)</span>' +
+                            '<span style="font-size:10px;color:#64748B;">(' + mod.doneTasksCount + ' / ' + mod.totalTasksCount + ' مهام)</span>' +
                         '</td>' +
-                        '<td style="text-align:center;font-weight:700;color:#78350F;">' + bidi(fieldSummary) + '</td>' +
-                        '<td style="line-height:1.45;">' + changesHtml + '</td>' +
+                        '<td style="text-align:center;font-weight:700;color:' + (isRem ? '#991B1B' : '#78350F') + ';">' + bidi(fieldSummary) + '</td>' +
+                        '<td style="font-size:11.5px;line-height:1.45;">' + changesHtml + '</td>' +
                     '</tr>';
             }
+
+            var auditAlertHtml = hasSecurityFreeze ? (
+                '<div class="a4-audit-alert is-frozen" style="background:#FEF2F2;border:1.5px solid #DC2626;border-right:6px solid #DC2626;border-radius:6px;padding:8px 12px;margin:6px 0 10px 0;">' +
+                    '<div style="display:flex;align-items:flex-start;gap:8px;">' +
+                        '<span style="font-size:18px;">⚠️</span>' +
+                        '<div style="font-size:11.5px;color:#7F1D1D;line-height:1.5;">' +
+                            '<strong style="color:#991B1B;font-size:12px;">' + bidi('تنبيه أمني للأستاذ(ة) المشرف(ة) — قرار أمني وتربوي حاسم (مكافحة الانتحال وتجميد الجلسة):') + '</strong><br>' +
+                            bidi('تم رصد استبعاد/تعديل هوية المشاركين أثناء سير المحاكاة عند نسبة إنجاز (') + '<bdi dir="ltr"><strong>' + freezeProgressPct + '%</strong></bdi> — <bdi dir="ltr"><strong>' + freezeDoneCount + ' ' + bidi('من') + ' ' + freezeTotalCount + ' ' + bidi('مهام') + '</strong></bdi>' + bidi('). وتطبيقاً لمبدأ حماية نزاهة التقويم وحقوق الفوج الأصلي، ') + '<strong>' + bidi('تم تجميد الجلسة نهائياً وإلغاء النسبة المتبقية (') + '<bdi dir="ltr">' + (100 - freezeProgressPct) + '%</bdi>' + bidi(')') + '</strong>' + bidi('، ومنع التلميذ البديل من مواصلة المحاكاة أو الاستيلاء على نقاط الفوج السابق.') +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            ) : (
+                '<div class="a4-audit-alert">' +
+                    '<div class="a4-audit-alert-icon">⚠️</div>' +
+                    '<div class="a4-audit-alert-text">' +
+                        '<strong>' + bidi('تنبيه أمني للأستاذ(ة) المشرف(ة):') + '</strong> ' +
+                        bidi('تم رصد تعديل على بيانات هوية التلميذ أو الفوج/الجهاز أثناء سير الجلسة العملية بعد انطلاق المحاكاة وإنجاز جزء من المهام. يُرجى مراجعة الجدول الزمني أدناه للتحقق من عدم انتحال الهوية أو تبديل الحسابات بين التلاميذ.') +
+                    '</div>' +
+                '</div>'
+            );
 
             sectionDHtml =
                 '<div class="a4-section-d">' +
@@ -1747,30 +1814,24 @@
                         '<span>' + bidi('القسم (د): سجل تدقيق وتعديل بيانات الهوية والجلسة (نظام مكافحة الانتحال والتحقق الأمني)') + '</span>' +
                         '<span style="font-size:11px;color:#B45309;font-weight:700;">⚠️ ' + bidi('تم تسجيل ' + stuHistory.modifications.length + ' تعديل(ات) أثناء الجلسة') + '</span>' +
                     '</div>' +
-                    '<div class="a4-audit-alert">' +
-                        '<div class="a4-audit-alert-icon">⚠️</div>' +
-                        '<div class="a4-audit-alert-text">' +
-                            '<strong>' + bidi('تنبيه أمني للأستاذ(ة) المشرف(ة):') + '</strong> ' +
-                            bidi('تم رصد تعديل على بيانات هوية التلميذ أو الفوج/الجهاز أثناء سير الجلسة العملية بعد انطلاق المحاكاة وإنجاز جزء من المهام. يُرجى مراجعة الجدول الزمني أدناه للتحقق من عدم انتحال الهوية أو تبديل الحسابات بين التلاميذ.') +
-                        '</div>' +
-                    '</div>' +
+                    auditAlertHtml +
                     '<table class="a4-audit-table">' +
                         '<colgroup>' +
-                            '<col style="width:13%;">' +
-                            '<col style="width:14%;">' +
-                            '<col style="width:14%;">' +
-                            '<col style="width:17%;">' +
+                            '<col style="width:12%;">' +
+                            '<col style="width:12%;">' +
+                            '<col style="width:12%;">' +
                             '<col style="width:16%;">' +
-                            '<col style="width:26%;">' +
+                            '<col style="width:18%;">' +
+                            '<col style="width:30%;">' +
                         '</colgroup>' +
                         '<thead>' +
                             '<tr>' +
-                                '<th style="width:13%;text-align:center;">' + bidi('المرحلة') + '</th>' +
-                                '<th style="width:14%;text-align:center;">' + bidi('توقيت النظام') + '</th>' +
-                                '<th style="width:14%;text-align:center;">' + bidi('وقت المحاكاة') + '</th>' +
-                                '<th style="width:17%;text-align:center;">' + bidi('نسبة الإنجاز عند التعديل') + '</th>' +
-                                '<th style="width:16%;text-align:center;">' + bidi('البيان المعدل') + '</th>' +
-                                '<th style="width:26%;text-align:right;">' + bidi('تفاصيل التغيير (سابق ➔ جديد)') + '</th>' +
+                                '<th style="width:12%;text-align:center;">' + bidi('المرحلة') + '</th>' +
+                                '<th style="width:12%;text-align:center;">' + bidi('توقيت النظام') + '</th>' +
+                                '<th style="width:12%;text-align:center;">' + bidi('وقت المحاكاة') + '</th>' +
+                                '<th style="width:16%;text-align:center;">' + bidi('نسبة الإنجاز عند التعديل') + '</th>' +
+                                '<th style="width:18%;text-align:center;">' + bidi('البيان المعدل والإجراء') + '</th>' +
+                                '<th style="width:30%;text-align:right;">' + bidi('تفاصيل التغيير والقرار الأمني (سابق ➔ جديد)') + '</th>' +
                             '</tr>' +
                         '</thead>' +
                         '<tbody>' +
@@ -1924,9 +1985,9 @@
             '.a4-report-table col{box-sizing:border-box !important;}\n' +
             '.a4-report-table th,.a4-report-table td{border:1px solid #CBD5E1 !important;padding:5px 5px !important;text-align:right;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;word-break:normal !important;white-space:normal !important;box-sizing:border-box !important;line-height:1.4 !important;}\n' +
             '.a4-report-table th{background:#F1F5F9;color:#0F172A;font-weight:700;font-size:10.5px;line-height:1.35;text-align:center;}\n' +
-            '.a4-audit-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;margin:6px 0 8px 0;font-size:11px;box-sizing:border-box !important;}\n' +
-            '.a4-audit-table th,.a4-audit-table td{border:1px solid #CBD5E1 !important;padding:5px 6px !important;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;line-height:1.45 !important;}\n' +
-            '.a4-audit-table th{background:#F8FAFC;color:#334155;font-weight:700;font-size:10.5px;text-align:center;}\n' +
+            '.a4-audit-table{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;margin:6px 0 8px 0;font-size:11.5px;box-sizing:border-box !important;}\n' +
+            '.a4-audit-table th,.a4-audit-table td{border:1px solid #CBD5E1 !important;padding:5px 6px !important;vertical-align:middle;word-wrap:break-word !important;overflow-wrap:break-word !important;word-break:normal !important;white-space:normal !important;line-height:1.45 !important;}\n' +
+            '.a4-audit-table th{background:#F8FAFC;color:#334155;font-weight:700;font-size:11px;text-align:center;}\n' +
             '.a4-quiz-disabled-notice{background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:6px;padding:6px 10px;margin:6px 0;color:#92400E;font-size:11px;line-height:1.5;}\n' +
             '.a4-math-grid{display:flex;gap:10px;margin-top:6px;align-items:stretch;width:100%;}\n' +
             '.a4-math-steps{flex:1 1 100%;width:100%;display:flex;flex-direction:column;gap:4px;}\n' +
@@ -2235,14 +2296,36 @@
             var passAppr = scores.appreciation || 'قريب من المتوسط';
             ctx.fillText(isPassed ? ('✔ مستوفٍ لمعيار النجاح — ' + passAppr) : ('✕ دون المعدل المطلوب — ' + passAppr), 895, curY + 62);
 
+            var stuHistory = (stu && stu.history) || (global.Win11Assessment && typeof global.Win11Assessment.getStudentHistory === 'function' ? global.Win11Assessment.getStudentHistory() : null);
+            var hasModifications = !!(stuHistory && stuHistory.modifications && stuHistory.modifications.length > 0);
+            var hasSecurityFreeze = false;
+            var freezeProgressPct = 0;
+            var freezeDoneCount = 0;
+            var freezeTotalCount = enabledTasks ? enabledTasks.length : 6;
+            if (hasModifications) {
+                for (var fmi = 0; fmi < stuHistory.modifications.length; fmi++) {
+                    var fMod = stuHistory.modifications[fmi];
+                    var hasRem = (fMod.changes || []).some(function (c) { return c.isRemoval || c.field === 'participantsRemoved'; });
+                    if (hasRem || (fMod.doneTasksCount < fMod.totalTasksCount)) {
+                        hasSecurityFreeze = true;
+                        freezeProgressPct = fMod.progressPercent || 0;
+                        freezeDoneCount = fMod.doneTasksCount || 0;
+                        freezeTotalCount = fMod.totalTasksCount || freezeTotalCount;
+                        break;
+                    }
+                }
+            }
+
             // Duration Card (Left: 80..610, W = 530)
             var isAllDone = (enabledTasks.length > 0 && doneTasksCount === enabledTasks.length);
-            var durBg = isAllDone ? '#F0FDF4' : '#EFF6FF';
-            var durBorder = isAllDone ? '#16A34A' : '#2563EB';
-            var durTextCol = isAllDone ? '#15803D' : '#1D4ED8';
+            var durBg = isAllDone ? '#F0FDF4' : (hasSecurityFreeze ? '#FFFBEB' : '#EFF6FF');
+            var durBorder = isAllDone ? '#16A34A' : (hasSecurityFreeze ? '#DC2626' : '#2563EB');
+            var durTextCol = isAllDone ? '#15803D' : (hasSecurityFreeze ? '#B91C1C' : '#1D4ED8');
             var durBadgeTxt = isAllDone
                 ? '✔ جلسة مكتملة ومستوفاة لكافة المهام (6 / 6 مهام — 100%)'
-                : ('⌛ جلسة قيد الإنجاز (' + doneTasksCount + ' / ' + enabledTasks.length + ' مهام — ' + completionPct + '%)');
+                : (hasSecurityFreeze
+                    ? ('⚠️ جلسة موقوفة ومجمدة أمنياً عند (' + freezeProgressPct + '%) — إلغاء المهام')
+                    : ('⌛ جلسة قيد الإنجاز (' + doneTasksCount + ' / ' + enabledTasks.length + ' مهام — ' + completionPct + '%)'));
 
             ctx.fillStyle = durBg;
             ctx.fillRect(80, curY, 530, cardH);
@@ -2497,6 +2580,9 @@
                 } else if (isSkip) {
                     ctx.fillStyle = '#64748B';
                     ctx.fillText('تم تخطيها', 615, curY + 21);
+                } else if (hasSecurityFreeze && (rIdx >= freezeDoneCount || tkEarned === 0)) {
+                    ctx.fillStyle = '#DC2626';
+                    ctx.fillText('ملغاة أمنياً', 615, curY + 21);
                 } else {
                     ctx.fillStyle = '#DC2626';
                     ctx.fillText('غير منجزة', 615, curY + 21);
@@ -2531,7 +2617,13 @@
                 ctx.textAlign = 'right';
                 ctx.font = '11.5px "Segoe UI", Tahoma, sans-serif';
                 ctx.fillStyle = '#475569';
-                var rNote = isDone ? 'تم إنجاز كافة خطوات المهمة بنجاح.' : (isSkip ? 'تم تخطي المهمة من قبل التلميذ.' : 'لم يتم استيفاء الخطوات العملية.');
+                var rNote = isDone
+                    ? 'تم إنجاز كافة خطوات المهمة بنجاح.'
+                    : (isSkip
+                        ? 'تم تخطي المهمة من قبل التلميذ.'
+                        : ((hasSecurityFreeze && (rIdx >= freezeDoneCount || tkEarned === 0))
+                            ? ('ملغاة أمنياً — تجميد الجلسة عند ' + freezeProgressPct + '%.')
+                            : 'لم يتم استيفاء الخطوات العملية.'));
                 ctx.fillText(rNote, 250, curY + 21);
                 ctx.restore();
 
@@ -2607,6 +2699,9 @@
                     } else if (isSkip) {
                         ctx.fillStyle = '#64748B';
                         ctx.fillText('تم تخطيه', 615, curY + 19);
+                    } else if (hasSecurityFreeze && (rIdx >= freezeDoneCount || qEarned === 0)) {
+                        ctx.fillStyle = '#DC2626';
+                        ctx.fillText('ملغاة أمنياً', 615, curY + 19);
                     } else {
                         ctx.fillStyle = '#64748B';
                         ctx.fillText('في الانتظار', 615, curY + 19);
@@ -2643,7 +2738,9 @@
                     ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
                     ctx.fillStyle = '#64748B';
                     var qNote = '';
-                    if (isQuizSkippedAll) {
+                    if (hasSecurityFreeze && (rIdx >= freezeDoneCount || qEarned === 0)) {
+                        qNote = 'ملغاة أمنياً إثر تجميد الجلسة.';
+                    } else if (isQuizSkippedAll) {
                         qNote = 'تخطي كل الأسئلة (-' + qMax.toFixed(2) + ' ن)';
                     } else if (isQuizSkippedCurrent) {
                         qNote = 'تخطي هذا السؤال (-' + qMax.toFixed(2) + ' ن)';
@@ -3010,89 +3107,165 @@
             if (hasModifications) {
                 curY += 10;
                 ctx.fillStyle = '#FFFBEB';
-                ctx.fillRect(80, curY, 1080, 26);
+                ctx.fillRect(80, curY, 1080, 28);
                 ctx.strokeStyle = '#D97706';
                 ctx.lineWidth = 1.2;
-                ctx.strokeRect(80, curY, 1080, 26);
+                ctx.strokeRect(80, curY, 1080, 28);
 
                 ctx.fillStyle = '#D97706';
-                ctx.fillRect(1156, curY, 4, 26);
+                ctx.fillRect(1156, curY, 4, 28);
 
                 ctx.fillStyle = '#92400E';
-                ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+                ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
                 ctx.textAlign = 'right';
-                ctx.fillText('القسم (د): سجل تدقيق وتعديل بيانات الهوية والجلسة (نظام مكافحة الانتحال والتحقق الأمني)', 1140, curY + 18);
+                ctx.fillText('القسم (د): سجل تدقيق وتعديل بيانات الهوية والجلسة (نظام مكافحة الانتحال والتحقق الأمني)', 1140, curY + 19);
 
                 ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
                 ctx.textAlign = 'left';
-                ctx.fillText('⚠️ تم تسجيل ' + stuHistory.modifications.length + ' تعديل(ات) أثناء الجلسة', 95, curY + 18);
-                curY += 30;
+                ctx.fillText('⚠️ تم تسجيل ' + stuHistory.modifications.length + ' تعديل(ات) أثناء الجلسة', 95, curY + 19);
+                curY += 32;
 
+                if (hasSecurityFreeze) {
+                    ctx.fillStyle = '#FEF2F2';
+                    ctx.fillRect(80, curY, 1080, 26);
+                    ctx.strokeStyle = '#FECACA';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(80, curY, 1080, 26);
+
+                    ctx.fillStyle = '#DC2626';
+                    ctx.fillRect(1156, curY, 4, 26);
+
+                    ctx.fillStyle = '#991B1B';
+                    ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('⚠️ قرار أمني وتربوي: تم تجميد الجلسة عند نسبة ' + freezeProgressPct + '% وإلغاء النسبة المتبقية (' + (100 - freezeProgressPct) + '%) لمنع انتحال الهوية أو مواصلة المحاكاة.', 1140, curY + 18);
+                    curY += 30;
+                }
+
+                // Table Header Row
                 ctx.fillStyle = '#F8FAFC';
-                ctx.fillRect(80, curY, 1080, 24);
+                ctx.fillRect(80, curY, 1080, 26);
                 ctx.strokeStyle = '#CBD5E1';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(80, curY, 1080, 24);
+                ctx.strokeRect(80, curY, 1080, 26);
 
                 ctx.fillStyle = '#334155';
-                ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+                ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('المرحلة', 1100, curY + 16);
-                ctx.fillText('توقيت النظام', 980, curY + 16);
-                ctx.fillText('وقت المحاكاة', 860, curY + 16);
-                ctx.fillText('نسبة الإنجاز', 720, curY + 16);
-                ctx.fillText('البيان المعدل', 560, curY + 16);
+                ctx.fillText('المرحلة', 1110, curY + 18);
+                ctx.fillText('توقيت النظام', 1005, curY + 18);
+                ctx.fillText('وقت المحاكاة', 895, curY + 18);
+                ctx.fillText('نسبة الإنجاز', 760, curY + 18);
+                ctx.fillText('البيان المعدل والإجراء', 595, curY + 18);
                 ctx.textAlign = 'right';
-                ctx.fillText('تفاصيل التغيير (سابق ➔ جديد)', 420, curY + 16);
-                curY += 24;
+                ctx.fillText('تفاصيل التغيير والقرار الأمني (سابق ➔ جديد)', 490, curY + 18);
+                curY += 26;
 
+                // Initial Snapshot Row
                 var initSnap = stuHistory.initial || {};
+                var initRowH = 26;
                 ctx.fillStyle = '#F1F5F9';
-                ctx.fillRect(80, curY, 1080, 22);
-                ctx.strokeStyle = '#E2E8F0';
-                ctx.strokeRect(80, curY, 1080, 22);
+                ctx.fillRect(80, curY, 1080, initRowH);
+                ctx.strokeStyle = '#CBD5E1';
+                ctx.strokeRect(80, curY, 1080, initRowH);
 
                 ctx.fillStyle = '#475569';
-                ctx.font = '9.5px "Segoe UI", Tahoma, sans-serif';
+                ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('التسجيل الأولي', 1100, curY + 15);
-                ctx.fillText(initSnap.timestamp || '00:00:00', 980, curY + 15);
-                ctx.fillText('00:00:00', 860, curY + 15);
-                ctx.fillText('0% (انطلاق)', 720, curY + 15);
-                ctx.fillText('بيانات أصلية', 560, curY + 15);
-                ctx.textAlign = 'right';
-                var initDesc = 'الاسم: ' + (initSnap.fullName || stu.fullName) + ' | فوج: ' + (initSnap.classGroup || stu.classGroup) + ' | جهاز #' + (initSnap.pcNumber || stu.pcNumber);
-                ctx.fillText(initDesc, 420, curY + 15);
-                curY += 22;
+                ctx.fillText('التسجيل الأولي', 1110, curY + 18);
+                ctx.fillText(initSnap.timestamp || '00:00:00', 1005, curY + 18);
+                ctx.fillText('00:00:00', 895, curY + 18);
+                ctx.fillStyle = '#059669';
+                ctx.fillText('0% (انطلاق)', 760, curY + 18);
+                ctx.fillStyle = '#1E3A8A';
+                ctx.fillText('بيانات أصلية', 595, curY + 18);
 
+                // Col 6 with strict clipping within [82, curY, 426, initRowH]
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(82, curY, 426, initRowH);
+                ctx.clip();
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#0F172A';
+                ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+                var initDesc = 'الاسم: ' + (initSnap.fullName || stu.fullName) + ' | فوج: ' + (initSnap.classGroup || stu.classGroup) + ' | جهاز #' + (initSnap.pcNumber || stu.pcNumber);
+                ctx.fillText(initDesc, 495, curY + 18);
+                ctx.restore();
+                curY += initRowH;
+
+                // Modifications Rows
                 for (var mi = 0; mi < Math.min(3, stuHistory.modifications.length); mi++) {
                     var mItem = stuHistory.modifications[mi];
+                    var isRem = (mItem.changes || []).some(function (c) { return c.isRemoval || c.field === 'participantsRemoved'; });
+                    var modRowH = isRem ? 46 : 30;
+
                     ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(80, curY, 1080, 22);
-                    ctx.strokeStyle = '#E2E8F0';
-                    ctx.strokeRect(80, curY, 1080, 22);
+                    ctx.fillRect(80, curY, 1080, modRowH);
+                    ctx.strokeStyle = '#CBD5E1';
+                    ctx.strokeRect(80, curY, 1080, modRowH);
 
                     ctx.fillStyle = '#B45309';
-                    ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
+                    ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText('تعديل ' + (mItem.editNumber || (mi + 1)), 1100, curY + 15);
-                    ctx.fillText(mItem.timestamp, 980, curY + 15);
-                    ctx.fillText(mItem.elapsedFormatted, 860, curY + 15);
+                    if (isRem) {
+                        ctx.fillText('تعديل ' + (mItem.editNumber || (mi + 1)), 1110, curY + 18);
+                        ctx.fillStyle = '#DC2626';
+                        ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
+                        ctx.fillText('[تجميد أمني]', 1110, curY + 34);
+                    } else {
+                        ctx.fillText('تعديل ' + (mItem.editNumber || (mi + 1)), 1110, curY + 19);
+                    }
+
+                    ctx.fillStyle = '#475569';
+                    ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillText(mItem.timestamp, 1005, curY + (isRem ? 26 : 19));
+                    ctx.fillText(mItem.elapsedFormatted, 895, curY + (isRem ? 26 : 19));
+
                     ctx.fillStyle = '#2563EB';
-                    ctx.fillText(mItem.progressPercent + '% (' + mItem.doneTasksCount + '/' + mItem.totalTasksCount + ')', 720, curY + 15);
+                    ctx.fillText(mItem.progressPercent + '% (' + mItem.doneTasksCount + '/' + mItem.totalTasksCount + ')', 760, curY + (isRem ? 26 : 19));
 
                     var fLabels = (mItem.changes || []).map(function (c) { return c.labelAr; }).join('، ');
+                    if (fLabels.length > 20) fLabels = fLabels.substring(0, 18) + '...';
                     ctx.fillStyle = '#78350F';
-                    ctx.fillText(fLabels, 560, curY + 15);
+                    ctx.font = 'bold 10.5px "Segoe UI", Tahoma, sans-serif';
+                    if (isRem) {
+                        ctx.fillText(fLabels, 595, curY + 18);
+                        ctx.fillStyle = '#DC2626';
+                        ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
+                        ctx.fillText('[إلغاء الاستكمال]', 595, curY + 34);
+                    } else {
+                        ctx.fillText(fLabels, 595, curY + 19);
+                    }
 
-                    var diffSummary = (mItem.changes || []).map(function (c) {
-                        if (c.notice) return (c.isRemoval ? '⚠️ ' : '') + c.labelAr + ': ' + c.notice;
-                        return c.labelAr + ': [' + c.oldVal + ' ➔ ' + c.newVal + ']';
-                    }).join(' | ');
+                    // Col 6 with STRICT CLIPPING inside [82, curY, 426, modRowH]
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(82, curY, 426, modRowH);
+                    ctx.clip();
                     ctx.textAlign = 'right';
-                    ctx.fillStyle = '#0F172A';
-                    ctx.fillText(diffSummary, 420, curY + 15);
-                    curY += 22;
+
+                    var remChange = (mItem.changes || []).find(function (c) { return c.isRemoval; });
+                    if (remChange) {
+                        ctx.fillStyle = '#0F172A';
+                        ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                        var line1 = 'سابق: [' + remChange.oldVal + '] ➔ جديد: [' + remChange.newVal + ']';
+                        ctx.fillText(line1, 495, curY + 18);
+
+                        ctx.fillStyle = '#DC2626';
+                        ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+                        var line2 = '⚠️ تجميد المحاكاة عند ' + mItem.progressPercent + '%: إلغاء المهام المتبقية (' + (100 - mItem.progressPercent) + '%) ومنع استكمال الجلسة لمنتحل الهوية.';
+                        ctx.fillText(line2, 495, curY + 36);
+                    } else {
+                        var diffSummary = (mItem.changes || []).map(function (c) {
+                            return c.labelAr + ': [' + c.oldVal + ' ➔ ' + c.newVal + ']';
+                        }).join(' | ');
+                        ctx.fillStyle = '#0F172A';
+                        ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                        ctx.fillText(diffSummary, 495, curY + 19);
+                    }
+                    ctx.restore();
+
+                    curY += modRowH;
                 }
             }
 
