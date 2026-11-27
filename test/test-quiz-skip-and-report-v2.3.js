@@ -165,6 +165,27 @@ const pdfHeader = String.fromCharCode.apply(null, pdfBytes.subarray(0, 5));
 assert.strictEqual(pdfHeader, '%PDF-', 'Generated document must be a genuine binary PDF');
 console.log('✓ TEST 4 PASSED: Canvas PDF generated with binary PDF header (%PDF-).');
 
+console.log('=== TEST 5: CONFIRMATION DIALOG Z-INDEX STACKING OVER QUIZ MODAL ===');
+const shellCss = fs.readFileSync(path.join(__dirname, '..', 'css', 'shell.css'), 'utf8');
+const pedagogyCss = fs.readFileSync(path.join(__dirname, '..', 'css', 'pedagogical.css'), 'utf8');
+
+const shellDialogMatch = shellCss.match(/#dialog-backdrop\s*\{[^}]*z-index:\s*(\d+)/);
+assert(shellDialogMatch, '#dialog-backdrop must have z-index defined in shell.css');
+const shellDialogZ = parseInt(shellDialogMatch[1], 10);
+
+const quizBackdropMatch = pedagogyCss.match(/\.pedagogy-quiz-backdrop\s*\{[^}]*z-index:\s*(\d+)/);
+assert(quizBackdropMatch, '.pedagogy-quiz-backdrop must have z-index defined in pedagogical.css');
+const quizBackdropZ = parseInt(quizBackdropMatch[1], 10);
+
+const pedDialogMatch = pedagogyCss.match(/#dialog-backdrop\s*\{[^}]*z-index:\s*(\d+)/);
+assert(pedDialogMatch, '#dialog-backdrop must have override z-index defined in pedagogical.css');
+const pedDialogZ = parseInt(pedDialogMatch[1], 10);
+
+assert(shellDialogZ > quizBackdropZ, `shell.css #dialog-backdrop z-index (${shellDialogZ}) must exceed quiz backdrop z-index (${quizBackdropZ})`);
+assert(pedDialogZ > quizBackdropZ, `pedagogical.css #dialog-backdrop z-index (${pedDialogZ}) must exceed quiz backdrop z-index (${quizBackdropZ})`);
+assert(shellDialogZ >= 200000, `#dialog-backdrop z-index (${shellDialogZ}) must be >= 200000`);
+console.log(`✓ TEST 5 PASSED: #dialog-backdrop (z-index: ${shellDialogZ}) strictly exceeds quiz backdrop (z-index: ${quizBackdropZ}). Dialog is guaranteed to float above quiz modal.`);
+
 console.log('\n======================================================');
 console.log('ALL REPORT V2.3 & QUIZ SKIP TESTS PASSED WITH 100% SUCCESS!');
 console.log('======================================================');

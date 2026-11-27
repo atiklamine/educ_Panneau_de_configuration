@@ -1270,6 +1270,11 @@ html[dir="ltr"] .export-toast-close {
     animation: quizFadeIn 0.25s ease forwards;
 }
 
+/* Universal Dialog Stacking: ContentDialog Modals must always float above the Quiz backdrop (100000) */
+#dialog-backdrop {
+    z-index: 200000 !important;
+}
+
 .pedagogy-quiz-modal {
     background: #FFFFFF;
     border-radius: 12px;
