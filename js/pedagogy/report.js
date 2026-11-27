@@ -1730,7 +1730,7 @@
                     '<td style="text-align:center;font-family:Consolas,monospace;"><bdi dir="ltr">00:00:00</bdi></td>' +
                     '<td style="text-align:center;font-weight:600;color:#059669;"><bdi dir="ltr">0%</bdi> ' + bidi('(انطلاق الجلسة)') + '</td>' +
                     '<td style="text-align:center;font-weight:700;color:#1E3A8A;">' + bidi('بيانات التسجيل الأصلية') + '</td>' +
-                    '<td style="font-size:11.5px;line-height:1.45;">' +
+                    '<td style="font-size:11.5px;line-height:1.55;white-space:normal;word-break:break-word;overflow-wrap:break-word;">' +
                         '<div>' + bidi('الاسم: ') + '<strong>' + bidi(initialSnap.fullName) + '</strong> &nbsp;|&nbsp; ' + bidi('الفوج: ') + '<strong>' + bidi(initialSnap.classGroup) + '</strong> &nbsp;|&nbsp; ' + bidi('الجهاز: ') + '<bdi dir="ltr">#' + esc(initialSnap.pcNumber) + '</bdi></div>' +
                         initPartsNotice +
                     '</td>' +
@@ -1784,7 +1784,7 @@
                             '<span style="font-size:10px;color:#64748B;">(' + mod.doneTasksCount + ' / ' + mod.totalTasksCount + ' مهام)</span>' +
                         '</td>' +
                         '<td style="text-align:center;font-weight:700;color:' + (isRem ? '#991B1B' : '#78350F') + ';">' + bidi(fieldSummary) + '</td>' +
-                        '<td style="font-size:11.5px;line-height:1.45;">' + changesHtml + '</td>' +
+                        '<td style="font-size:11.5px;line-height:1.55;white-space:normal;word-break:break-word;overflow-wrap:break-word;">' + changesHtml + '</td>' +
                     '</tr>';
             }
 
@@ -1817,21 +1817,21 @@
                     auditAlertHtml +
                     '<table class="a4-audit-table">' +
                         '<colgroup>' +
+                            '<col style="width:9%;">' +
+                            '<col style="width:9%;">' +
+                            '<col style="width:8%;">' +
                             '<col style="width:12%;">' +
-                            '<col style="width:12%;">' +
-                            '<col style="width:12%;">' +
-                            '<col style="width:16%;">' +
                             '<col style="width:18%;">' +
-                            '<col style="width:30%;">' +
+                            '<col style="width:44%;">' +
                         '</colgroup>' +
                         '<thead>' +
                             '<tr>' +
-                                '<th style="width:12%;text-align:center;">' + bidi('المرحلة') + '</th>' +
-                                '<th style="width:12%;text-align:center;">' + bidi('توقيت النظام') + '</th>' +
-                                '<th style="width:12%;text-align:center;">' + bidi('وقت المحاكاة') + '</th>' +
-                                '<th style="width:16%;text-align:center;">' + bidi('نسبة الإنجاز عند التعديل') + '</th>' +
+                                '<th style="width:9%;text-align:center;">' + bidi('المرحلة') + '</th>' +
+                                '<th style="width:9%;text-align:center;">' + bidi('توقيت النظام') + '</th>' +
+                                '<th style="width:8%;text-align:center;">' + bidi('وقت المحاكاة') + '</th>' +
+                                '<th style="width:12%;text-align:center;">' + bidi('نسبة الإنجاز عند التعديل') + '</th>' +
                                 '<th style="width:18%;text-align:center;">' + bidi('البيان المعدل والإجراء') + '</th>' +
-                                '<th style="width:30%;text-align:right;">' + bidi('تفاصيل التغيير والقرار الأمني (سابق ➔ جديد)') + '</th>' +
+                                '<th style="width:44%;text-align:right;">' + bidi('تفاصيل التغيير والقرار الأمني (سابق ➔ جديد)') + '</th>' +
                             '</tr>' +
                         '</thead>' +
                         '<tbody>' +
@@ -2073,6 +2073,33 @@
             index += CHUNK;
         }
         return btoa(result);
+    }
+
+    function wrapCanvasText(ctx, text, maxWidth) {
+        if (!text) return [];
+        var str = String(text).trim();
+        if (!str) return [];
+        if (ctx.measureText(str).width <= maxWidth) {
+            return [str];
+        }
+        var words = str.split(/\s+/);
+        var lines = [];
+        var currentLine = '';
+        for (var i = 0; i < words.length; i++) {
+            var word = words[i];
+            if (!word) continue;
+            var testLine = currentLine ? (currentLine + ' ' + word) : word;
+            if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        }
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+        return lines;
     }
 
     function generateReportPdfUint8() {
@@ -3149,151 +3176,236 @@
                 ctx.lineWidth = 1;
                 ctx.strokeRect(80, curY, 1080, 26);
 
+                // Vertical dividers
+                ctx.beginPath();
+                ctx.moveTo(1075, curY); ctx.lineTo(1075, curY + 26);
+                ctx.moveTo(995, curY); ctx.lineTo(995, curY + 26);
+                ctx.moveTo(915, curY); ctx.lineTo(915, curY + 26);
+                ctx.moveTo(805, curY); ctx.lineTo(805, curY + 26);
+                ctx.moveTo(645, curY); ctx.lineTo(645, curY + 26);
+                ctx.strokeStyle = '#CBD5E1';
+                ctx.stroke();
+
                 ctx.fillStyle = '#334155';
                 ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('المرحلة', 1110, curY + 18);
-                ctx.fillText('توقيت النظام', 1005, curY + 18);
-                ctx.fillText('وقت المحاكاة', 895, curY + 18);
-                ctx.fillText('نسبة الإنجاز', 760, curY + 18);
-                ctx.fillText('البيان المعدل والإجراء', 595, curY + 18);
+                ctx.fillText('المرحلة', 1118, curY + 18);
+                ctx.fillText('توقيت النظام', 1035, curY + 18);
+                ctx.fillText('وقت المحاكاة', 955, curY + 18);
+                ctx.fillText('نسبة الإنجاز', 860, curY + 18);
+                ctx.fillText('البيان المعدل والإجراء', 725, curY + 18);
                 ctx.textAlign = 'right';
-                ctx.fillText('تفاصيل التغيير والقرار الأمني (سابق ➔ جديد)', 490, curY + 18);
+                ctx.fillText('تفاصيل التغيير والقرار الأمني (سابق ➔ جديد)', 635, curY + 18);
                 curY += 26;
 
                 // Initial Snapshot Row
                 var initSnap = stuHistory.initial || {};
-                var initRowH = 26;
-                ctx.fillStyle = '#F1F5F9';
+                ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+                var initDesc = 'الاسم: ' + (initSnap.fullName || stu.fullName) + ' | فوج: ' + (initSnap.classGroup || stu.classGroup) + ' | جهاز #' + (initSnap.pcNumber || stu.pcNumber);
+                var initCol6Lines = wrapCanvasText(ctx, initDesc, 540);
+                if (initSnap && initSnap.participants && Array.isArray(initSnap.participants) && initSnap.participants.length > 0) {
+                    var pListInit = initSnap.participants.map(function (p, idx) {
+                        var pl = String(p.lastName || '—').trim().toUpperCase();
+                        var pf = String(p.firstName || '—').trim().toUpperCase();
+                        return (idx + 1) + ') ' + pl + ' ' + pf;
+                    }).join(' | ');
+                    var initPartLines = wrapCanvasText(ctx, 'المشاركون في البداية: ' + pListInit, 540);
+                    initCol6Lines = initCol6Lines.concat(initPartLines);
+                }
+
+                var initRowH = Math.max(30, initCol6Lines.length * 17 + 12);
+                ctx.fillStyle = '#F8FAFC';
                 ctx.fillRect(80, curY, 1080, initRowH);
                 ctx.strokeStyle = '#CBD5E1';
                 ctx.strokeRect(80, curY, 1080, initRowH);
 
+                ctx.beginPath();
+                ctx.moveTo(1075, curY); ctx.lineTo(1075, curY + initRowH);
+                ctx.moveTo(995, curY); ctx.lineTo(995, curY + initRowH);
+                ctx.moveTo(915, curY); ctx.lineTo(915, curY + initRowH);
+                ctx.moveTo(805, curY); ctx.lineTo(805, curY + initRowH);
+                ctx.moveTo(645, curY); ctx.lineTo(645, curY + initRowH);
+                ctx.strokeStyle = '#E2E8F0';
+                ctx.stroke();
+
+                var initMidY = curY + Math.round(initRowH / 2) + 4;
                 ctx.fillStyle = '#475569';
                 ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('التسجيل الأولي', 1110, curY + 18);
-                ctx.fillText(initSnap.timestamp || '00:00:00', 1005, curY + 18);
-                ctx.fillText('00:00:00', 895, curY + 18);
+                ctx.fillText('التسجيل الأولي', 1118, initMidY);
+                ctx.fillText(initSnap.timestamp || '00:00:00', 1035, initMidY);
+                ctx.fillText('00:00:00', 955, initMidY);
                 ctx.fillStyle = '#059669';
-                ctx.fillText('0% (انطلاق)', 760, curY + 18);
+                ctx.fillText('0% (انطلاق)', 860, initMidY);
                 ctx.fillStyle = '#1E3A8A';
-                ctx.fillText('بيانات أصلية', 595, curY + 18);
+                ctx.fillText('بيانات أصلية', 725, initMidY);
 
-                // Col 6 with strict clipping within [82, curY, 426, initRowH]
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(82, curY, 426, initRowH);
-                ctx.clip();
                 ctx.textAlign = 'right';
-                ctx.fillStyle = '#0F172A';
-                ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
-                var initDesc = 'الاسم: ' + (initSnap.fullName || stu.fullName) + ' | فوج: ' + (initSnap.classGroup || stu.classGroup) + ' | جهاز #' + (initSnap.pcNumber || stu.pcNumber);
-                ctx.fillText(initDesc, 495, curY + 18);
-                ctx.restore();
+                for (var il = 0; il < initCol6Lines.length; il++) {
+                    var lY = curY + 16 + (il * 17);
+                    ctx.font = (il === 0) ? 'bold 11px "Segoe UI", Tahoma, sans-serif' : '10.5px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = (il === 0) ? '#0F172A' : '#1E3A8A';
+                    ctx.fillText(initCol6Lines[il], 635, lY);
+                }
                 curY += initRowH;
 
                 // Modifications Rows
                 for (var mi = 0; mi < Math.min(3, stuHistory.modifications.length); mi++) {
                     var mItem = stuHistory.modifications[mi];
-                    var isRem = (mItem.changes || []).some(function (c) { return c.isRemoval || c.field === 'participantsRemoved'; });
-                    var modRowH = isRem ? 46 : 30;
+                    var changesList = mItem.changes || [];
+                    var isRem = changesList.some(function (c) { return c.isRemoval || c.field === 'participantsRemoved'; });
 
-                    ctx.fillStyle = '#FFFFFF';
+                    // Build Col 5 Lines (zero truncation, full wrapping)
+                    var fLabelsStr = changesList.map(function (c) { return c.labelAr || c.field; }).join('، ');
+                    ctx.font = 'bold 10.5px "Segoe UI", Tahoma, sans-serif';
+                    var col5Lines = wrapCanvasText(ctx, fLabelsStr, 150);
+                    if (isRem) {
+                        col5Lines.push('[إلغاء الاستكمال]');
+                    }
+
+                    // Build Col 6 Blocks (zero truncation, full text wrapping)
+                    var col6Blocks = [];
+                    for (var ci = 0; ci < changesList.length; ci++) {
+                        var ch = changesList[ci];
+
+                        // 1. Diffs
+                        var diffLabel = ch.labelAr || ch.field;
+                        var diffText = diffLabel + ': [سابق: ' + ch.oldVal + '] ➔ [جديد: ' + ch.newVal + ']';
+                        ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                        var diffLines = wrapCanvasText(ctx, diffText, 540);
+                        col6Blocks.push({ lines: diffLines, font: 'bold 11px "Segoe UI", Tahoma, sans-serif', color: '#0F172A' });
+
+                        // 2. Audit Notice
+                        if (ch.notice) {
+                            var noticePrefix = ch.isRemoval ? '⚠️ ' : 'ℹ️ ';
+                            ctx.font = '10.5px "Segoe UI", Tahoma, sans-serif';
+                            var noticeLines = wrapCanvasText(ctx, noticePrefix + ch.notice, 540);
+                            col6Blocks.push({ lines: noticeLines, font: '10.5px "Segoe UI", Tahoma, sans-serif', color: ch.isRemoval ? '#B91C1C' : '#0369A1' });
+                        }
+
+                        // 3. Security Ruling on removal/freeze
+                        if (ch.isRemoval) {
+                            var rulingText = '⚠️ قرار أمني: تم تجميد الجلسة نهائياً عند (' + mItem.progressPercent + '%) وإلغاء المهام المتبقية (' + (100 - mItem.progressPercent) + '%) لمنع استغلال رصيد الفوج السابق.';
+                            ctx.font = 'bold 10.5px "Segoe UI", Tahoma, sans-serif';
+                            var rulingLines = wrapCanvasText(ctx, rulingText, 540);
+                            col6Blocks.push({ lines: rulingLines, font: 'bold 10.5px "Segoe UI", Tahoma, sans-serif', color: '#991B1B' });
+                        }
+                    }
+
+                    var totalCol6Lines = 0;
+                    for (var b = 0; b < col6Blocks.length; b++) {
+                        totalCol6Lines += col6Blocks[b].lines.length;
+                    }
+
+                    var maxLines = Math.max(totalCol6Lines, col5Lines.length, 1);
+                    var modRowH = Math.max(42, maxLines * 18 + 14);
+
+                    ctx.fillStyle = isRem ? '#FFFDFD' : '#FFFFFF';
                     ctx.fillRect(80, curY, 1080, modRowH);
-                    ctx.strokeStyle = '#CBD5E1';
+                    ctx.strokeStyle = isRem ? '#FCA5A5' : '#CBD5E1';
                     ctx.strokeRect(80, curY, 1080, modRowH);
 
-                    ctx.fillStyle = '#B45309';
-                    ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                    // Dividers
+                    ctx.beginPath();
+                    ctx.moveTo(1075, curY); ctx.lineTo(1075, curY + modRowH);
+                    ctx.moveTo(995, curY); ctx.lineTo(995, curY + modRowH);
+                    ctx.moveTo(915, curY); ctx.lineTo(915, curY + modRowH);
+                    ctx.moveTo(805, curY); ctx.lineTo(805, curY + modRowH);
+                    ctx.moveTo(645, curY); ctx.lineTo(645, curY + modRowH);
+                    ctx.strokeStyle = isRem ? '#FECACA' : '#E2E8F0';
+                    ctx.stroke();
+
+                    var midRowY = curY + Math.round(modRowH / 2) + 4;
+                    var editNum = mItem.editNumber || (mi + 1);
+
+                    // Col 1: المرحلة
                     ctx.textAlign = 'center';
                     if (isRem) {
-                        ctx.fillText('تعديل ' + (mItem.editNumber || (mi + 1)), 1110, curY + 18);
+                        ctx.fillStyle = '#B45309';
+                        ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                        ctx.fillText('تعديل ' + editNum, 1118, midRowY - 8);
                         ctx.fillStyle = '#DC2626';
                         ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
-                        ctx.fillText('[تجميد أمني]', 1110, curY + 34);
+                        ctx.fillText('[تجميد أمني]', 1118, midRowY + 9);
                     } else {
-                        ctx.fillText('تعديل ' + (mItem.editNumber || (mi + 1)), 1110, curY + 19);
+                        ctx.fillStyle = '#B45309';
+                        ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                        ctx.fillText('تعديل ' + editNum, 1118, midRowY);
                     }
 
+                    // Col 2: توقيت النظام
                     ctx.fillStyle = '#475569';
                     ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
-                    ctx.fillText(mItem.timestamp, 1005, curY + (isRem ? 26 : 19));
-                    ctx.fillText(mItem.elapsedFormatted, 895, curY + (isRem ? 26 : 19));
+                    ctx.fillText(mItem.timestamp, 1035, midRowY);
 
+                    // Col 3: وقت المحاكاة
+                    ctx.fillText(mItem.elapsedFormatted, 955, midRowY);
+
+                    // Col 4: نسبة الإنجاز
                     ctx.fillStyle = '#2563EB';
-                    ctx.fillText(mItem.progressPercent + '% (' + mItem.doneTasksCount + '/' + mItem.totalTasksCount + ')', 760, curY + (isRem ? 26 : 19));
+                    ctx.fillText(mItem.progressPercent + '% (' + mItem.doneTasksCount + '/' + mItem.totalTasksCount + ')', 860, midRowY);
 
-                    var fLabels = (mItem.changes || []).map(function (c) { return c.labelAr; }).join('، ');
-                    if (fLabels.length > 20) fLabels = fLabels.substring(0, 18) + '...';
-                    ctx.fillStyle = '#78350F';
-                    ctx.font = 'bold 10.5px "Segoe UI", Tahoma, sans-serif';
-                    if (isRem) {
-                        ctx.fillText(fLabels, 595, curY + 18);
-                        ctx.fillStyle = '#DC2626';
-                        ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
-                        ctx.fillText('[إلغاء الاستكمال]', 595, curY + 34);
-                    } else {
-                        ctx.fillText(fLabels, 595, curY + 19);
+                    // Col 5: البيان المعدل والإجراء
+                    ctx.textAlign = 'center';
+                    var startCol5Y = curY + 16;
+                    for (var cl = 0; cl < col5Lines.length; cl++) {
+                        var cLine = col5Lines[cl];
+                        if (cLine === '[إلغاء الاستكمال]') {
+                            ctx.fillStyle = '#DC2626';
+                            ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
+                        } else {
+                            ctx.fillStyle = isRem ? '#991B1B' : '#78350F';
+                            ctx.font = 'bold 10.5px "Segoe UI", Tahoma, sans-serif';
+                        }
+                        ctx.fillText(cLine, 725, startCol5Y + (cl * 17));
                     }
 
-                    // Col 6 with STRICT CLIPPING inside [82, curY, 426, modRowH]
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(82, curY, 426, modRowH);
-                    ctx.clip();
+                    // Col 6: تفاصيل التغيير والقرار الأمني
                     ctx.textAlign = 'right';
-
-                    var remChange = (mItem.changes || []).find(function (c) { return c.isRemoval; });
-                    if (remChange) {
-                        ctx.fillStyle = '#0F172A';
-                        ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
-                        var line1 = 'سابق: [' + remChange.oldVal + '] ➔ جديد: [' + remChange.newVal + ']';
-                        ctx.fillText(line1, 495, curY + 18);
-
-                        ctx.fillStyle = '#DC2626';
-                        ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
-                        var line2 = '⚠️ تجميد المحاكاة عند ' + mItem.progressPercent + '%: إلغاء المهام المتبقية (' + (100 - mItem.progressPercent) + '%) ومنع استكمال الجلسة لمنتحل الهوية.';
-                        ctx.fillText(line2, 495, curY + 36);
-                    } else {
-                        var diffSummary = (mItem.changes || []).map(function (c) {
-                            return c.labelAr + ': [' + c.oldVal + ' ➔ ' + c.newVal + ']';
-                        }).join(' | ');
-                        ctx.fillStyle = '#0F172A';
-                        ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
-                        ctx.fillText(diffSummary, 495, curY + 19);
+                    var startCol6Y = curY + 16;
+                    var lineOffset = 0;
+                    for (var b = 0; b < col6Blocks.length; b++) {
+                        var block = col6Blocks[b];
+                        ctx.font = block.font;
+                        ctx.fillStyle = block.color;
+                        for (var l = 0; l < block.lines.length; l++) {
+                            ctx.fillText(block.lines[l], 635, startCol6Y + (lineOffset * 17));
+                            lineOffset++;
+                        }
                     }
-                    ctx.restore();
 
                     curY += modRowH;
                 }
             }
 
             // 7. Signature & Seal + Teacher Observations
-            var ySig = Math.max(1540, curY + 16);
+            var ySig = Math.max(curY + 14, 1530);
+            if (ySig + 96 > 1680) ySig = 1584; // safety cap before footer at 1690
+            var sigBoxH = 96;
+
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = '#64748B';
             ctx.setLineDash([6, 6]);
-            ctx.strokeRect(100, ySig, 340, 110);
+            ctx.strokeRect(100, ySig, 340, sigBoxH);
             ctx.setLineDash([]);
 
             ctx.textAlign = 'center';
             ctx.fillStyle = '#475569';
             ctx.font = 'bold 13.5px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('توقيع وختم الأستاذ(ة)', 270, ySig + 32);
+            ctx.fillText('توقيع وختم الأستاذ(ة)', 270, ySig + 28);
 
             ctx.textAlign = 'right';
             ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#0F172A';
-            ctx.fillText('ملاحظات وتوجيهات الأستاذ(ة):', 1140, ySig + 18);
+            ctx.fillText('ملاحظات وتوجيهات الأستاذ(ة):', 1140, ySig + 16);
 
             ctx.fillStyle = '#94A3B8';
-            ctx.fillText('............................................................................................................................................', 1140, ySig + 45);
-            ctx.fillText('............................................................................................................................................', 1140, ySig + 72);
+            ctx.fillText('............................................................................................................................................', 1140, ySig + 40);
+            ctx.fillText('............................................................................................................................................', 1140, ySig + 64);
 
             ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#64748B';
-            ctx.fillText('حرر في: ' + dateFormatted, 1140, ySig + 98);
+            ctx.fillText('حرر في: ' + dateFormatted, 1140, ySig + 88);
 
             // Page Footer
             ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';

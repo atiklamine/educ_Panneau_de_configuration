@@ -148,30 +148,35 @@ console.log('✓ TEST 4 PASSED: HTML report displays 100% crystal clear freeze d
 fs.writeFileSync(path.join(__dirname, '../docs/report_versions/REPORT_SPEC_v2.5_2026-11-27_17-00-00.preview.html'), reportHtml, 'utf8');
 console.log('✓ v2.5 HTML Preview written to docs/report_versions/REPORT_SPEC_v2.5_2026-11-27_17-00-00.preview.html');
 
-console.log('=== TEST 5: VERIFY CANVAS RENDERING & BOUNDARY CLIPPING ===');
+console.log('=== TEST 5: VERIFY CANVAS RENDERING, MULTI-LINE WORD WRAPPING & ZERO TRUNCATION ===');
 canvasCalls = [];
 var pdfBytes = global.Win11Report.generateReportPdfUint8();
 assert.ok(pdfBytes && pdfBytes.length > 500, 'PDF bytes must be generated');
 
-// Verify that clipping occurred on Col 6 of Section D
-var clipCalls = canvasCalls.filter(function (c) { return c.type === 'clip'; });
-assert.ok(clipCalls.length >= 3, 'Canvas must invoke clipping for Section B and Section D columns');
-
-// Find rect calls for Col 6 in Section D: width 426, x = 82
-var col6Clips = canvasCalls.filter(function (c) {
-    return c.type === 'rect' && c.x === 82 && c.w === 426;
-});
-assert.ok(col6Clips.length >= 2, 'Col 6 in Section D must have strict rect clips at x=82, w=426 (initial + mod)');
-
-// Verify that freeze notice lines were drawn in Canvas
 var canvasTexts = canvasCalls.filter(function (c) { return c.type === 'fillText'; }).map(function (c) { return c.txt; });
-var hasCanvasFreezeBanner = canvasTexts.some(function (t) { return t && t.indexOf('قرار أمني وتربوي: تم تجميد الجلسة') !== -1; });
-assert.ok(hasCanvasFreezeBanner, 'Canvas must render security freeze sub-banner');
+var allCanvasText = canvasTexts.join(' ');
 
-var hasCanvasLine2Notice = canvasTexts.some(function (t) { return t && t.indexOf('تجميد المحاكاة عند 67%') !== -1; });
-assert.ok(hasCanvasLine2Notice, 'Canvas must render multi-line security cancellation notice in Col 6');
+// 1. Verify that full names of removed and remaining participants appear without abbreviation or truncation
+assert.ok(allCanvasText.indexOf('حلوف بولجاح') !== -1, 'Canvas must render full name of student 1');
+assert.ok(allCanvasText.indexOf('مفقوش خرباطي') !== -1, 'Canvas must render full name of student 2');
+assert.ok(allCanvasText.indexOf('عيداني بعنوش') !== -1, 'Canvas must render full name of student 3');
 
-console.log('✓ TEST 5 PASSED: Canvas rendering strictly clips Section D Col 6 within x=82..508 with bold readable text and security notice.');
+// 2. Verify that there is NO ellipsis or truncation in Section D texts
+var hasEllipsis = canvasTexts.some(function (t) {
+    return t && (t.indexOf('...') !== -1 || t.indexOf('…') !== -1) && (t.indexOf('حلوف') !== -1 || t.indexOf('تعديل') !== -1);
+});
+assert.strictEqual(hasEllipsis, false, 'Section D text must NEVER be truncated with ellipsis');
+
+// 3. Verify security freeze banner
+assert.ok(allCanvasText.indexOf('قرار أمني وتربوي: تم تجميد الجلسة') !== -1, 'Canvas must render security freeze sub-banner');
+
+// 4. Verify multi-line security ruling in Col 6
+assert.ok(allCanvasText.indexOf('تم تجميد الجلسة نهائياً عند (67%) وإلغاء المهام المتبقية (33%)') !== -1, 'Canvas must render complete security freeze and cancellation ruling in Col 6');
+
+// 5. Verify audit notice in Col 6
+assert.ok(allCanvasText.indexOf('تم استبعاد/حذف 2 تلاميذ مشاركين') !== -1, 'Canvas must render complete participant removal audit notice in Col 6');
+
+console.log('✓ TEST 5 PASSED: Canvas rendering displays 100% complete text with word-wrapping, multi-line row expansion, and zero truncation/clipping.');
 
 console.log('\n========================================================================');
 console.log('ALL SECTION D OVERFLOW, FREEZE & INTEGRITY TESTS PASSED 100%!');
