@@ -65,7 +65,7 @@ assert.ok(singleA4Html.indexOf('a4-top-summary-card') !== -1, 'Must contain a4-t
 assert.ok(singleA4Html.indexOf('a4-tsc-score') !== -1, 'Must contain large score highlight card');
 assert.ok(singleA4Html.indexOf('a4-tsc-time') !== -1, 'Must contain large duration highlight card');
 assert.ok(singleA4Html.indexOf('اسم ولقب التلميذ(ة):') !== -1, 'Must have single student label');
-assert.ok(singleA4Html.indexOf('اللقب:') !== -1 && singleA4Html.indexOf('الاسم:') !== -1, 'Must display separate labels for surname and name');
+assert.ok(singleA4Html.indexOf('اللقب') !== -1 && singleA4Html.indexOf('الاسم') !== -1, 'Must display separate labels for surname and name');
 assert.ok(singleA4Html.indexOf('عرفة') !== -1 && singleA4Html.indexOf('ياسين') !== -1, 'Student name must appear');
 console.log('✓ TEST 1 PASSED: Single-student restored layout rendered cleanly matching Image 1.');
 

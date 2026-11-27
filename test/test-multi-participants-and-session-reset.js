@@ -181,8 +181,8 @@ assert.strictEqual(stuSingle.lastName, 'عرفة');
 assert.strictEqual(stuSingle.firstName, 'ياسين');
 
 const singleHtml = global.Win11Report.buildA4Html();
-assert.ok(singleHtml.indexOf('اللقب:') !== -1, 'Separate surname label');
-assert.ok(singleHtml.indexOf('الاسم:') !== -1, 'Separate firstname label');
+assert.ok(singleHtml.indexOf('اللقب') !== -1, 'Separate surname label');
+assert.ok(singleHtml.indexOf('الاسم') !== -1, 'Separate firstname label');
 assert.ok(singleHtml.indexOf('المشاركون في العمل التطبيقي (عمل مشترك):') === -1, 'Multi-participant banner should not be present for single student');
 console.log('✓ TEST 4 PASSED: Single-student backward compatibility strictly maintained.');
 

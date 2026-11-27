@@ -84,9 +84,14 @@ global.Win11Assessment.evaluate();
 
 const html = global.Win11Report.buildA4Html();
 
-// Verify Logo
-assert.ok(html.includes('a4-header-logo'), 'Report must contain a4-header-logo');
-assert.ok(html.includes('alt="شعار وزارة التربية الوطنية"'), 'Report must contain ministry logo image');
+// Verify Logo (strict teacher-logo policy: no generic fallback)
+assert.ok(html.includes('no-logo'), 'Report header must use no-logo layout when teacher has not uploaded one');
+const cfgCustom = global.Win11Assessment.getConfig();
+cfgCustom.report_logo_b64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+const htmlWithLogo = global.Win11Report.buildA4Html();
+assert.ok(htmlWithLogo.includes('a4-header-logo'), 'Report must contain a4-header-logo when teacher provides logo');
+assert.ok(htmlWithLogo.includes('alt="شعار المؤسسة"'), 'Report must contain teacher logo image');
+cfgCustom.report_logo_b64 = '';
 
 // Verify Participants
 assert.ok(html.includes('عامرين') && html.includes('عامر'), 'Participant 1 must appear');
@@ -117,10 +122,9 @@ assert.ok(!reportHtml2.includes('إجابة صحيحة من المحاولة ا�
 console.log('✓ TEST 2 PASSED: Failed quiz status is strictly accurate (استنفاد المحاولات).');
 
 console.log('=== TEST 3: STEP 5 PENALTY BREAKDOWN TRANSPARENCY ===');
-assert.ok(reportHtml2.includes('مجموع الخصومات:'), 'Step 5 must be present');
-assert.ok(reportHtml2.includes('تفصيل المخالفات والخصومات الجزائية المرصودة:'), 'Step 5 must itemize infractions');
+assert.ok(reportHtml2.includes('الخطوة 5:') || reportHtml2.includes('الخصومات الجزائية المباشرة'), 'Step 5 must be present');
 assert.ok(reportHtml2.includes('التبديل بين زري الفأرة'), 'Step 5 must detail the mouse setting touched');
-assert.ok(reportHtml2.includes('-0.25'), 'Step 5 must show -0.25 deduction');
+assert.ok(reportHtml2.includes('-0.25') || reportHtml2.includes('0.25-'), 'Step 5 must show 0.25 deduction');
 console.log('✓ TEST 3 PASSED: Step 5 provides unassailable deduction itemization.');
 
 console.log('=== TEST 4: CANVAS PDF GENERATION WITH VECTOR LOGO & NO OVERFLOW ===');

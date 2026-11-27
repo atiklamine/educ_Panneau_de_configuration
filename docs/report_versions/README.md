@@ -1,4 +1,4 @@
-# سجل وإرشادات إصدارات تقارير التقويم البيداغوجي (Report Versions Registry)
+# سجل وإرشادات إصدارات تقارير التقويم التعليمي (Report Versions Registry)
 
 هذا المجلد مخصص لحفظ وتوثيق كافة الإصدارات المعتمدة لشكل بطاقة تقويم الأعمال التطبيقية (مادة الإعلام الآلي — السنة أولى ثانوي 1AS).
 
@@ -12,8 +12,9 @@
 
 | رقم الإصدار (Version) | التاريخ والتوقيت (Timestamp) | الملف المرجعي الموثق (Specification) | الملف الاستعراضي التفاعلي (Live Preview) | الحالة (Status) | الملاحظات الأساسية |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **v2.1-master** | `2026-11-27 09:45:00 +01:00` | [`REPORT_SPEC_v2.1_2026-11-27_09-45-00.md`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.1_2026-11-27_09-45-00.md) | [`REPORT_SPEC_v2.1_2026-11-27_09-45-00.preview.html`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.1_2026-11-27_09-45-00.preview.html) | ⭐ **المرجع النهائي المعتمد (Canonical Master)** | الشعار الرسمي مدمج افتراضياً، منع التداخل لعدة تلاميذ نهائياً (أ)، شارات دقيقة لاستنفاد محاولات الأسئلة دون تناقض (ب)، تفصيل قطعي للخصومات بالثانية والسبب في الخطوة 5 (ج). |
-| **v2.0-canonical** | `2026-11-27 09:15:29 +01:00` | [`REPORT_SPEC_v2.0_2026-11-27_09-15-29.md`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.0_2026-11-27_09-15-29.md) | [`REPORT_SPEC_v2.0_2026-11-27_09-15-29.preview.html`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.0_2026-11-27_09-15-29.preview.html) | 📦 أرشيف معتمد سابق | استعادة جدول بيانات التلميذ والجلسة 3 أعمدة (أ)، بطاقتي التمييز العريضتين للعلامة والوقت، جدول 9 أعمدة (ب)، التفكيك الحسابي 5 خطوات (ج)، وسجل تدقيق الحذف (د). |
+| **v2.2-canonical** | `2026-11-27 11:15:00 +01:00` | [`REPORT_SPEC_v2.2_2026-11-27_11-15-00.md`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.2_2026-11-27_11-15-00.md) | [`REPORT_SPEC_v2.2_2026-11-27_11-15-00.preview.html`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.2_2026-11-27_11-15-00.preview.html) | ⭐ **المرجع النهائي المعتمد (Active Canonical Master)** | الشعار مقتصر حصراً على اختيار الأستاذ من `inf.dll` (بدون شعار عشوائي fallback)، إبراز بطاقتي العلامة والوقت في أعلى التقرير فوراً، جدول منسق للمشاركين (# \| اللقب \| الاسم)، حماية تاريخ الإنجاز داخل الإطار مع هامش أمان (>48px)، جدول مخصص ومفصل للخصومات الجزائية (ج)، الحظر التام لكلمة «بيداغوجي» واستبدالها بلغة عربية واضحة، وتذييل برقم الصفحة. |
+| **v2.1-archive** | `2026-11-27 09:45:00 +01:00` | [`REPORT_SPEC_v2.1_2026-11-27_09-45-00.md`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.1_2026-11-27_09-45-00.md) | [`REPORT_SPEC_v2.1_2026-11-27_09-45-00.preview.html`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.1_2026-11-27_09-45-00.preview.html) | 📦 أرشيف معتمد سابق | شارات دقيقة لاستنفاد محاولات الأسئلة، تفصيل الخصومات في الخطوة 5. |
+| **v2.0-archive** | `2026-11-27 09:15:29 +01:00` | [`REPORT_SPEC_v2.0_2026-11-27_09-15-29.md`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.0_2026-11-27_09-15-29.md) | [`REPORT_SPEC_v2.0_2026-11-27_09-15-29.preview.html`](file:///d:/enseignement/dev_tools/settings_projects/003/docs/report_versions/REPORT_SPEC_v2.0_2026-11-27_09-15-29.preview.html) | 📦 أرشيف معتمد سابق | استعادة جدول بيانات التلميذ والجلسة 3 أعمدة (أ)، بطاقتي التمييز العريضتين للعلامة والوقت، جدول 9 أعمدة (ب). |
 
 ---
 

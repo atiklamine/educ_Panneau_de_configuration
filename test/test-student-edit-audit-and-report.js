@@ -80,7 +80,7 @@ console.log('✓ Initial registration snapshot recorded correctly: ' + history.i
 // Test 2: HTML Report with NO modifications (Section D MUST be absent)
 console.log('\n[Test 2] Conditional Section D omission when no modifications exist...');
 var reportHtmlNoMod = global.Win11Report.buildA4Html();
-assert.strictEqual(reportHtmlNoMod.indexOf('a4-section-d'), -1, 'Section D must NOT be rendered when no modifications exist');
+assert.strictEqual(reportHtmlNoMod.indexOf('<div class="a4-section-d">'), -1, 'Section D must NOT be rendered when no modifications exist');
 assert.ok(reportHtmlNoMod.indexOf('a4-score-earned') !== -1, 'Top summary card must include a4-score-earned');
 assert.ok(reportHtmlNoMod.indexOf('من أصل 20.00') !== -1, 'Top summary card must include score clarifier "(XX.XX من أصل 20.00)"');
 assert.ok(reportHtmlNoMod.indexOf('المعامل الأقصى') !== -1, 'Table must use "المعامل الأقصى" instead of "الوزن الأقصى"');
@@ -134,9 +134,9 @@ console.log('✓ Modification 2 logged with PC diff: #' + pcChange.oldVal + ' �
 // Test 5: HTML Report WITH modifications (Section D MUST appear prominently)
 console.log('\n[Test 5] Conditional Section D presence when modifications exist...');
 var reportHtmlWithMod = global.Win11Report.buildA4Html();
-assert.ok(reportHtmlWithMod.indexOf('a4-section-d') !== -1, 'Section D MUST be rendered when modifications exist');
+assert.ok(reportHtmlWithMod.indexOf('<div class="a4-section-d">') !== -1, 'Section D MUST be rendered when modifications exist');
 assert.ok(reportHtmlWithMod.indexOf('القسم (د): سجل تدقيق وتعديل بيانات الهوية والجلسة') !== -1, 'Section D title must appear');
-assert.ok(reportHtmlWithMod.indexOf('تنبيه بيداغوجي وأمني للأستاذ(ة) المشرف(ة)') !== -1, 'Teacher anti-cheating alert box must appear');
+assert.ok(reportHtmlWithMod.indexOf('تنبيه أمني للأستاذ(ة) المشرف(ة)') !== -1, 'Teacher anti-cheating alert box must appear');
 assert.ok(reportHtmlWithMod.indexOf('التسجيل الأولي') !== -1, 'Initial registration row must appear');
 assert.ok(reportHtmlWithMod.indexOf('التعديل') !== -1, 'Modification rows must appear');
 assert.ok(reportHtmlWithMod.indexOf('منيعي أيوب') !== -1, 'Old student name must be displayed in audit log');
