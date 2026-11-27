@@ -612,7 +612,7 @@ namespace Win11SimHost
                     Match mLevel = Regex.Match(html ?? "", @"Niveau:[\s\S]*?<strong>([^<]+)</strong>");
                     if (mLevel.Success) levelName = CleanHtml(mLevel.Groups[1].Value);
 
-                    // Extract or find Logo Image (Strict: ONLY from HTML/Teacher Settings, never default fallback or disk probe)
+                    // Extract or find Logo Image (Strict: from HTML/Teacher Settings, or fallback to adjacent logo)
                     Image logoImg = null;
                     try
                     {
@@ -627,6 +627,30 @@ namespace Win11SimHost
                         }
                     }
                     catch { }
+
+                    if (logoImg == null)
+                    {
+                        try
+                        {
+                            string[] cand = new string[] {
+                                Path.Combine(_exeDir, "logo.jpg"),
+                                Path.Combine(_exeDir, "logo.png"),
+                                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Path.Combine("logo", "logo.jpg"))
+                            };
+                            for (int ci = 0; ci < cand.Length; ci++)
+                            {
+                                if (File.Exists(cand[ci]))
+                                {
+                                    using (Image srcL = Image.FromFile(cand[ci]))
+                                    {
+                                        logoImg = new Bitmap(srcL);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
 
                     if (logoImg != null)
                     {
@@ -902,17 +926,27 @@ namespace Win11SimHost
 
                     using (Brush bDark = new SolidBrush(Color.FromArgb(15, 23, 42)))
                     {
-                        string participantDisplay = !string.IsNullOrEmpty(multiParticipantsText)
-                            ? ("المشاركون: " + multiParticipantsText)
-                            : ("اللقب: " + stuLastName + "      |      الاسم: " + stuFirstName);
-                        float pFontSize = (!string.IsNullOrEmpty(multiParticipantsText) && participantDisplay.Length > 65) ? 9.5f : 12f;
-                        using (Font fStu = new Font("Segoe UI", pFontSize, FontStyle.Bold))
+                        if (!string.IsNullOrEmpty(multiParticipantsText))
                         {
-                            g.DrawString(participantDisplay + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fStu, bDark, new RectangleF(100, 230, 1040, 28), rtlRight);
+                            using (Font fStu = new Font("Segoe UI", 10f, FontStyle.Bold))
+                            {
+                                g.DrawString("المشاركون في العمل التطبيقي: " + multiParticipantsText, fStu, bDark, new RectangleF(100, 226, 1040, 24), rtlRight);
+                            }
+                            using (Font fLabel = new Font("Segoe UI", 10.5f, FontStyle.Bold))
+                            {
+                                g.DrawString("الفوج: " + className + "   |   الجهاز: #" + pcNumber + "   |   النشاط: " + sessionMode + "   |   التاريخ: " + dateText + "   |   " + sessionProgressText, fLabel, bDark, new RectangleF(100, 256, 1040, 24), rtlRight);
+                            }
                         }
-                        using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
+                        else
                         {
-                            g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText + "      |      حالة الجلسة: " + sessionProgressText, fLabel, bDark, new RectangleF(100, 264, 1040, 28), rtlRight);
+                            using (Font fStu = new Font("Segoe UI", 12f, FontStyle.Bold))
+                            {
+                                g.DrawString("اللقب: " + stuLastName + "      |      الاسم: " + stuFirstName + "      |      الفوج: " + className + "      |      الجهاز: #" + pcNumber, fStu, bDark, new RectangleF(100, 230, 1040, 28), rtlRight);
+                            }
+                            using (Font fLabel = new Font("Segoe UI", 12f, FontStyle.Bold))
+                            {
+                                g.DrawString("النشاط: " + sessionMode + "      |      تاريخ الإنجاز: " + dateText + "      |      حالة الجلسة: " + sessionProgressText, fLabel, bDark, new RectangleF(100, 264, 1040, 28), rtlRight);
+                            }
                         }
                     }
 

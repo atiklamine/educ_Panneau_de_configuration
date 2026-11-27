@@ -274,13 +274,21 @@ for (let i = 0; i < tasks.length; i++) {
     tasks[i].earnedPoints = tasks[i].maxPoints;
 }
 
-// 8.1.1 Default mode: ZERO logo by default (no placeholder, no SVG crest, clean 2-column header)
+// 8.1.1 Default mode: Official required Ministry logo is rendered by default
 const defaultReportHtml = global.Win11Report.buildA4Html();
-assert(defaultReportHtml.includes('no-logo'), 'Default report header must use 2-column balanced no-logo layout');
-assert(!defaultReportHtml.includes('a4-header-logo'), 'Default report header must NOT have logo container');
-assert(!defaultReportHtml.includes('<svg'), 'Default report must NEVER render fallback SVG crest');
+assert(defaultReportHtml.includes('has-logo'), 'Default report header must use 3-column has-logo layout with official emblem');
+assert(defaultReportHtml.includes('a4-header-logo'), 'Default report header must have a4-header-logo container');
+assert(defaultReportHtml.includes('<img'), 'Default report must render official logo img element');
 
-// 8.1.2 Teacher configured logo mode: ONLY renders when report_logo_b64 is set in teacher settings
+// 8.1.2 Explicitly disabled logo mode: renders 2-column balanced no-logo layout when show_logo is false or 'none'
+const disabledLogoCfg = global.Win11Assessment.getConfig();
+disabledLogoCfg.show_logo = false;
+const disabledReportHtml = global.Win11Report.buildA4Html();
+assert(disabledReportHtml.includes('no-logo'), 'Disabled logo report header must use 2-column balanced no-logo layout');
+assert(!disabledReportHtml.includes('a4-header-logo'), 'Disabled logo report header must NOT have logo container');
+disabledLogoCfg.show_logo = true;
+
+// 8.1.3 Teacher configured logo mode: custom logo takes precedence
 const customCfg = global.Win11Assessment.getConfig();
 customCfg.report_logo_b64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 const logoReportHtml = global.Win11Report.buildA4Html();
