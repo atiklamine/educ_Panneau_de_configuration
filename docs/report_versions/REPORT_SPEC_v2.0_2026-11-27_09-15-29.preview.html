@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة الإصدار المعتمد للتقرير v2.0-canonical (2026-11-27)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
+            background-color: #0F172A;
+            margin: 0;
+            padding: 20px;
+            color: #0F172A;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Toolbar */
+        .preview-toolbar {
+            width: 100%;
+            max-width: 960px;
+            background: #1E293B;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #F8FAFC;
+        }
+        .preview-toolbar h2 {
+            margin: 0;
+            font-size: 15px;
+            color: #38BDF8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .preview-toolbar .meta-pill {
+            background: #0284C7;
+            color: #FFF;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-tool {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-tool:hover { background: #2563EB; }
+        .btn-tool.secondary { background: #475569; }
+        .btn-tool.secondary:hover { background: #334155; }
+
+        /* A4 Page Container */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm 15mm;
+            background: #FFFFFF;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 2px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        @media print {
+            body { background: transparent; padding: 0; }
+            .preview-toolbar { display: none !important; }
+            .a4-page { width: 100%; min-height: auto; box-shadow: none; padding: 0; margin: 0; }
+        }
+
+        /* Canonical Report Styles from report.js */
+        .a4-report-root {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            font-size: 11.5px;
+            line-height: 1.45;
+            color: #0F172A;
+        }
+        .a4-header-republic {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 6px;
+        }
+        .a4-header-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+            color: #334155;
+            margin-bottom: 8px;
+            line-height: 1.45;
+        }
+        .a4-header-right { text-align: right; flex: 1 1 38%; }
+        .a4-header-logo { text-align: center; flex: 0 0 80px; }
+        .a4-header-left { text-align: left; flex: 1 1 38%; direction: ltr; }
+
+        .a4-banner {
+            text-align: center;
+            background: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            padding: 6px 12px;
+            margin-bottom: 8px;
+        }
+        .a4-banner-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #1E3A8A;
+        }
+        .a4-banner-sub {
+            font-size: 11.5px;
+            color: #475569;
+            margin-top: 2px;
+        }
+
+        .a4-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1E3A8A;
+            background: #F1F5F9;
+            border: 1px solid #CBD5E1;
+            border-right: 4px solid #1E3A8A;
+            padding: 4px 10px;
+            margin: 8px 0 5px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Section A: Info Table */
+        .a4-student-box {
+            margin: 4px 0 6px 0;
+        }
+        .a4-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .a4-info-table td {
+            padding: 6px 10px;
+            border: 1px solid #CBD5E1;
+            vertical-align: middle;
+            text-align: right;
+        }
+        .a4-cell-lbl {
+            font-size: 9.5px;
+            color: #64748B;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .a4-cell-val {
+            color: #0F172A;
+        }
+
+        /* Top Summary Cards (Side by side 50%/50%) */
+        .a4-top-summary-card {
+            display: flex;
+            gap: 10px;
+            margin: 8px 0 10px 0;
+            align-items: stretch;
+        }
+        .a4-tsc-score {
+            flex: 1 1 50%;
+            background: #F0FDF4;
+            border: 2px solid #16A34A;
+            border-radius: 6px;
+            padding: 8px 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .a4-tsc-time {
+            flex: 1 1 50%;
+            background: #F0FDF4;
+            border: 2px solid #16A34A;
+            border-radius: 6px;
+            padding: 8px 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .a4-tsc-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #15803D;
+        }
+        .a4-tsc-grade {
+            font-family: Consolas, monospace;
+            font-size: 26px;
+            font-weight: 900;
+            color: #15803D;
+            line-height: 1.2;
+            margin: 2px 0;
+            direction: ltr !important;
+        }
+        .a4-tsc-grade .out {
+            font-size: 17px;
+            color: #64748B;
+            font-weight: 700;
+        }
+        .a4-tsc-clarifier {
+            font-size: 11px;
+            font-weight: 700;
+            color: #15803D;
+            margin-bottom: 4px;
+        }
+        .a4-pass-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            background: #DCFCE7;
+            color: #15803D;
+            border: 1px solid #86EFAC;
+        }
+
+        /* Section B: Breakdown Table */
+        .a4-report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+            line-height: 1.4;
+            margin-top: 4px;
+        }
+        .a4-report-table th {
+            background: #1E3A8A;
+            color: #FFFFFF;
+            padding: 5px 6px;
+            border: 1px solid #1E3A8A;
+            font-weight: 700;
+            font-size: 10.5px;
+            text-align: center;
+        }
+        .a4-report-table td {
+            padding: 5px 6px;
+            border: 1px solid #CBD5E1;
+            vertical-align: middle;
+        }
+        .a4-report-table tbody tr:nth-child(even) {
+            background: #F8FAFC;
+        }
+        .a4-type-badge {
+            display: block;
+            margin: 0 auto;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 9.5px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .a4-type-badge.is-task { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+        .a4-type-badge.is-quiz { background: #F5F3FF; color: #6D28D9; border: 1px solid #DDD6FE; }
+        .a4-type-badge.is-penalty { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+
+        .a4-badge {
+            display: block;
+            margin: 0 auto;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 9.5px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .a4-badge.is-done { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
+        .a4-badge.is-fail { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
+
+        /* Section C: Math steps */
+        .a4-math-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        .a4-math-step {
+            display: flex;
+            align-items: center;
+            padding: 4px 10px;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 4px;
+            gap: 8px;
+        }
+        .a4-math-step.is-calc {
+            background: #F0F9FF;
+            border-color: #BAE6FD;
+        }
+        .a4-step-num {
+            width: 18px;
+            height: 18px;
+            background: #1E3A8A;
+            color: #FFF;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .a4-step-lbl { font-weight: 700; color: #334155; }
+        .a4-step-val { font-weight: 800; color: #0F172A; margin-left: auto; }
+        .a4-step-sub { font-size: 10px; color: #64748B; margin-right: 12px; }
+
+        /* Section E: Signature */
+        .a4-sign-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="preview-toolbar">
+        <div>
+            <h2>⭐ نموذج الإصدار المعتمد للتقرير <span class="meta-pill">v2.0-canonical</span></h2>
+            <div style="font-size:11px;color:#94A3B8;margin-top:4px;">مختوم في: 27 نوفمبر 2026 — 09:15:29 | اعتماد الذكاء الاصطناعي والمرجع الرسمي</div>
+        </div>
+        <div class="preview-actions">
+            <button type="button" class="btn-tool" onclick="window.print()">🖨️ طباعة أو تصدير PDF</button>
+            <button type="button" class="btn-tool secondary" id="btn-toggle-mode" onclick="toggleStudentMode()">👥 تبديل وضع العمل المشترك</button>
+        </div>
+    </div>
+
+    <div class="a4-page">
+        <div class="a4-report-root">
+
+            <!-- 1. Header -->
+            <div class="a4-header-republic">الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية</div>
+            <div class="a4-header-grid">
+                <div class="a4-header-right">
+                    <div>المؤسسة: <strong>مدرسة الشهيد قورين محمد الأغواط</strong></div>
+                    <div>الأستاذ المشرف: <strong>أستاذ مادة المعلوماتية</strong></div>
+                </div>
+                <div class="a4-header-logo">
+                    <svg width="56" height="56" viewBox="0 0 100 100" fill="none">
+                        <circle cx="50" cy="50" r="46" stroke="#D97706" stroke-width="4" fill="#F8FAFC"/>
+                        <circle cx="50" cy="50" r="38" stroke="#1E3A8A" stroke-width="2" fill="#FFFFFF"/>
+                        <path d="M30 65 L50 72 L70 65 L70 38 L50 45 L30 38 Z" fill="#D97706" stroke="#B45309" stroke-width="2"/>
+                        <path d="M50 45 L50 72" stroke="#B45309" stroke-width="2"/>
+                        <path d="M30 38 L50 28 L70 38" fill="none" stroke="#1E3A8A" stroke-width="3"/>
+                    </svg>
+                </div>
+                <div class="a4-header-left">
+                    <div>Année scolaire: <strong>2026 / 2027</strong></div>
+                    <div>Niveau: <strong>السنة أولى ثانوي (جذع مشترك علوم وتكنولوجيا / آداب)</strong></div>
+                </div>
+            </div>
+
+            <!-- 2. Main Title Banner -->
+            <div class="a4-banner">
+                <div class="a4-banner-title">بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي</div>
+                <div class="a4-banner-sub">المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)</div>
+            </div>
+
+            <!-- 3. Section A: Info Table -->
+            <div class="a4-section-title">
+                <span>القسم (أ): بيانات التلميذ والجلسة التقويمية</span>
+                <span style="font-size:11px;color:#475569;font-weight:normal;">بيانات رسمية معتمدة</span>
+            </div>
+
+            <div class="a4-student-box">
+                <table class="a4-info-table">
+                    <tbody>
+                        <tr>
+                            <td style="width:36%;" id="cell-student-names">
+                                <div class="a4-cell-lbl">اسم ولقب التلميذ(ة):</div>
+                                <div class="a4-cell-val" style="font-size:13px;font-weight:700;color:#0F172A;">
+                                    <span style="color:#64748B;font-weight:600;">اللقب:</span> <strong>عرفاوي</strong> &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#64748B;font-weight:600;">الاسم:</span> <strong>مقران</strong>
+                                </div>
+                            </td>
+                            <td style="width:32%;">
+                                <div class="a4-cell-lbl">الفوج التربوي ورقم الجهاز:</div>
+                                <div class="a4-cell-val"><strong>5</strong> &nbsp;|&nbsp; <span>حاسوب <bdi dir="ltr">#06</bdi></span></div>
+                            </td>
+                            <td style="width:32%;">
+                                <div class="a4-cell-lbl">طبيعة النشاط ونمط المحاكاة:</div>
+                                <div class="a4-cell-val"><strong id="val-activity">نشاط تطبيقي تدريبي (استطلاع وتدريب)</strong></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="a4-cell-lbl">المشرف البيداغوجي والمؤسسة (inf.dll):</div>
+                                <div class="a4-cell-val"><strong>أستاذ مادة المعلوماتية</strong> &nbsp;|&nbsp; <span>مدرسة الشهيد قورين محمد الأغواط</span></div>
+                            </td>
+                            <td>
+                                <div class="a4-cell-lbl">تاريخ وتوقيت الإنجاز:</div>
+                                <div class="a4-cell-val"><strong><bdi dir="ltr">23 نوفمبر 2026 — 22:30</bdi></strong></div>
+                            </td>
+                            <td>
+                                <div class="a4-cell-lbl">الوقت الإجمالي المستغرق:</div>
+                                <div class="a4-cell-val"><strong><bdi dir="ltr">00:07:48</bdi></strong> &nbsp;|&nbsp; <span class="a4-pass-badge">✔ مكتملة بالكامل (6 / 6 — 100%)</span></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 4. Top Summary Highlight Cards -->
+            <div class="a4-top-summary-card">
+                <div class="a4-tsc-score">
+                    <div class="a4-tsc-title">العلامة النهائية المستحقة:</div>
+                    <div class="a4-tsc-grade" dir="ltr"><span class="score">14.78</span> <span class="out">/ 20.00</span></div>
+                    <div class="a4-tsc-clarifier">(14.78 من أصل 20.00)</div>
+                    <div><span class="a4-pass-badge">✔ مستوفٍ لمعيار النجاح — معتمد</span></div>
+                </div>
+                <div class="a4-tsc-time">
+                    <div class="a4-tsc-title">الوقت المستغرق وحالة الجلسة:</div>
+                    <div class="a4-tsc-grade" dir="ltr">00:07:48</div>
+                    <div class="a4-tsc-clarifier">تم تثبيت وقت الإنجاز النهائي لكافة المهام</div>
+                    <div><span class="a4-pass-badge">✔ جلسة مكتملة ومستوفاة لكافة المهام (6 / 6 مهام — 100%)</span></div>
+                </div>
+            </div>
+
+            <!-- 5. Section B: Breakdown Table -->
+            <div class="a4-section-title">
+                <span>القسم (ب): جدول التفصيل الدقيق للمهام العملية والأسئلة التقويمية</span>
+                <span style="font-size:11px;color:#475569;font-weight:normal;">تفصيل النقاط والمعاملات والمحاولات</span>
+            </div>
+
+            <table class="a4-report-table">
+                <thead>
+                    <tr>
+                        <th style="width:3.5%;">#</th>
+                        <th style="width:26%;text-align:right;">المهمة التطبيقية أو السؤال التقويمي</th>
+                        <th style="width:8%;">النوع</th>
+                        <th style="width:10%;">الحالة</th>
+                        <th style="width:6.5%;">المحاولات</th>
+                        <th style="width:8%;">المعامل الأقصى</th>
+                        <th style="width:8%;">الممنوحة</th>
+                        <th style="width:7%;">الخصم</th>
+                        <th style="width:23%;text-align:right;">الملاحظات وتفاصيل الإنجاز</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;">1</td>
+                        <td><strong>تخصيص الخلفية (الصور المعروضة ومجلد الصور) ولون التمييز</strong></td>
+                        <td><span class="a4-type-badge is-task">مهمة عملية</span></td>
+                        <td><span class="a4-badge is-done">مكتملة</span></td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:center;">3.00</td>
+                        <td style="text-align:center;color:#15803D;font-weight:700;">3.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00</td>
+                        <td style="font-size:10px;">تم إنجاز كافة خطوات المهمة بنجاح.</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;color:#6D28D9;">س1</td>
+                        <td>سؤال تقويم الكفاءة المرحلية (تخصيص الخلفية ولون التمييز)</td>
+                        <td><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>
+                        <td><span class="a4-badge is-fail">معطّل</span></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">1.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00 (0%)</td>
+                        <td style="text-align:center;color:#DC2626;font-weight:700;">-1.00</td>
+                        <td style="font-size:10px;">تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (1.00 نقطة).</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;">2</td>
+                        <td><strong>إضافة لغة إدخال وضبط المنطقة الزمنية</strong></td>
+                        <td><span class="a4-type-badge is-task">مهمة عملية</span></td>
+                        <td><span class="a4-badge is-done">مكتملة</span></td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:center;">2.00</td>
+                        <td style="text-align:center;color:#15803D;font-weight:700;">2.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00</td>
+                        <td style="font-size:10px;">تم إنجاز كافة خطوات المهمة بنجاح.</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;color:#6D28D9;">س2</td>
+                        <td>سؤال تقويم الكفاءة المرحلية (إضافة لغة إدخال وضبط المنطقة الزمنية)</td>
+                        <td><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>
+                        <td><span class="a4-badge is-fail">معطّل</span></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">1.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00 (0%)</td>
+                        <td style="text-align:center;color:#DC2626;font-weight:700;">-1.00</td>
+                        <td style="font-size:10px;">تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (1.00 نقطة).</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;">3</td>
+                        <td><strong>تغيير لغة عرض واجهة Windows</strong></td>
+                        <td><span class="a4-type-badge is-task">مهمة عملية</span></td>
+                        <td><span class="a4-badge is-done">مكتملة</span></td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:center;">1.00</td>
+                        <td style="text-align:center;color:#15803D;font-weight:700;">1.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00</td>
+                        <td style="font-size:10px;">تم إنجاز كافة خطوات المهمة بنجاح.</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;color:#6D28D9;">س3</td>
+                        <td>سؤال تقويم الكفاءة المرحلية (تغيير لغة عرض واجهة Windows)</td>
+                        <td><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>
+                        <td><span class="a4-badge is-fail">معطّل</span></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">1.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00 (0%)</td>
+                        <td style="text-align:center;color:#DC2626;font-weight:700;">-1.00</td>
+                        <td style="font-size:10px;">تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (1.00 نقطة).</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;">4</td>
+                        <td><strong>ضبط خصائص الفأرة</strong></td>
+                        <td><span class="a4-type-badge is-task">مهمة عملية</span></td>
+                        <td><span class="a4-badge is-done">مكتملة</span></td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:center;">2.00</td>
+                        <td style="text-align:center;color:#15803D;font-weight:700;">2.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00</td>
+                        <td style="font-size:10px;">تم إنجاز كافة خطوات المهمة بنجاح.</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;color:#6D28D9;">س4</td>
+                        <td>سؤال تقويم الكفاءة المرحلية (ضبط خصائص الفأرة)</td>
+                        <td><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>
+                        <td><span class="a4-badge is-fail">معطّل</span></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">1.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00 (0%)</td>
+                        <td style="text-align:center;color:#DC2626;font-weight:700;">-1.00</td>
+                        <td style="font-size:10px;">تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (1.00 نقطة).</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;">5</td>
+                        <td><strong>تثبيت وإزالة البرامج والميزات الاختيارية</strong></td>
+                        <td><span class="a4-type-badge is-task">مهمة عملية</span></td>
+                        <td><span class="a4-badge is-done">مكتملة</span></td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:center;">5.00</td>
+                        <td style="text-align:center;color:#15803D;font-weight:700;">5.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00</td>
+                        <td style="font-size:10px;">تم إنجاز كافة خطوات المهمة بنجاح.</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;color:#6D28D9;">س5</td>
+                        <td>سؤال تقويم الكفاءة المرحلية (تثبيت وإزالة البرامج والميزات الاختيارية)</td>
+                        <td><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>
+                        <td><span class="a4-badge is-fail">معطّل</span></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">1.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00 (0%)</td>
+                        <td style="text-align:center;color:#DC2626;font-weight:700;">-1.00</td>
+                        <td style="font-size:10px;">تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (1.00 نقطة).</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;">6</td>
+                        <td><strong>إدارة حسابات المستخدمين والصلاحيات (G - A)</strong></td>
+                        <td><span class="a4-type-badge is-task">مهمة عملية</span></td>
+                        <td><span class="a4-badge is-done">مكتملة</span></td>
+                        <td style="text-align:center;">1</td>
+                        <td style="text-align:center;">4.00</td>
+                        <td style="text-align:center;color:#15803D;font-weight:700;">4.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00</td>
+                        <td style="font-size:10px;">تم إنجاز كافة خطوات المهمة بنجاح.</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align:center;font-weight:700;color:#6D28D9;">س6</td>
+                        <td>سؤال تقويم الكفاءة المرحلية (إدارة حسابات المستخدمين والصلاحيات)</td>
+                        <td><span class="a4-type-badge is-quiz">سؤال تقويمي</span></td>
+                        <td><span class="a4-badge is-fail">معطّل</span></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">1.00</td>
+                        <td style="text-align:center;color:#64748B;">0.00 (0%)</td>
+                        <td style="text-align:center;color:#DC2626;font-weight:700;">-1.00</td>
+                        <td style="font-size:10px;">تم إلغاء تفعيل الأسئلة بطلب من التلميذ؛ خصم كامل علامة السؤال (1.00 نقطة).</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr style="background:#F8FAFC;font-weight:700;border-top:2px solid #CBD5E1;">
+                        <td colspan="5" style="text-align:left;padding:6px 10px;font-size:11px;">المجموع الكلي لمعاملات ونقاط المهام والأسئلة:</td>
+                        <td style="text-align:center;color:#0F172A;">23.00</td>
+                        <td style="text-align:center;color:#1E3A8A;font-size:12px;">17.00</td>
+                        <td style="text-align:center;color:#DC2626;">-6.00</td>
+                        <td style="font-size:10.5px;color:#334155;">استيفاء 17.00 من أصل 23.00 نقطة مطلوبة</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <!-- 6. Section C: Math Steps -->
+            <div class="a4-section-title">
+                <span>القسم (ج): التفكيك الحسابي للعلامة (كيف تم احتساب المعدل خطوة بخطوة)</span>
+                <span style="font-size:11px;color:#475569;font-weight:normal;">تطبيق القاعدة الثلاثية الرسمية (Rule of Three)</span>
+            </div>
+
+            <div class="a4-math-steps">
+                <div class="a4-math-step">
+                    <span class="a4-step-num">1</span>
+                    <span class="a4-step-lbl">مجموع معاملات المهام العملية:</span>
+                    <span class="a4-step-sub">(حصلت على: 17.00)</span>
+                    <span class="a4-step-val">17.00 نقطة</span>
+                </div>
+                <div class="a4-math-step">
+                    <span class="a4-step-num">2</span>
+                    <span class="a4-step-lbl">مجموع معاملات الأسئلة:</span>
+                    <span class="a4-step-sub">(معطل بطلب التلميذ — حصلت على 0.00)</span>
+                    <span class="a4-step-val">6.00 نقطة</span>
+                </div>
+                <div class="a4-math-step">
+                    <span class="a4-step-num">3</span>
+                    <span class="a4-step-lbl">مجموع النقاط التي حصلت عليها (معاملات):</span>
+                    <span class="a4-step-sub">(17.00 عملي + 0.00 أسئلة = 17.00)</span>
+                    <span class="a4-step-val">17.00 / 23.00 نقطة</span>
+                </div>
+                <div class="a4-math-step is-calc">
+                    <span class="a4-step-num">4</span>
+                    <span class="a4-step-lbl">العلامة قبل الخصم (من 20):</span>
+                    <span class="a4-step-sub">القاعدة الثلاثية: (17.00 ÷ 23.00) × 20</span>
+                    <span class="a4-step-val" style="color:#1E3A8A;font-size:12px;">14.78 / 20</span>
+                </div>
+                <div class="a4-math-step">
+                    <span class="a4-step-num">5</span>
+                    <span class="a4-step-lbl">مجموع الخصومات:</span>
+                    <span class="a4-step-sub">أداء نظامي سليم بدون خصومات</span>
+                    <span class="a4-step-val" style="color:#15803D;">0.00 نقطة</span>
+                </div>
+            </div>
+
+            <!-- 7. Section E: Teacher Notes & Stamp -->
+            <div class="a4-section-title">
+                <span>القسم (هـ): ملاحظات وتوجيهات الأستاذ(ة) المشرف(ة)</span>
+                <span style="font-size:11px;color:#475569;font-weight:normal;">المصادقة والاعتماد الرسمي</span>
+            </div>
+
+            <div class="a4-sign-grid">
+                <div>
+                    <div>الملاحظة البيداغوجية: <strong>أداء متميز وتطبيق سليم لكافة المهارات المبرمجة.</strong></div>
+                    <div style="margin-top:4px;color:#64748B;">حرر في: 23 نوفمبر 2026 بالأغواط</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-weight:700;color:#1E3A8A;margin-bottom:28px;">توقيع وختم الأستاذ(ة) المشرف(ة)</div>
+                    <div style="color:#94A3B8;font-size:9.5px;">[الختم الرسمي للمؤسسة]</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        var isMulti = false;
+        function toggleStudentMode() {
+            isMulti = !isMulti;
+            var cell = document.getElementById('cell-student-names');
+            var btn = document.getElementById('btn-toggle-mode');
+            var act = document.getElementById('val-activity');
+            if (isMulti) {
+                btn.textContent = '👤 تبديل إلى تلميذ منفرد';
+                cell.innerHTML =
+                    '<div class="a4-cell-lbl">المشاركون في العمل التطبيقي:</div>' +
+                    '<div class="a4-cell-val" style="font-size:11.5px;color:#0F172A;line-height:1.4;">' +
+                        '1) <span style="color:#64748B;font-weight:600;">اللقب:</span> <strong>عرفاوي</strong> &nbsp;<span style="color:#64748B;font-weight:600;">الاسم:</span> <strong>مقران</strong><br>' +
+                        '2) <span style="color:#64748B;font-weight:600;">اللقب:</span> <strong>عتيق</strong> &nbsp;<span style="color:#64748B;font-weight:600;">الاسم:</span> <strong>محمد الأمين</strong>' +
+                    '</div>';
+                act.innerHTML = 'نشاط تطبيقي تدريبي <span style="font-size:10.5px;color:#0284C7;font-weight:700;">(عمل مشترك)</span>';
+            } else {
+                btn.textContent = '👥 تبديل وضع العمل المشترك';
+                cell.innerHTML =
+                    '<div class="a4-cell-lbl">اسم ولقب التلميذ(ة):</div>' +
+                    '<div class="a4-cell-val" style="font-size:13px;font-weight:700;color:#0F172A;">' +
+                        '<span style="color:#64748B;font-weight:600;">اللقب:</span> <strong>عرفاوي</strong> &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#64748B;font-weight:600;">الاسم:</span> <strong>مقران</strong>' +
+                    '</div>';
+                act.textContent = 'نشاط تطبيقي تدريبي (استطلاع وتدريب)';
+            }
+        }
+    </script>
+</body>
+</html>
