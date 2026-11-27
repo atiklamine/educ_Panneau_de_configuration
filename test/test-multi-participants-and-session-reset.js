@@ -194,3 +194,4 @@ assert.ok(themesCss.indexOf('backdrop-filter: blur(32px)') === -1, '32px blur on
 console.log('✓ TEST 5 PASSED: CSS mica uses solid background to eliminate tile desync flicker.');
 
 console.log('\nALL 5 TESTS IN TEST SUITE PASSED SUCCESSFULLY!');
+process.exit(0);

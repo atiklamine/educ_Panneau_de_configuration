@@ -453,7 +453,7 @@
             '<span class="off-task-toast-icon">' + (global.Win11Icons ? global.Win11Icons.get('warning', 18) : '!') + '</span>' +
             '<span class="off-task-toast-text">' + bidi(messageAr) + '</span>' +
             '<button type="button" class="off-task-toast-close" aria-label="Close">&times;</button>';
-        var closeBtn = toast.querySelector('.off-task-toast-close');
+        var closeBtn = (typeof toast.querySelector === 'function') ? toast.querySelector('.off-task-toast-close') : null;
         if (closeBtn) {
             closeBtn.onclick = dismissOffTaskToast;
         }
@@ -500,7 +500,21 @@
         return '';
     }
 
+    var stateSubscribed = false;
+    function ensureStateSubscription() {
+        if (stateSubscribed) return;
+        if (global.Win11State && typeof global.Win11State.subscribe === 'function') {
+            global.Win11State.subscribe(function () {
+                if (student.activeSession) {
+                    evaluate();
+                }
+            });
+            stateSubscribed = true;
+        }
+    }
+
     function initPedagogyFlow() {
+        ensureStateSubscription();
         var st = global.Win11State ? global.Win11State.get() : null;
         activeTaskIndex = 0;
         lastSeenSignatures = {};
@@ -581,13 +595,18 @@
     }
 
     function recordUnrequestedChange(settingLabel, detail) {
+        if (!student.activeSession) return;
         var lbl = settingLabel || 'إعدادات النظام';
+        var mTitle = 'تعديل غير مطلوب (' + lbl + ')';
+        if (hasMistake(0, mTitle)) return;
         var desc = detail || ('تعديل إعدادات «' + lbl + '» وهو إجراء غير مطلوب ضمن المهام التقويمية المحددة.');
-        recordMistake(0, 'تعديل غير مطلوب (' + lbl + ')', desc, 0.25, 'unrequested');
+        var penAmt = Math.max(0.25, config.penalty_error || 0.25);
+        recordMistake(0, mTitle, desc, penAmt, 'unrequested');
+        showOffTaskToast('تم خصم ' + penAmt.toFixed(2) + ' نقطة: تعديل «' + lbl + '» غير مطلوب في المهام التقويمية المحددة.');
         if (global.Win11Notifications && typeof global.Win11Notifications.showToast === 'function') {
             global.Win11Notifications.showToast({
                 title: 'تنبيه بيداغوجي (خصم نقاط)',
-                message: 'تعديل «' + lbl + '» غير مطلوب في هذا النشاط. تم خصم 0.25 نقطة.',
+                message: 'تعديل «' + lbl + '» غير مطلوب في هذا النشاط. تم خصم ' + penAmt.toFixed(2) + ' نقطة.',
                 icon: 'warning'
             });
         }
@@ -622,19 +641,23 @@
             }
         }
         // Section 4: Show non-blocking contextual warning when visiting an off-task section (NO deduction until action is committed)
-        if (student.activeSession && mappedIds.length > 0) {
-            var ordered = syncConfiguredTasks();
-            var enabledList = [];
-            for (var ei = 0; ei < ordered.length; ei++) {
-                if (ordered[ei].enabled !== false) enabledList.push(ordered[ei]);
-            }
-            var curActive = (activeTaskIndex < enabledList.length) ? enabledList[activeTaskIndex] : null;
-            if (curActive && mappedIds.indexOf(curActive.id) === -1) {
-                var warnMsg = (sectionId === 'personalization')
-                    ? ('أنت الآن في مهمة "' + curActive.titleAr + '". تغيير الخلفية الآن سيؤدي إلى خصم نقاط.')
-                    : ('أنت الآن في مهمة "' + curActive.titleAr + '". إجراء تعديل في قسم "' + (SECTION_TITLE_AR[sectionId] || sectionId) + '" الآن سيؤدي إلى خصم نقاط.');
-                showOffTaskToast(warnMsg);
-            } else if (curActive) {
+        if (student.activeSession) {
+            if (mappedIds.length > 0) {
+                var ordered = syncConfiguredTasks();
+                var enabledList = [];
+                for (var ei = 0; ei < ordered.length; ei++) {
+                    if (ordered[ei].enabled !== false) enabledList.push(ordered[ei]);
+                }
+                var curActive = (activeTaskIndex < enabledList.length) ? enabledList[activeTaskIndex] : null;
+                if (curActive && mappedIds.indexOf(curActive.id) === -1) {
+                    var warnMsg = (sectionId === 'personalization')
+                        ? ('أنت الآن في مهمة "' + curActive.titleAr + '". تغيير الخلفية الآن سيؤدي إلى خصم نقاط.')
+                        : ('أنت الآن في مهمة "' + curActive.titleAr + '". إجراء تعديل في قسم "' + (SECTION_TITLE_AR[sectionId] || sectionId) + '" الآن سيؤدي إلى خصم نقاط.');
+                    showOffTaskToast(warnMsg);
+                } else if (curActive) {
+                    dismissOffTaskToast();
+                }
+            } else {
                 dismissOffTaskToast();
             }
         }
@@ -997,6 +1020,13 @@
             if (ordered[ei].enabled !== false) enabledList.push(ordered[ei]);
         }
         var st = global.Win11State.get();
+
+        if (st && st.mouseButtonsInverted && student.activeSession) {
+            var mMouseTitle = 'تعديل غير مطلوب (تبديل الزر الأساسي للفأرة)';
+            if (!hasMistake(0, mMouseTitle)) {
+                recordUnrequestedChange('تبديل الزر الأساسي للفأرة', 'تم تفعيل تبديل الزر الأساسي للفأرة وهو غير مطلوب في التعليمات.');
+            }
+        }
 
         // Enforce sequential Active Task rule (Section 2):
         // 1. Freeze already completed or skipped tasks (< activeTaskIndex) globally across user switches (Section 6.5)
@@ -2330,6 +2360,7 @@
                 penalties: pen,
                 net: net,
                 deductions: deductionRows,
+                deductionRows: deductionRows,
                 totalDeductions: totalDeductions,
                 passed: net >= threshold,
                 passThreshold: threshold,

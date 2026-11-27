@@ -119,3 +119,4 @@ assert(csContent.includes('g.DrawString("Année scolaire: " + acadYear, fGridLtr
 console.log('✓ Test 6 Passed: Win11SimLauncher.cs draws Année scolaire and Niveau with ltrLeft');
 
 console.log('\nALL HUD CLOSE & REACTIVITY TESTS PASSED SUCCESSFULLY!');
+process.exit(0);
