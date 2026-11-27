@@ -24,7 +24,9 @@ global.document = {
                         fillText: function () {},
                         measureText: function (t) { return { width: (t || '').length * 7 }; },
                         drawImage: function () {},
-                        setLineDash: function () {}
+                        setLineDash: function () {},
+                        rect: function () {},
+                        clip: function () {}
                     };
                 },
                 toDataURL: function () {

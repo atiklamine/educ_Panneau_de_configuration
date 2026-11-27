@@ -1195,7 +1195,7 @@
                     '<td style="text-align:center;">-</td>' +
                     '<td style="text-align:center;">-</td>' +
                     '<td style="text-align:center;font-weight:700;color:#DC2626;"><bdi dir="ltr">-' + pen.toFixed(2) + '</bdi></td>' +
-                    '<td style="font-size:11px;line-height:1.45;">' + bidi('خصم جزائي مباشر يُطرح من العلامة النهائية بعد القاعدة الثلاثية (انظر تفصيل الخطوة 5 و6 في القسم ج): ' + penaltyReason) + '</td>' +
+                    '<td style="font-size:10.5px;line-height:1.4;color:#991B1B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">' + bidi('خصم جزائي مباشر (انظر تفصيل الخطوة 5 بالأسفل)') + '</td>' +
                 '</tr>';
         }
 
@@ -1377,7 +1377,7 @@
         var pcNum = global.Win11Compat.escapeHtml(String(stu.pcNumber || cfg.default_device || '01'));
 
         // ==========================================
-        // SECTION A: STUDENT INFO BOX & TABLE (EXACT CANONICAL PDF LAYOUT)
+        // SECTION A: STUDENT INFO BOX & TABLE (MASTER-CLASS 2-COLUMN BALANCED LAYOUT)
         // ==========================================
         var isMultiStudent = Array.isArray(stu.participants) && stu.participants.length > 1;
         var studentBoxHtml = '';
@@ -1387,13 +1387,20 @@
             var pListStr = stu.participants.map(function (p, idx) {
                 var l = String(p.lastName || '—').trim().toUpperCase();
                 var f = String(p.firstName || '—').trim().toUpperCase();
-                return (idx + 1) + ') <span style="color:#64748B;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(l) + '</strong> &nbsp;<span style="color:#64748B;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(f) + '</strong>';
-            }).join('<br>');
+                return '<div class="a4-part-item" style="margin:4px 0;font-size:12.5px;color:#0F172A;line-height:1.6;">' +
+                    '<span style="font-weight:700;color:#1E3A8A;display:inline-block;min-width:24px;">' + (idx + 1) + ')</span> ' +
+                    '<span style="color:#64748B;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(l) + '</strong> &nbsp;&nbsp;&nbsp;&nbsp; ' +
+                    '<span style="color:#64748B;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(f) + '</strong>' +
+                '</div>';
+            }).join('');
             studentCellContent = pListStr;
         } else {
             var sL = String(stu.lastName || '—').trim().toUpperCase();
             var sF = String(stu.firstName || stu.fullName || '—').trim().toUpperCase();
-            studentCellContent = '<span style="color:#64748B;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(sL) + '</strong> &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#64748B;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(sF) + '</strong>';
+            studentCellContent = '<div style="margin:4px 0;font-size:13px;color:#0F172A;line-height:1.6;">' +
+                '<span style="color:#64748B;font-weight:600;">' + bidi('اللقب:') + '</span> <strong>' + bidi(sL) + '</strong> &nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp; ' +
+                '<span style="color:#64748B;font-weight:600;">' + bidi('الاسم:') + '</span> <strong>' + bidi(sF) + '</strong>' +
+            '</div>';
         }
 
         studentBoxHtml =
@@ -1401,35 +1408,36 @@
                 '<span>' + bidi('القسم (أ): بيانات التلميذ والجلسة التقويمية') + '</span>' +
                 '<span style="font-size:11px;color:#475569;font-weight:normal;">' + bidi('بيانات رسمية معتمدة') + '</span>' +
             '</div>' +
-            '<div class="a4-student-box">' +
-                '<table class="a4-info-table">' +
+            '<div class="a4-student-box-v2" style="background:#FFFFFF;border:1.2px solid #CBD5E1;border-radius:6px;padding:10px 14px;margin:8px 0 12px 0;box-sizing:border-box;">' +
+                '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">' +
                     '<tbody>' +
                         '<tr>' +
-                            '<td style="width:36%;">' +
-                                '<div class="a4-cell-lbl">' + bidi(isMultiStudent ? 'المشاركون في العمل التطبيقي:' : 'اسم ولقب التلميذ(ة):') + '</div>' +
-                                '<div class="a4-cell-val" style="font-size:13px;font-weight:700;color:#0F172A;">' + studentCellContent + '</div>' +
+                            '<td style="width:52%;vertical-align:top;padding-left:14px;border-left:1.5px solid #E2E8F0;text-align:right;">' +
+                                '<div style="font-size:11px;color:#64748B;font-weight:700;margin-bottom:6px;border-bottom:1px solid #F1F5F9;padding-bottom:4px;">' +
+                                    bidi(isMultiStudent ? 'المشاركون في العمل التطبيقي (عمل مشترك):' : 'اسم ولقب التلميذ(ة):') +
+                                '</div>' +
+                                studentCellContent +
                             '</td>' +
-                            '<td style="width:32%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('الفوج التربوي ورقم الجهاز:') + '</div>' +
-                                '<div class="a4-cell-val"><strong>' + bidi(stu.classGroup) + '</strong> &nbsp;|&nbsp; <span>' + bidi('حاسوب') + ' <bdi dir="ltr">#' + pcNum + '</bdi></span></div>' +
-                            '</td>' +
-                            '<td style="width:32%;">' +
-                                '<div class="a4-cell-lbl">' + bidi('طبيعة النشاط ونمط المحاكاة:') + '</div>' +
-                                '<div class="a4-cell-val"><strong>' + bidi(sessionLabel) + '</strong>' + (isMultiStudent ? (' <span style="font-size:10.5px;color:#0284C7;font-weight:700;">(' + bidi('عمل مشترك') + ')</span>') : '') + '</div>' +
-                            '</td>' +
-                        '</tr>' +
-                        '<tr>' +
-                            '<td>' +
-                                '<div class="a4-cell-lbl">' + bidi('المشرف البيداغوجي والمؤسسة (inf.dll):') + '</div>' +
-                                '<div class="a4-cell-val"><strong>' + bidi(cfg.teacher_name || 'أستاذ مادة المعلوماتية') + '</strong> &nbsp;|&nbsp; <span>' + bidi(cfg.institution_name || 'مؤسسة أبي بكر الحاج عيسى (الأغواط)') + '</span></div>' +
-                            '</td>' +
-                            '<td>' +
-                                '<div class="a4-cell-lbl">' + bidi('تاريخ وتوقيت الإنجاز:') + '</div>' +
-                                '<div class="a4-cell-val"><strong><bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></strong></div>' +
-                            '</td>' +
-                            '<td>' +
-                                '<div class="a4-cell-lbl">' + bidi('الوقت الإجمالي المستغرق:') + '</div>' +
-                                '<div class="a4-cell-val"><strong><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></strong> &nbsp;|&nbsp; ' + sessionProgressBadgeHtml + '</div>' +
+                            '<td style="width:48%;vertical-align:top;padding-right:14px;text-align:right;">' +
+                                '<div style="font-size:11px;color:#64748B;font-weight:700;margin-bottom:6px;border-bottom:1px solid #F1F5F9;padding-bottom:4px;">' +
+                                    bidi('بيانات الفوج والجلسة التقويمية:') +
+                                '</div>' +
+                                '<div style="margin-bottom:6px;font-size:12px;color:#0F172A;">' +
+                                    '<span style="color:#64748B;font-weight:600;">' + bidi('الفوج التربوي ورقم الجهاز:') + '</span> ' +
+                                    '<strong>' + bidi(stu.classGroup || '1AS') + '</strong> &nbsp;|&nbsp; <span>' + bidi('حاسوب') + ' <bdi dir="ltr">#' + pcNum + '</bdi></span>' +
+                                '</div>' +
+                                '<div style="margin-bottom:6px;font-size:12px;color:#0F172A;">' +
+                                    '<span style="color:#64748B;font-weight:600;">' + bidi('طبيعة النشاط ونمط المحاكاة:') + '</span> ' +
+                                    '<strong>' + bidi(sessionLabel) + '</strong>' + (isMultiStudent ? (' <span style="font-size:10.5px;color:#0284C7;font-weight:700;">(' + bidi('عمل مشترك') + ')</span>') : '') +
+                                '</div>' +
+                                '<div style="margin-bottom:6px;font-size:12px;color:#0F172A;">' +
+                                    '<span style="color:#64748B;font-weight:600;">' + bidi('تاريخ وتوقيت الإنجاز:') + '</span> ' +
+                                    '<strong><bdi dir="ltr">' + bidi(dateFormatted) + '</bdi></strong>' +
+                                '</div>' +
+                                '<div style="font-size:12px;color:#0F172A;">' +
+                                    '<span style="color:#64748B;font-weight:600;">' + bidi('الوقت الإجمالي المستغرق:') + '</span> ' +
+                                    '<strong><bdi dir="ltr">' + bidi(totalDurationStr) + '</bdi></strong> &nbsp;|&nbsp; ' + sessionProgressBadgeHtml +
+                                '</div>' +
                             '</td>' +
                         '</tr>' +
                     '</tbody>' +
@@ -1915,12 +1923,16 @@
             var baseScoreOutOf20 = Number(scores.baseScore !== undefined ? scores.baseScore : (grandTotalMax > 0 ? ((grandTotalEarned / grandTotalMax) * 20) : 0));
             var pen = Number(scores.penalties || 0);
 
-            // 1. Republic Header text
+            // 1. Republic Header text (Two-line official format)
             ctx.direction = 'rtl';
             ctx.textAlign = 'center';
             ctx.fillStyle = '#0F172A';
             ctx.font = 'bold 16px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية — وزارة التربية الوطنية', 620, 66);
+            ctx.fillText('الجمهورية الجزائرية الديمقراطية الشعبية', 620, 50);
+
+            ctx.fillStyle = '#1E3A8A';
+            ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('وزارة التربية الوطنية', 620, 70);
 
             // Official Logo Drawing (Photographic from DOM or Crisp Vector Seal)
             try {
@@ -1928,14 +1940,14 @@
                 if (typeof document !== 'undefined') {
                     var domLogo = document.querySelector('.a4-header-logo img');
                     if (domLogo && domLogo.complete && domLogo.naturalWidth > 0) {
-                        ctx.drawImage(domLogo, 585, 72, 70, 50);
+                        ctx.drawImage(domLogo, 588, 76, 64, 64);
                         logoDrawn = true;
                     }
                 }
                 if (!logoDrawn) {
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(620, 96, 24, 0, Math.PI * 2);
+                    ctx.arc(620, 106, 26, 0, Math.PI * 2);
                     ctx.fillStyle = '#1E3A8A';
                     ctx.fill();
                     ctx.lineWidth = 2;
@@ -1943,195 +1955,259 @@
                     ctx.stroke();
 
                     ctx.beginPath();
-                    ctx.arc(620, 96, 20, 0, Math.PI * 2);
+                    ctx.arc(620, 106, 22, 0, Math.PI * 2);
                     ctx.strokeStyle = '#FDE68A';
                     ctx.lineWidth = 1;
                     ctx.stroke();
 
                     ctx.fillStyle = '#FFFFFF';
                     ctx.beginPath();
-                    ctx.moveTo(620, 103);
-                    ctx.lineTo(609, 100);
-                    ctx.lineTo(609, 90);
-                    ctx.lineTo(620, 93);
+                    ctx.moveTo(620, 114);
+                    ctx.lineTo(608, 110);
+                    ctx.lineTo(608, 99);
+                    ctx.lineTo(620, 103);
                     ctx.closePath();
                     ctx.fill();
 
                     ctx.beginPath();
-                    ctx.moveTo(620, 103);
-                    ctx.lineTo(631, 100);
-                    ctx.lineTo(631, 90);
-                    ctx.lineTo(620, 93);
+                    ctx.moveTo(620, 114);
+                    ctx.lineTo(632, 110);
+                    ctx.lineTo(632, 99);
+                    ctx.lineTo(620, 103);
                     ctx.closePath();
                     ctx.fill();
 
                     ctx.strokeStyle = '#1E3A8A';
                     ctx.lineWidth = 1;
                     ctx.beginPath();
-                    ctx.moveTo(620, 93);
-                    ctx.lineTo(620, 103);
+                    ctx.moveTo(620, 103);
+                    ctx.lineTo(620, 114);
                     ctx.stroke();
 
                     ctx.fillStyle = '#F59E0B';
                     ctx.beginPath();
-                    ctx.arc(620, 85, 3.5, 0, Math.PI * 2);
+                    ctx.arc(620, 93, 4, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.restore();
                 }
             } catch (eLogo) {}
 
-            ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#475569';
-            var instStr = (cfg.institution_name || 'ثانوية الشهيد قورين محمد الأغواط');
+            // Right Block: Official Institution & Teacher
+            var instStr = (cfg.institution_name || 'مدرسة الشهيد قورين محمد الأغواط');
             var teachStr = (cfg.teacher_name || 'أستاذ مادة المعلوماتية');
             ctx.textAlign = 'right';
-            ctx.fillText('المؤسسة: ' + instStr, 1140, 92);
-            ctx.fillText('الأستاذ المشرف: ' + teachStr, 1140, 110);
 
+            ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('المؤسسة:', 1150, 84);
+            ctx.font = 'bold 13.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText(instStr, 1090, 84);
+
+            ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('الأستاذ المشرف:', 1150, 108);
+            ctx.font = 'bold 13.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#1E3A8A';
+            ctx.fillText(teachStr, 1060, 108);
+
+            ctx.font = '11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب', 1150, 130);
+
+            // Left Block: Academic Year & Level
             ctx.textAlign = 'left';
-            ctx.fillText('Année scolaire: ' + (cfg.academic_year || '2026 / 2027'), 100, 92);
-            ctx.fillText('Niveau: ' + (cfg.target_level || 'السنة أولى ثانوي'), 100, 110);
+            ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('Année scolaire:', 90, 84);
+            ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText(cfg.academic_year || '2026 / 2027', 185, 84);
 
-            // Main Title Banner (Y = 124..178)
+            ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('Niveau:', 90, 108);
+            ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#334155';
+            ctx.fillText(cfg.target_level || 'السنة أولى ثانوي (جذع مشترك)', 140, 108);
+
+            ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('Unité: لوحة التحكم وإعدادات النظام', 90, 130);
+
+            // Main Title Banner (Y = 146..208)
             ctx.fillStyle = '#F8FAFC';
-            ctx.fillRect(80, 124, 1080, 54);
+            ctx.fillRect(80, 146, 1080, 60);
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = '#CBD5E1';
-            ctx.strokeRect(80, 124, 1080, 54);
+            ctx.strokeRect(80, 146, 1080, 60);
 
             ctx.textAlign = 'center';
             ctx.fillStyle = '#1E3A8A';
-            ctx.font = 'bold 19px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي', 620, 147);
+            ctx.font = 'bold 20px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('بطاقة تقويم الأعمال التطبيقية — مادة الإعلام الآلي', 620, 175);
 
             ctx.fillStyle = '#475569';
             ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)', 620, 168);
+            ctx.fillText('المجال التعلمي: بيئة التعامل مع الحاسوب (لوحة التحكم وإعدادات نظام التشغيل Windows 11)', 620, 197);
 
-            // 2. Section A: Header & Info Table (Exact attached PDF layout)
-            // Section A Title bar (Y = 176..202)
+            // 2. Section A: Header & Info Table (Master-Class 2-Column Balanced Layout)
+            // Title bar: Y = 216..242 (Height 26)
             ctx.fillStyle = '#F1F5F9';
-            ctx.fillRect(80, 176, 1080, 26);
+            ctx.fillRect(80, 216, 1080, 26);
             ctx.strokeStyle = '#CBD5E1';
             ctx.lineWidth = 1;
-            ctx.strokeRect(80, 176, 1080, 26);
+            ctx.strokeRect(80, 216, 1080, 26);
 
             ctx.fillStyle = '#1E3A8A';
-            ctx.fillRect(1156, 176, 4, 26);
+            ctx.fillRect(1156, 216, 4, 26);
 
-            ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#1E3A8A';
             ctx.textAlign = 'right';
-            ctx.fillText('القسم (أ): بيانات التلميذ والجلسة التقويمية', 1145, 194);
+            ctx.fillText('القسم (أ): بيانات التلميذ والجلسة التقويمية', 1145, 234);
 
             ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#475569';
             ctx.textAlign = 'left';
-            ctx.fillText('بيانات رسمية معتمدة', 95, 194);
+            ctx.fillText('بيانات رسمية معتمدة', 95, 234);
 
-            // Info Table 3 Columns x 2 Rows (Y = 204..268)
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(80, 204, 1080, 64);
-            ctx.strokeStyle = '#CBD5E1';
-            ctx.strokeRect(80, 204, 1080, 64);
-
-            // Horizontal inner line
-            ctx.beginPath();
-            ctx.moveTo(80, 236);
-            ctx.lineTo(1160, 236);
-            ctx.stroke();
-
-            // Vertical inner lines (36%: X=771, 32%: X=425)
-            ctx.beginPath();
-            ctx.moveTo(771, 204);
-            ctx.lineTo(771, 268);
-            ctx.moveTo(425, 204);
-            ctx.lineTo(425, 268);
-            ctx.stroke();
-
+            // Dynamic Section A Height calculation
             var sLastName = (stu.lastName || '—').trim().toUpperCase();
             var sFirstName = (stu.firstName || stu.fullName || '—').trim().toUpperCase();
-            var participantBanner = '';
             var isMultiStudent = Array.isArray(stu.participants) && stu.participants.length > 1;
-            if (isMultiStudent) {
-                var pList = stu.participants.map(function (p, idx) {
-                    return (idx + 1) + ') اللقب: ' + (p.lastName || '—').trim().toUpperCase() + ' الاسم: ' + (p.firstName || '—').trim().toUpperCase();
-                }).join('   |   ');
-                participantBanner = pList;
-            } else {
-                participantBanner = 'اللقب: ' + sLastName + '   |   الاسم: ' + sFirstName;
-            }
+            var numParticipants = isMultiStudent ? stu.participants.length : 1;
+            var secAInnerH = Math.max(76, 20 + (numParticipants * 25) + 12);
+            var secAY = 244;
 
-            var isAllDone = (enabledTasks.length > 0 && doneTasksCount === enabledTasks.length);
-            var isZeroDone = (doneTasksCount === 0);
-            var isPartDone = (!isAllDone && !isZeroDone);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(80, secAY, 1080, secAInnerH);
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(80, secAY, 1080, secAInnerH);
 
-            // Row 1 Text
+            // Vertical divider between right (Participants) and left (Session Metadata)
+            ctx.beginPath();
+            ctx.moveTo(620, secAY);
+            ctx.lineTo(620, secAY + secAInnerH);
+            ctx.strokeStyle = '#E2E8F0';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Right Column: Participants (X = 620 to X = 1160, W = 540)
             ctx.textAlign = 'right';
             ctx.fillStyle = '#64748B';
-            ctx.font = '10px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText(isMultiStudent ? 'المشاركون في العمل التطبيقي:' : 'اسم ولقب التلميذ:', 1150, 216);
-            ctx.fillText('الفوج التربوي ورقم الجهاز:', 761, 216);
-            ctx.fillText('طبيعة النشاط ونمط المحاكاة:', 415, 216);
+            ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText(isMultiStudent ? ('المشاركون في العمل التطبيقي (عمل مشترك — ' + numParticipants + ' تلاميذ):') : 'اسم ولقب التلميذ(ة):', 1145, secAY + 20);
 
-            ctx.fillStyle = '#0F172A';
             if (isMultiStudent) {
-                // Dedicated wrapped rendering per participant inside col 1 (X=771..1150) - ZERO OVERLAP!
-                ctx.font = 'bold 9.5px "Segoe UI", Tahoma, sans-serif';
-                for (var pi = 0; pi < stu.participants.length && pi < 3; pi++) {
+                for (var pi = 0; pi < stu.participants.length && pi < 4; pi++) {
                     var part = stu.participants[pi];
-                    var pText = (pi + 1) + ') اللقب: ' + (part.lastName || '—').trim().toUpperCase() + '  الاسم: ' + (part.firstName || '—').trim().toUpperCase();
-                    ctx.fillText(pText, 1150, 226 + (pi * 10));
+                    var py = secAY + 44 + (pi * 25);
+                    ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#1E3A8A';
+                    ctx.fillText((pi + 1) + ')', 1145, py);
+                    ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#64748B';
+                    ctx.fillText('اللقب:', 1120, py);
+                    ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#0F172A';
+                    var pLast = (part.lastName || '—').trim().toUpperCase();
+                    ctx.fillText(pLast, 1080, py);
+
+                    ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#64748B';
+                    ctx.fillText('الاسم:', 900, py);
+                    ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#0F172A';
+                    var pFirst = (part.firstName || '—').trim().toUpperCase();
+                    ctx.fillText(pFirst, 860, py);
                 }
             } else {
-                ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
-                ctx.fillText(participantBanner, 1150, 230);
+                var singleY = secAY + 48;
+                ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#64748B';
+                ctx.fillText('اللقب:', 1145, singleY);
+                ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#0F172A';
+                ctx.fillText(sLastName, 1105, singleY);
+
+                ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#94A3B8';
+                ctx.fillText('|', 930, singleY);
+
+                ctx.font = '12px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#64748B';
+                ctx.fillText('الاسم:', 900, singleY);
+                ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#0F172A';
+                ctx.fillText(sFirstName, 860, singleY);
             }
-            ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText((stu.classGroup || '1AS') + '   |   حاسوب #' + (stu.pcNumber || '01'), 761, 230);
-            ctx.fillText((isExam ? 'امتحان رسمي' : 'نشاط تطبيقي تدريبي (استطلاع وتدريب)') + (isMultiStudent ? ' (عمل مشترك)' : ''), 415, 230);
 
-            // Row 2 Text
+            // Left Column: Session Metadata (X = 80 to X = 620, W = 540)
             ctx.fillStyle = '#64748B';
-            ctx.font = '10px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText('المشرف البيداغوجي والمؤسسة (inf.dll):', 1150, 248);
-            ctx.fillText('تاريخ وتوقيت الإنجاز:', 761, 248);
-            ctx.fillText('الوقت الإجمالي المستغرق:', 415, 248);
+            ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText('بيانات الفوج والجلسة التقويمية:', 605, secAY + 20);
 
+            ctx.font = '11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('الفوج ورقم الجهاز:', 605, secAY + 44);
+            ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = '#0F172A';
-            ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText(teachStr + '   |   ' + instStr, 1150, 262);
-            ctx.fillText(dateFormatted, 761, 262);
+            ctx.fillText((stu.classGroup || '1AS') + '   |   حاسوب #' + (stu.pcNumber || '01'), 485, secAY + 44);
 
-            ctx.fillStyle = '#1E3A8A';
-            ctx.font = 'bold 12px Consolas, monospace';
-            ctx.fillText(totalDurationStr, 415, 262);
+            ctx.font = '11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('طبيعة النشاط:', 605, secAY + 66);
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText((isExam ? 'امتحان رسمي (تقييمي)' : 'نشاط تطبيقي تدريبي (استطلاع وتدريب)') + (isMultiStudent ? ' (عمل مشترك)' : ''), 520, secAY + 66);
 
-            // 3. Top Summary Cards (Y = 276..354, Height = 78)
-            // Right Card: Score Card (X = 630, W = 530, Y = 276, H = 78)
+            ctx.font = '11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('تاريخ الإنجاز:', 605, secAY + 88);
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText(dateFormatted, 520, secAY + 88);
+
+            if (secAInnerH >= 105) {
+                ctx.font = '11.5px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#64748B';
+                ctx.fillText('الوقت المستغرق:', 605, secAY + 110);
+                ctx.font = 'bold 12px Consolas, monospace';
+                ctx.fillStyle = '#1E3A8A';
+                ctx.fillText(totalDurationStr + ' (' + durBadgeTxt + ')', 500, secAY + 110);
+            }
+
+            // 3. Fluid curY position for Summary Cards
+            var curY = secAY + secAInnerH + 12;
+
+            // Top Summary Cards (Score Card & Duration Card)
+            var cardH = 76;
             ctx.fillStyle = isPassed ? '#F0FDF4' : '#FFFBEB';
-            ctx.fillRect(630, 276, 530, 78);
+            ctx.fillRect(630, curY, 530, cardH);
             ctx.strokeStyle = isPassed ? '#16A34A' : '#D97706';
             ctx.lineWidth = 2;
-            ctx.strokeRect(630, 276, 530, 78);
+            ctx.strokeRect(630, curY, 530, cardH);
 
             ctx.textAlign = 'center';
-            ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = isPassed ? '#166534' : '#92400E';
-            ctx.fillText('العلامة النهائية المستحقة:', 895, 294);
+            ctx.fillText('العلامة النهائية المستحقة:', 895, curY + 20);
 
             ctx.save();
             ctx.direction = 'ltr';
-            ctx.font = '900 24px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = '900 25px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = isPassed ? '#15803D' : '#B45309';
-            ctx.fillText(finalScoreStr + ' / 20.00', 895, 321);
+            ctx.fillText(finalScoreStr + ' / 20.00', 895, curY + 48);
             ctx.restore();
 
-            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 10.5px "Segoe UI", Tahoma, sans-serif';
             var passAppr = scores.appreciation || 'قريب من المتوسط';
-            ctx.fillText(isPassed ? ('✔ مستوفٍ لمعيار النجاح — ' + passAppr) : ('✕ دون المعدل المطلوب — ' + passAppr), 895, 342);
+            ctx.fillText(isPassed ? ('✔ مستوفٍ لمعيار النجاح — ' + passAppr) : ('✕ دون المعدل المطلوب — ' + passAppr), 895, curY + 68);
 
-            // Left Card: Duration Card (X = 80, W = 530, Y = 276, H = 78)
+            // Duration Card (Left)
+            var isAllDone = (enabledTasks.length > 0 && doneTasksCount === enabledTasks.length);
             var durBg = isAllDone ? '#F0FDF4' : '#EFF6FF';
             var durBorder = isAllDone ? '#16A34A' : '#2563EB';
             var durTextCol = isAllDone ? '#15803D' : '#1D4ED8';
@@ -2140,36 +2216,37 @@
                 : '⌛ جلسة قيد الإنجاز';
 
             ctx.fillStyle = durBg;
-            ctx.fillRect(80, 276, 530, 78);
+            ctx.fillRect(80, curY, 530, cardH);
             ctx.strokeStyle = durBorder;
             ctx.lineWidth = 2;
-            ctx.strokeRect(80, 276, 530, 78);
+            ctx.strokeRect(80, curY, 530, cardH);
 
-            ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
             ctx.fillStyle = durTextCol;
-            ctx.fillText('الوقت الإجمالي المستغرق:', 345, 294);
+            ctx.fillText('الوقت الإجمالي المستغرق:', 345, curY + 20);
 
             ctx.save();
             ctx.direction = 'ltr';
-            ctx.font = '900 24px Consolas, monospace';
+            ctx.font = '900 25px Consolas, monospace';
             ctx.fillStyle = durTextCol;
-            ctx.fillText(totalDurationStr, 345, 321);
+            ctx.fillText(totalDurationStr, 345, curY + 48);
             ctx.restore();
 
-            ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText(durBadgeTxt, 345, 342);
+            ctx.font = 'bold 10.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText(durBadgeTxt, 345, curY + 68);
 
-            // 4. Section B: Table Header (Y = 364..394)
-            var curY = 364;
+            curY += cardH + 12;
+
+            // 4. Section B: Table Header
             ctx.fillStyle = '#1E3A8A';
-            ctx.fillRect(80, curY, 1080, 30);
+            ctx.fillRect(80, curY, 1080, 28);
             ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 14px "Segoe UI", Tahoma, sans-serif';
+            ctx.font = 'bold 13.5px "Segoe UI", Tahoma, sans-serif';
             ctx.textAlign = 'right';
-            ctx.fillText('القسم (ب): جدول التفصيل الدقيق للمهام العملية والأسئلة التقويمية', 1140, curY + 20);
-            curY += 30;
+            ctx.fillText('القسم (ب): جدول التفصيل الدقيق للمهام العملية والأسئلة التقويمية', 1140, curY + 19);
+            curY += 28;
 
-            // Column Headers (Y = 392..422)
+            // Column Headers
             ctx.fillStyle = '#F1F5F9';
             ctx.fillRect(80, curY, 1080, 30);
             ctx.strokeStyle = '#CBD5E1';
@@ -2398,10 +2475,16 @@
                 ctx.fillText('-', 370, curY + 18);
                 ctx.fillText('-' + pen.toFixed(2), 295, curY + 18);
 
+                // Col 8: Strictly clipped to 180px so it NEVER spills outside table border!
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(80, curY, 180, 28);
+                ctx.clip();
                 ctx.textAlign = 'right';
-                ctx.font = '10px "Segoe UI", Tahoma, sans-serif';
+                ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
                 ctx.fillStyle = '#B91C1C';
-                ctx.fillText('خصم جزائي مباشر يُطرح من العلامة (انظر تفصيل الخطوة 5 بالقسم ج)', 250, curY + 18);
+                ctx.fillText('خصم جزائي مباشر (انظر الخطوة 5)', 250, curY + 18);
+                ctx.restore();
                 curY += 28;
             }
 
@@ -2446,22 +2529,7 @@
                 { num: '2', lbl: 'مجموع معاملات الأسئلة التقويمية:', val: (showQuizzes ? (quizEarned.toFixed(2) + ' / ' + quizMax.toFixed(2)) : 'معطلة من الأستاذ'), sub: (showQuizzes ? 'نقاط الأسئلة بحسب عدد المحاولات المستهلكة' : 'تم اعتماد تقييم المهام العملية فقط'), bg: '#F8FAFC' },
                 { num: '3', lbl: 'مجموع النقاط المحصلة من المعاملات:', val: grandTotalEarned.toFixed(2) + ' / ' + grandTotalMax.toFixed(2), sub: 'مجموع النقاط العملية + نقاط الأسئلة التقويمية', bg: '#F8FAFC' },
                 { num: '4', lbl: 'تطبيق القاعدة الثلاثية الرسمية (من 20):', val: baseScoreOutOf20.toFixed(2) + ' / 20.00', sub: '(' + grandTotalEarned.toFixed(2) + ' ÷ ' + grandTotalMax.toFixed(2) + ') × 20 = ' + baseScoreOutOf20.toFixed(2), bg: '#F0F9FF' },
-                (function () {
-                    var penSub = 'أداء نظامي سليم بدون أي خصومات';
-                    if (pen > 0) {
-                        var mList = (global.Win11Assessment && typeof global.Win11Assessment.getMistakes === 'function')
-                            ? global.Win11Assessment.getMistakes()
-                            : [];
-                        if (mList && mList.length > 0) {
-                            var firstM = mList[0];
-                            penSub = 'رصد مخالفة: [' + (firstM.time || '00:00') + '] ' + (firstM.title || 'مخالفة تسلسل') + (mList.length > 1 ? (' (و' + (mList.length - 1) + ' أخرى)') : '');
-                        } else {
-                            penSub = 'خصومات جزائية مباشرة عن مخالفات تسلسل المهام';
-                        }
-                    }
-                    return { num: '5', lbl: 'الخصومات الجزائية المباشرة من العلامة:', val: (pen > 0 ? ('-' + pen.toFixed(2)) : '0.00') + ' نقطة', sub: penSub, bg: pen > 0 ? '#FEF2F2' : '#F8FAFC' };
-                })(),
-                { num: '6', lbl: 'العلامة النهائية المعتمدة المستحقة:', val: finalScoreStr + ' / 20.00', sub: (pen > 0 ? (baseScoreOutOf20.toFixed(2) + ' - ' + pen.toFixed(2) + ' = ' + finalScoreStr) : 'مطابقة للقاعدة الثلاثية دون خصم'), bg: '#F0FDF4' }
+                { num: '5', lbl: 'الخصومات الجزائية المباشرة من العلامة:', val: (pen > 0 ? ('-' + pen.toFixed(2)) : '0.00') + ' نقطة', sub: (pen > 0 ? 'خصومات جزائية مباشرة عن مخالفات تسلسل المهام تُطرح من علامة الـ 20' : 'أداء نظامي سليم بدون أي خصومات'), bg: pen > 0 ? '#FEF2F2' : '#F8FAFC' }
             ];
 
             for (var mIdx = 0; mIdx < mathSteps.length; mIdx++) {
@@ -2473,7 +2541,7 @@
                 ctx.strokeRect(80, curY, 1080, 28);
 
                 // Step circle
-                ctx.fillStyle = '#2563EB';
+                ctx.fillStyle = (mIdx === 4 && pen > 0) ? '#DC2626' : '#2563EB';
                 ctx.beginPath();
                 ctx.arc(1142, curY + 14, 10, 0, Math.PI * 2);
                 ctx.fill();
@@ -2494,18 +2562,87 @@
                 ctx.direction = 'ltr';
                 ctx.textAlign = 'center';
                 ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
-                ctx.fillStyle = (mIdx === 5) ? '#15803D' : ((mIdx === 4 && pen > 0) ? '#DC2626' : '#1E3A8A');
+                ctx.fillStyle = (mIdx === 4 && pen > 0) ? '#DC2626' : '#1E3A8A';
                 ctx.fillText(ms.val, 550, curY + 19);
                 ctx.restore();
 
-                // Subtext / Formula
+                // Subtext
                 ctx.textAlign = 'right';
                 ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
-                ctx.fillStyle = '#64748B';
+                ctx.fillStyle = (mIdx === 4 && pen > 0) ? '#B91C1C' : '#64748B';
                 ctx.fillText(ms.sub, 440, curY + 19);
 
-                curY += 32;
+                curY += 30;
             }
+
+            // ITEMIZED BREAKDOWN FOR STEP 5: LIST EVERY INFRACTION IN A DEDICATED BOX
+            if (pen > 0) {
+                var mList = (global.Win11Assessment && typeof global.Win11Assessment.getMistakes === 'function')
+                    ? global.Win11Assessment.getMistakes()
+                    : [];
+                if (mList && mList.length > 0) {
+                    var penBoxH = 26 + (mList.length * 20);
+                    ctx.fillStyle = '#FEF2F2';
+                    ctx.fillRect(80, curY, 1080, penBoxH);
+                    ctx.strokeStyle = '#FECACA';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(80, curY, 1080, penBoxH);
+
+                    ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#991B1B';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('تفصيل المخالفات والخصومات الجزائية المرصودة بدقة قطعية:', 1145, curY + 18);
+
+                    for (var mi = 0; mi < mList.length; mi++) {
+                        var m = mList[mi];
+                        var my = curY + 38 + (mi * 20);
+                        var tStr = m.time ? ('[' + m.time + '] ') : '';
+                        var tkStr = m.taskTitle ? ('أثناء ' + m.taskTitle + ': ') : '';
+                        var mLine = '• ' + tStr + tkStr + (m.title || 'مخالفة تسلسل') + ' — ' + (m.desc || '') + ' (خصم: -' + Number(m.penalty || 0.25).toFixed(2) + ' نقطة)';
+                        ctx.font = '10.5px "Segoe UI", Tahoma, sans-serif';
+                        ctx.fillStyle = '#7F1D1D';
+                        ctx.fillText(mLine, 1135, my);
+                    }
+                    curY += penBoxH + 6;
+                }
+            }
+
+            // Step 6: Final Score
+            ctx.fillStyle = '#F0FDF4';
+            ctx.fillRect(80, curY, 1080, 32);
+            ctx.strokeStyle = '#16A34A';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(80, curY, 1080, 32);
+
+            ctx.fillStyle = '#16A34A';
+            ctx.beginPath();
+            ctx.arc(1142, curY + 16, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 11px "Segoe UI", Tahoma, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('6', 1142, curY + 20);
+
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 12.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText('العلامة النهائية المعتمدة المستحقة:', 1120, curY + 21);
+
+            ctx.save();
+            ctx.direction = 'ltr';
+            ctx.textAlign = 'center';
+            ctx.font = '900 15px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#15803D';
+            ctx.fillText(finalScoreStr + ' / 20.00', 550, curY + 21);
+            ctx.restore();
+
+            ctx.textAlign = 'right';
+            ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#15803D';
+            ctx.fillText(pen > 0 ? (baseScoreOutOf20.toFixed(2) + ' - ' + pen.toFixed(2) + ' = ' + finalScoreStr) : 'مطابقة للقاعدة الثلاثية دون خصم', 440, curY + 21);
+
+            curY += 38;
 
             // Section D: Audit & Identity Modification Log (Canvas fallback)
             var stuHistory = (stu && stu.history) || (global.Win11Assessment && typeof global.Win11Assessment.getStudentHistory === 'function' ? global.Win11Assessment.getStudentHistory() : null);
