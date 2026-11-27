@@ -1416,48 +1416,33 @@
             }
         }
 
-        // Dedicated Direct Penalties Row if pen > 0
-        var penaltiesRowHtml = '';
-        if (pen > 0 && cfg.show_penalties !== false) {
-            totalDeductionsInTable += pen;
-            var mistakesList = (global.Win11Assessment && typeof global.Win11Assessment.getMistakes === 'function')
-                ? global.Win11Assessment.getMistakes()
-                : [];
-            var mistDesc = [];
-            for (var m = 0; m < mistakesList.length; m++) {
-                if (mistakesList[m] && mistakesList[m].title && mistDesc.indexOf(mistakesList[m].title) === -1) {
-                    mistDesc.push(mistakesList[m].title);
-                }
-            }
-            var penaltyReason = mistDesc.length > 0 ? mistDesc.join('؛ ') : 'تعديلات أو أفعال خارج نطاق المهمة النشطة';
-
-            penaltiesRowHtml =
-                '<tr style="background:#FFF5F5;color:#991B1B;">' +
-                    '<td style="text-align:center;font-weight:700;">-</td>' +
-                    '<td><strong>خصومات عامة (مخالفة تسلسل المهام النشطة)</strong></td>' +
-                    '<td style="text-align:center;"><span class="a4-type-badge is-penalty">خصم جزائي</span></td>' +
-                    '<td style="text-align:center;"><span class="a4-badge is-fail">خصم من الرصيد</span></td>' +
-                    '<td style="text-align:center;">-</td>' +
-                    '<td style="text-align:center;">-</td>' +
-                    '<td style="text-align:center;">-</td>' +
-                    '<td style="text-align:center;font-weight:700;color:#DC2626;"><bdi dir="ltr">-' + pen.toFixed(2) + '</bdi></td>' +
-                    '<td style="font-size:10.5px;line-height:1.4;color:#991B1B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">' + bidi('خصم جزائي مباشر (انظر تفصيل الخطوة 5 بالأسفل)') + '</td>' +
-                '</tr>';
-        }
-
-        // Table Footer Row
-        var totalUnearnedWeight = Math.max(0, grandTotalMax - grandTotalEarned);
+        // Table Footer Rows: Row 1 = Performance points balance; Row 2 (if pen > 0) = Direct penalties
+        var totalUnearnedWeight = Number(Math.max(0, grandTotalMax - grandTotalEarned).toFixed(2));
         var tableFooterHtml =
             '<tr style="background:#F8FAFC;font-weight:700;border-top:2px solid #CBD5E1;">' +
-                '<td colspan="5" style="text-align:left;padding:6px 10px;font-size:11.5px;">' + bidi('المجموع الكلي لمعاملات ونقاط المهام والأسئلة:') + '</td>' +
+                '<td colspan="5" style="text-align:left;padding:6px 10px;font-size:11.5px;">' + bidi('المجموع الكلي لنقاط الأداء (المهام والأسئلة):') + '</td>' +
                 '<td style="text-align:center;"><bdi dir="ltr">' + grandTotalMax.toFixed(2) + '</bdi></td>' +
                 '<td style="text-align:center;color:#1E3A8A;font-size:12.5px;"><bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi></td>' +
-                '<td style="text-align:center;color:#DC2626;"><bdi dir="ltr">-' + totalDeductionsInTable.toFixed(2) + '</bdi></td>' +
+                '<td style="text-align:center;color:#DC2626;"><bdi dir="ltr">-' + totalUnearnedWeight.toFixed(2) + '</bdi></td>' +
                 '<td style="font-size:11px;color:#334155;padding:6px 10px;">' +
-                    bidi('تحصيل ') + '<bdi dir="ltr"><strong>' + grandTotalEarned.toFixed(2) + '</strong></bdi>' + bidi(' من أصل ') + '<bdi dir="ltr"><strong>' + grandTotalMax.toFixed(2) + '</strong></bdi>' + bidi(' نقطة معامل (فارق غير مستوفى: ') + '<bdi dir="ltr"><strong>' + totalUnearnedWeight.toFixed(2) + '</strong></bdi>' + bidi(' نقطة)') +
-                    (pen > 0 ? (bidi(' &nbsp;|&nbsp; خصومات جزائية مباشرة: ') + '<bdi dir="ltr" style="color:#DC2626;"><strong>-' + pen.toFixed(2) + '</strong></bdi>' + bidi(' نقطة')) : '') +
+                    bidi('استيفاء ') + '<bdi dir="ltr"><strong>' + grandTotalEarned.toFixed(2) + '</strong></bdi>' + bidi(' من أصل ') + '<bdi dir="ltr"><strong>' + grandTotalMax.toFixed(2) + '</strong></bdi>' + bidi(' نقطة (الضائع: -') + '<bdi dir="ltr"><strong>' + totalUnearnedWeight.toFixed(2) + '</strong></bdi>' + bidi(' ن — توازن تام: ') + '<bdi dir="ltr">' + grandTotalMax.toFixed(2) + ' - ' + totalUnearnedWeight.toFixed(2) + ' = ' + grandTotalEarned.toFixed(2) + '</bdi>' + bidi(')') +
                 '</td>' +
             '</tr>';
+
+        if (pen > 0 && cfg.show_penalties !== false) {
+            tableFooterHtml +=
+                '<tr style="background:#FFF5F5;color:#991B1B;font-weight:700;border-top:1px dashed #FECACA;">' +
+                    '<td colspan="5" style="text-align:left;padding:5px 10px;font-size:11px;color:#991B1B;">' +
+                        bidi('خصومات عامة (مخالفة تسلسل المهام النشطة)') + ' <span style="font-size:10px;color:#7F1D1D;">(' + bidi('خصم مباشر من رصيد الـ 20') + '):</span>' +
+                    '</td>' +
+                    '<td style="text-align:center;font-size:10px;color:#64748B;">' + bidi('(من رصيد 20)') + '</td>' +
+                    '<td style="text-align:center;color:#64748B;">-</td>' +
+                    '<td style="text-align:center;font-weight:700;color:#DC2626;"><bdi dir="ltr">-' + pen.toFixed(2) + '</bdi></td>' +
+                    '<td style="font-size:10.5px;color:#991B1B;padding:5px 10px;">' +
+                        bidi('خصم جزائي مباشر يُطرح من العلامة بعد تطبيق القاعدة الثلاثية (انظر تفصيل الخطوة 5 بالقسم ج)') +
+                    '</td>' +
+                '</tr>';
+        }
 
         var sectionBHtml =
             '<div class="a4-section-b">' +
@@ -1484,15 +1469,14 @@
                             '<th style="width:8%;text-align:center;">' + bidi('النوع') + '</th>' +
                             '<th style="width:10%;text-align:center;">' + bidi('الحالة') + '</th>' +
                             '<th style="width:6.5%;text-align:center;">' + bidi('المحاولات') + '</th>' +
-                            '<th style="width:8%;text-align:center;">' + bidi('المعامل الأقصى') + '</th>' +
-                            '<th style="width:8%;text-align:center;">' + bidi('الممنوحة') + '</th>' +
-                            '<th style="width:7%;text-align:center;">' + bidi('الخصم') + '</th>' +
+                            '<th style="width:8%;text-align:center;" title="' + bidi('المعامل الأقصى') + '">' + bidi('النقطة الكاملة') + '</th>' +
+                            '<th style="width:8%;text-align:center;" title="' + bidi('النقاط المحصلة') + '">' + bidi('الممنوحة') + '</th>' +
+                            '<th style="width:7%;text-align:center;" title="' + bidi('الخصم أو الفارق الضائع') + '">' + bidi('الضائع') + '</th>' +
                             '<th style="width:23%;text-align:right;">' + bidi('الملاحظات وتفاصيل الإنجاز') + '</th>' +
                         '</tr>' +
                     '</thead>' +
                     '<tbody>' +
                         rowsHtml +
-                        penaltiesRowHtml +
                     '</tbody>' +
                     '<tfoot>' +
                         tableFooterHtml +
@@ -1580,6 +1564,27 @@
                 '</table>' +
             '</div>';
 
+        var calculationExplainerHtml =
+            '<div class="a4-calculation-explainer" style="background:#F8FAFC;border:1px solid #CBD5E1;border-right:4px solid #1E3A8A;padding:8px 12px;margin:8px 0;border-radius:4px;font-size:11.5px;color:#334155;line-height:1.5;">' +
+                '<div style="font-weight:700;color:#1E3A8A;margin-bottom:6px;display:flex;align-items:center;gap:6px;font-size:12px;">' +
+                    '<span>📐</span> <span>' + bidi('منهجية وطريقة احتساب النقطة النهائية (خطوة بخطوة وفق المنهاج):') + '</span>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
+                    '<div style="background:#FFFFFF;border:1px solid #E2E8F0;padding:6px 8px;border-radius:4px;">' +
+                        '<div style="font-weight:700;color:#0F172A;margin-bottom:2px;">' + bidi('1. توازن نقاط الأداء (من ') + '<bdi dir="ltr">' + grandTotalMax.toFixed(2) + '</bdi>' + bidi('):') + '</div>' +
+                        '<div style="font-size:11px;color:#475569;">' + bidi('الكاملة (') + '<bdi dir="ltr">' + grandTotalMax.toFixed(2) + '</bdi>' + bidi(') - الضائع (') + '<bdi dir="ltr">' + totalUnearnedWeight.toFixed(2) + '</bdi>' + bidi(') = ') + '<strong style="color:#1E3A8A;"><bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi> ' + bidi('ممنوحة') + '</strong>.</div>' +
+                    '</div>' +
+                    '<div style="background:#FFFFFF;border:1px solid #E2E8F0;padding:6px 8px;border-radius:4px;">' +
+                        '<div style="font-weight:700;color:#0284C7;margin-bottom:2px;">' + bidi('2. القاعدة الثلاثية (من 20):') + '</div>' +
+                        '<div style="font-size:11px;color:#475569;">(' + '<bdi dir="ltr">' + grandTotalEarned.toFixed(2) + '</bdi> ÷ <bdi dir="ltr">' + grandTotalMax.toFixed(2) + '</bdi>) × 20 = <strong style="color:#0284C7;"><bdi dir="ltr">' + baseScoreOutOf20.toFixed(2) + ' / 20</bdi></strong></div>' +
+                    '</div>' +
+                    '<div style="background:#FFFFFF;border:1px solid #E2E8F0;padding:6px 8px;border-radius:4px;">' +
+                        '<div style="font-weight:700;color:' + (pen > 0 ? '#DC2626' : '#16A34A') + ';margin-bottom:2px;">' + bidi('3. الخصم الجزائي المباشر:') + '</div>' +
+                        '<div style="font-size:11px;color:#475569;">' + (pen > 0 ? ('<bdi dir="ltr">' + baseScoreOutOf20.toFixed(2) + ' - ' + pen.toFixed(2) + ' = </bdi><strong style="color:#15803D;"><bdi dir="ltr">' + finalScoreStr + ' / 20</bdi></strong>') : ('<strong style="color:#16A34A;">' + bidi('0.00 خصم (أداء نظامي سليم)') + '</strong> ➔ <bdi dir="ltr">' + finalScoreStr + ' / 20</bdi>')) + '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
         var mathBreakdownHtml =
             '<div class="a4-section-c">' +
                 '<div class="a4-section-title">' +
@@ -1587,6 +1592,7 @@
                     '<span style="font-size:11px;color:#475569;font-weight:normal;">' + bidi('تطبيق القاعدة الثلاثية الرسمية والنتيجة النهائية') + '</span>' +
                 '</div>' +
                 quizDisabledNoticeHtml +
+                calculationExplainerHtml +
                 deductionSectionHtml +
                 '<div class="a4-math-grid">' +
                     '<div class="a4-math-steps">' +
@@ -2434,9 +2440,9 @@
             ctx.fillText('النوع', 717, curY + 21); // col 2: 670..765
             ctx.fillText('الحالة', 615, curY + 21); // col 3: 560..670
             ctx.fillText('المحاولات', 525, curY + 21); // col 4: 490..560
-            ctx.fillText('المعامل الأقصى', 450, curY + 21); // col 5: 410..490
+            ctx.fillText('النقطة الكاملة', 450, curY + 21); // col 5: 410..490
             ctx.fillText('الممنوحة', 370, curY + 21); // col 6: 330..410
-            ctx.fillText('الخصم', 295, curY + 21); // col 7: 260..330
+            ctx.fillText('الضائع', 295, curY + 21); // col 7: 260..330
             ctx.textAlign = 'right';
             ctx.fillText('الملاحظات وتفاصيل الإنجاز', 250, curY + 21); // col 8: 80..260
             curY += 32;
@@ -2657,9 +2663,44 @@
                 }
             }
 
-            // Direct Penalties row on Canvas if pen > 0
+            // Totals Footer Row 1: Balanced Performance Points (الكاملة - الضائع = الممنوحة)
+            var totalLostPoints = Number(Math.max(0, grandTotalMax - grandTotalEarned).toFixed(2));
+            ctx.fillStyle = '#F1F5F9';
+            ctx.fillRect(80, curY, 1080, 32);
+            ctx.strokeStyle = '#94A3B8';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(80, curY, 1080, 32);
+
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 13px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#0F172A';
+            ctx.fillText('المجموع الكلي لنقاط الأداء (المهام والأسئلة):', 1100, curY + 21);
+
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 13.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillText(grandTotalMax.toFixed(2), 450, curY + 21);
+
+            ctx.fillStyle = '#1E3A8A';
+            ctx.fillText(grandTotalEarned.toFixed(2), 370, curY + 21);
+
+            ctx.fillStyle = '#DC2626';
+            ctx.fillText('-' + totalLostPoints.toFixed(2), 295, curY + 21);
+
+            // Col 8 Notes: Strictly clipped to 175px (NEVER crosses left border)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(80, curY, 175, 32);
+            ctx.clip();
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#475569';
+            var totNote = 'استيفاء ' + grandTotalEarned.toFixed(2) + ' من ' + grandTotalMax.toFixed(2) + ' ن (الضائع: -' + totalLostPoints.toFixed(2) + ')';
+            ctx.fillText(totNote, 250, curY + 21);
+            ctx.restore();
+            curY += 32;
+
+            // Direct Penalties Row on Canvas if pen > 0
             if (pen > 0 && cfg.show_penalties !== false) {
-                totalDeductionsInTable += pen;
                 ctx.fillStyle = '#FFF5F5';
                 ctx.fillRect(80, curY, 1080, 28);
                 ctx.strokeStyle = '#FECACA';
@@ -2672,14 +2713,18 @@
                 ctx.fillText('-', 1137, curY + 19);
 
                 ctx.textAlign = 'right';
-                ctx.fillText('خصومات عامة (مخالفة تسلسل المهام النشطة)', 1100, curY + 19);
+                ctx.fillText('خصومات عامة (مخالفة تسلسل المهام — خصم مباشر من 20)', 1100, curY + 19);
 
                 ctx.textAlign = 'center';
                 ctx.fillText('خصم جزائي', 717, curY + 19);
                 ctx.fillText('خصم من الرصيد', 615, curY + 19);
                 ctx.fillText('-', 525, curY + 19);
-                ctx.fillText('-', 450, curY + 19);
+                ctx.font = 'bold 10px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#64748B';
+                ctx.fillText('(من رصيد 20)', 450, curY + 19);
                 ctx.fillText('-', 370, curY + 19);
+                ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
+                ctx.fillStyle = '#DC2626';
                 ctx.fillText('-' + pen.toFixed(2), 295, curY + 19);
 
                 // Col 8: Strictly clipped to 175px
@@ -2694,41 +2739,7 @@
                 ctx.restore();
                 curY += 28;
             }
-
-            // Totals Footer Row
-            ctx.fillStyle = '#F1F5F9';
-            ctx.fillRect(80, curY, 1080, 34);
-            ctx.strokeStyle = '#94A3B8';
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(80, curY, 1080, 34);
-
-            ctx.textAlign = 'right';
-            ctx.font = 'bold 13.5px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#0F172A';
-            ctx.fillText('المجموع الكلي لمعاملات ونقاط المهام والأسئلة:', 1100, curY + 22);
-
-            ctx.textAlign = 'center';
-            ctx.font = 'bold 13.5px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillText(grandTotalMax.toFixed(2), 450, curY + 22);
-
-            ctx.fillStyle = '#1E3A8A';
-            ctx.fillText(grandTotalEarned.toFixed(2), 370, curY + 22);
-
-            ctx.fillStyle = '#DC2626';
-            ctx.fillText('-' + totalDeductionsInTable.toFixed(2), 295, curY + 22);
-
-            // Col 8 Notes: Strictly clipped to 175px (NEVER crosses left border)
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(80, curY, 175, 34);
-            ctx.clip();
-            ctx.textAlign = 'right';
-            ctx.font = 'bold 12px "Segoe UI", Tahoma, sans-serif';
-            ctx.fillStyle = '#475569';
-            var totNote = 'استيفاء ' + grandTotalEarned.toFixed(2) + ' من ' + grandTotalMax.toFixed(2) + ' ن';
-            ctx.fillText(totNote, 250, curY + 22);
-            ctx.restore();
-            curY += 40;
+            curY += 12;
 
             // ==========================================
             // 5 & 6. SECTION C: DEDUCTIONS METHODOLOGY & FINAL RESULT CALCULATION
@@ -2740,6 +2751,26 @@
             ctx.textAlign = 'right';
             ctx.fillText('القسم (ج): التفكيك الحسابي للعلامة (كيف تم احتساب المعدل خطوة بخطوة)', 1140, curY + 19);
             curY += 32;
+
+            // 2-Line Calculation Methodology Banner on Canvas
+            ctx.fillStyle = '#F8FAFC';
+            ctx.fillRect(80, curY, 1080, 36);
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(80, curY, 1080, 36);
+            ctx.fillStyle = '#1E3A8A';
+            ctx.fillRect(1156, curY, 4, 36);
+
+            ctx.font = 'bold 11.5px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#1E3A8A';
+            ctx.textAlign = 'right';
+            ctx.fillText('منهجية الحساب: 1. توازن نقاط الأداء (من ' + grandTotalMax.toFixed(2) + '): الكاملة (' + grandTotalMax.toFixed(2) + ') - الضائع (' + totalLostPoints.toFixed(2) + ') = الممنوحة (' + grandTotalEarned.toFixed(2) + ' ن)', 1140, curY + 16);
+
+            ctx.font = '11px "Segoe UI", Tahoma, sans-serif';
+            ctx.fillStyle = '#475569';
+            var methodLine2 = '2. تطبيق القاعدة الثلاثية (من 20): (' + grandTotalEarned.toFixed(2) + ' ÷ ' + grandTotalMax.toFixed(2) + ') × 20 = ' + baseScoreOutOf20.toFixed(2) + ' من 20 | 3. الخصم الجزائي: ' + (pen > 0 ? (baseScoreOutOf20.toFixed(2) + ' - ' + pen.toFixed(2) + ' = ' + finalScoreStr) : 'لا توجد خصومات جزائية') + ' / 20.00';
+            ctx.fillText(methodLine2, 1140, curY + 30);
+            curY += 42;
 
             // Dedicated Deductions Table on Canvas (Structured 5-Column Table)
             var mList = (global.Win11Assessment && typeof global.Win11Assessment.getMistakes === 'function')
