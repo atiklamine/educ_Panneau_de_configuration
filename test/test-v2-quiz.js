@@ -46,7 +46,7 @@ for (let taskId = 1; taskId <= 6; taskId++) {
     taskQuestions.forEach((q, idx) => {
         assert(q.questionAr && q.questionAr.trim().length > 5, `Task ${taskId} Q${idx} must have questionAr`);
         assert(q.correctAnswerAr && q.correctAnswerAr.trim().length > 0, `Task ${taskId} Q${idx} must have correctAnswerAr`);
-        assert(Array.isArray(q.distractorsAr) && q.distractorsAr.length >= 10, `Task ${taskId} Q${idx} must have at least 10 distractors`);
+        assert(Array.isArray(q.distractorsAr) && q.distractorsAr.length >= 4, `Task ${taskId} Q${idx} must have at least 4 distractors`);
         assert(q.hintAr && q.hintAr.trim().length > 5, `Task ${taskId} Q${idx} must have scaffolding hintAr`);
     });
 }

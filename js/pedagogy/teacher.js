@@ -695,7 +695,7 @@
                                                 '<textarea class="win-input" id="tc-editq-answer" rows="2" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;border:1.5px solid #16A34A;background:#F0FDF4;">' + esc(qObj.correctAnswerAr || '') + '</textarea>' +
                                             '</div>' +
                                             '<div style="margin-bottom:8px;">' +
-                                                '<label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' + (global.Win11Icons ? global.Win11Icons.get('bulb', 13) : '') + '<strong>' + bidi('التلميح البيداغوجي الذكي:') + '</strong></label>' +
+                                                '<label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' + (global.Win11Icons ? global.Win11Icons.get('bulb', 13) : '') + '<strong>' + bidi('التلميح الإرشادي الذكي:') + '</strong></label>' +
                                                 '<textarea class="win-input" id="tc-editq-hint" rows="2" style="width:100%;font-size:12px;line-height:1.5;resize:vertical;">' + esc(qObj.hintAr || '') + '</textarea>' +
                                             '</div>' +
                                             '<div style="margin-bottom:8px;">' +
@@ -757,7 +757,7 @@
                                             '</div>' +
                                         '</details>' +
                                         '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:6px 10px;font-size:11.5px;color:#475569;display:flex;align-items:flex-start;gap:6px;">' +
-                                            (global.Win11Icons ? global.Win11Icons.get('bulb', 13) : '') + '<div><strong>' + bidi('التلميح البيداغوجي الذكي:') + '</strong> ' + bidi(qObj.hintAr || '') + '</div>' +
+                                            (global.Win11Icons ? global.Win11Icons.get('bulb', 13) : '') + '<div><strong>' + bidi('التلميح الإرشادي الذكي:') + '</strong> ' + bidi(qObj.hintAr || '') + '</div>' +
                                         '</div>' +
                                     '</div>';
                             }
@@ -796,7 +796,7 @@
                                     '<label style="display:block;margin-bottom:8px;"><strong>' + bidi('مخزن المموهات والإجابات الخاطئة (أدخل كل مموه في سطر مستقل — على الأقل 3 مموهات، ويفضل 10):') + '</strong>' +
                                         '<textarea class="win-input" id="tc-addq-distractors" rows="4" style="resize:vertical;" placeholder="مموه 1&#10;مموه 2&#10;مموه 3&#10;مموه 4&#10;..."></textarea>' +
                                     '</label>' +
-                                    '<label style="display:block;margin-bottom:10px;"><strong>' + bidi('التلميح البيداغوجي المساعد (يظهر عند الخطأ دون كشف الإجابة):') + '</strong>' +
+                                    '<label style="display:block;margin-bottom:10px;"><strong>' + bidi('التلميح الإرشادي المساعد (يظهر عند الخطأ دون كشف الإجابة):') + '</strong>' +
                                         '<input class="win-input" id="tc-addq-hint" placeholder="تلميح توجيهي دون ذكر كلمات الإجابة الصريحة...">' +
                                     '</label>' +
                                     '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
@@ -1253,6 +1253,9 @@
                             reader.onload = function () {
                                 cfg.report_logo_b64 = String(reader.result || '');
                                 isDirty = true;
+                                if (global.Win11Report && typeof global.Win11Report.preloadLogo === 'function') {
+                                    global.Win11Report.preloadLogo(cfg.report_logo_b64);
+                                }
                                 draw();
                             };
                             reader.readAsDataURL(f);
@@ -1263,6 +1266,9 @@
                         logoClr.onclick = function () {
                             cfg.report_logo_b64 = '';
                             isDirty = true;
+                            if (global.Win11Report && typeof global.Win11Report.preloadLogo === 'function') {
+                                global.Win11Report.preloadLogo('');
+                            }
                             draw();
                         };
                     }

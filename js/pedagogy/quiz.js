@@ -241,7 +241,7 @@
                 '<div class="quiz-hint-box" style="margin-top:12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 14px;color:#1E3A8A;display:flex;align-items:flex-start;gap:10px;animation:quizFadeIn 0.3s ease;">' +
                     '<span style="color:#D97706;flex-shrink:0;display:inline-flex;">' + (global.Win11Icons ? global.Win11Icons.get('bulb', 22) : '') + '</span>' +
                     '<div style="font-size:12.5px;line-height:1.6;">' +
-                        '<strong>' + bidi('تلميح بيداغوجي للمساعدة:') + '</strong> ' +
+                        '<strong>' + bidi('تلميح للمساعدة:') + '</strong> ' +
                         bidi(q.hintAr) +
                     '</div>' +
                 '</div>';
@@ -277,7 +277,7 @@
                         '</div>' +
                         '<div>' +
                             '<div style="font-size:11px;font-weight:700;color:var(--win-accent);letter-spacing:0.5px;">' +
-                                bidi('وضع التقويم البيداغوجي — كفاءات لوحة التحكم (1AS)') +
+                                bidi('وضع التقويم والأسئلة — كفاءات لوحة التحكم (1AS)') +
                             '</div>' +
                             '<div style="font-size:14px;font-weight:800;color:#0F172A;">' +
                                 bidi('تقويم مرحلي: ') + bidi(session.taskTitle) +
@@ -310,12 +310,23 @@
                 '<div class="quiz-modal-footer">' +
                     '<div style="font-size:11.5px;color:#64748B;">' +
                         (isResolved
-                            ? bidi('تم استيفاء شرط التقويم. يمكنك الآن مواصلة المهام التطبيقية.')
-                            : bidi('يشترط الإجابة الصحيحة على السؤال لمتابعة مسار المحاكاة.')) +
+                            ? bidi('تم استيفاء شرط التقويم بنجاح. يمكنك الآن مواصلة المهام التطبيقية.')
+                            : bidi('يشترط الإجابة الصحيحة أو اختيار التخطي لمتابعة مسار المحاكاة.')) +
                     '</div>' +
-                    '<button type="button" class="' + btnCls + '" id="quiz-btn-confirm" style="padding:6px 20px;font-weight:700;font-size:13px;">' +
-                        btnText +
-                    '</button>' +
+                    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                        (!isResolved
+                            ? ('<button type="button" class="win-btn win-btn-secondary" id="quiz-btn-skip-current" style="padding:6px 14px;font-size:12px;font-weight:600;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">' +
+                                  (global.Win11Icons ? global.Win11Icons.get('skip', 12) : '>>') +
+                                  ' <span>' + bidi('تخطي هذا السؤال') + '</span>' +
+                              '</button>' +
+                              '<button type="button" class="win-btn win-btn-secondary" id="quiz-btn-skip-all" style="padding:6px 14px;font-size:12px;font-weight:600;color:#B91C1C;background:#FEE2E2;border:1px solid #FCA5A5;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">' +
+                                  '<span>' + bidi('تخطي كل الأسئلة') + '</span>' +
+                              '</button>')
+                            : '') +
+                        '<button type="button" class="' + btnCls + '" id="quiz-btn-confirm" style="padding:6px 20px;font-weight:700;font-size:13px;">' +
+                            btnText +
+                        '</button>' +
+                    '</div>' +
                 '</div>' +
             '</div>';
 
@@ -343,6 +354,88 @@
                 this.classList.add('is-selected');
                 var curRadio = this.querySelector('input[type="radio"]');
                 if (curRadio) curRadio.checked = true;
+            };
+        }
+
+        var skipCurBtn = backdrop.querySelector('#quiz-btn-skip-current');
+        if (skipCurBtn) {
+            skipCurBtn.onclick = function () {
+                var executeSkipCurrent = function () {
+                    var resData = {
+                        taskId: session.taskId,
+                        questionId: session.question ? session.question.id : ('q_' + session.taskId),
+                        questionTitle: session.question ? session.question.titleAr : ('سؤال المهمة ' + session.taskId),
+                        questionText: session.question ? session.question.questionAr : '',
+                        attempts: Math.max(1, session.attempts || 1),
+                        earnedPoints: 0.0,
+                        maxPoints: session.maxPoints || 1.0,
+                        answeredCorrectly: false,
+                        skipped: true,
+                        skippedAll: false
+                    };
+                    activeQuizSession = null;
+                    removeBackdrop();
+                    if (typeof session.onResolved === 'function') {
+                        session.onResolved(resData);
+                    }
+                };
+
+                if (global.Win11Dialogs && typeof global.Win11Dialogs.showConfirm === 'function') {
+                    global.Win11Dialogs.showConfirm(
+                        'تأكيد تخطي السؤال الحالي',
+                        'هل أنت متأكد من رغبتك في تخطي هذا السؤال؟ سيتم تصفير علامته (0.00 من 1.00 نقطة) ومتابعة المحاكاة مباشرة.',
+                        function (confirmed) {
+                            if (confirmed) executeSkipCurrent();
+                        },
+                        'warning'
+                    );
+                } else {
+                    if (confirm('هل أنت متأكد من رغبتك في تخطي هذا السؤال؟')) executeSkipCurrent();
+                }
+            };
+        }
+
+        var skipAllBtn = backdrop.querySelector('#quiz-btn-skip-all');
+        if (skipAllBtn) {
+            skipAllBtn.onclick = function () {
+                var executeSkipAll = function () {
+                    var resData = {
+                        taskId: session.taskId,
+                        questionId: session.question ? session.question.id : ('q_' + session.taskId),
+                        questionTitle: session.question ? session.question.titleAr : ('سؤال المهمة ' + session.taskId),
+                        questionText: session.question ? session.question.questionAr : '',
+                        attempts: Math.max(1, session.attempts || 1),
+                        earnedPoints: 0.0,
+                        maxPoints: session.maxPoints || 1.0,
+                        answeredCorrectly: false,
+                        skipped: true,
+                        skippedAll: true
+                    };
+                    if (global.Win11Assessment) {
+                        var stu = global.Win11Assessment.getStudent();
+                        if (stu) {
+                            stu.quizSkippedAll = true;
+                        }
+                    }
+                    activeQuizSession = null;
+                    removeBackdrop();
+                    if (typeof session.onResolved === 'function') {
+                        session.onResolved(resData);
+                    }
+                };
+
+                if (global.Win11Dialogs && typeof global.Win11Dialogs.showConfirm === 'function') {
+                    global.Win11Dialogs.showConfirm(
+                        'تأكيد تخطي كافة الأسئلة',
+                        'هل أنت متأكد من رغبتك في تخطي كافة الأسئلة التقويمية المتبقية؟ سيتم تصفير علامات الأسئلة وتخطيها تلقائياً لمواصلة الجانب التطبيقي فقط.',
+                        function (confirmed) {
+                            if (confirmed) executeSkipAll();
+                        },
+                        'warning'
+                    );
+                } else {
+                    if (confirm('هل أنت متأكد من رغبتك في تخطي كافة الأسئلة؟')) executeSkipAll();
+                }
             };
         }
 

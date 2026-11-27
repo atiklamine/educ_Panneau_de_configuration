@@ -453,7 +453,10 @@
             return null;
         },
         addQuestion: function (qObj) {
-            if (!qObj || !qObj.id) return;
+            if (!qObj) return { ok: false };
+            if (!qObj.id) {
+                qObj.id = 'q_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            }
             var existing = this.getQuestionById(qObj.id);
             if (existing) {
                 for (var k in qObj) {
@@ -462,6 +465,24 @@
             } else {
                 QUIZ_BANK.push(qObj);
             }
+            return { ok: true, question: qObj };
+        },
+        toggleQuestionEnabled: function (id, state) {
+            var q = this.getQuestionById(id);
+            if (q) {
+                q.enabled = (state !== undefined) ? !!state : !q.enabled;
+                return true;
+            }
+            return false;
+        },
+        deleteQuestion: function (id) {
+            for (var i = 0; i < QUIZ_BANK.length; i++) {
+                if (QUIZ_BANK[i].id === id) {
+                    QUIZ_BANK.splice(i, 1);
+                    return true;
+                }
+            }
+            return false;
         }
     };
 })(window);

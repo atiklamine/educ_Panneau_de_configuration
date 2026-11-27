@@ -605,7 +605,7 @@
         showOffTaskToast('تم خصم ' + penAmt.toFixed(2) + ' نقطة: تعديل «' + lbl + '» غير مطلوب في المهام التقويمية المحددة.');
         if (global.Win11Notifications && typeof global.Win11Notifications.showToast === 'function') {
             global.Win11Notifications.showToast({
-                title: 'تنبيه بيداغوجي (خصم نقاط)',
+                title: 'تنبيه توضيحي (خصم نقاط)',
                 message: 'تعديل «' + lbl + '» غير مطلوب في هذا النشاط. تم خصم ' + penAmt.toFixed(2) + ' نقطة.',
                 icon: 'warning'
             });
@@ -1120,9 +1120,10 @@
                 curActiveTk.lockedDone = true;
 
                 // VERSION 2.0 QUIZ INTERCEPTION:
-                // Present quiz modal before advancing to next task unless disabled or student opted out
+                // Present quiz modal before advancing to next task unless disabled, student opted out, or skipped all
                 var isQuizOn = (config.quiz_enabled !== false) &&
                     (student.quizOptIn !== false) &&
+                    (!student.quizSkippedAll) &&
                     (!Array.isArray(config.quiz_disabled_tasks) || config.quiz_disabled_tasks.indexOf(curActiveTk.id) === -1);
 
                 if (isQuizOn && !curActiveTk.quizCompleted && !curActiveTk.skipped && global.Win11Quiz) {
@@ -1169,6 +1170,7 @@
                 var chkTk = enabledList[chkI];
                 var qDone = (config.quiz_enabled === false) ||
                     (student.quizOptIn === false) ||
+                    (student.quizSkippedAll) ||
                     (Array.isArray(config.quiz_disabled_tasks) && config.quiz_disabled_tasks.indexOf(chkTk.id) !== -1) ||
                     chkTk.quizCompleted || chkTk.skipped;
                 if (!chkTk.completed || !qDone) {
@@ -1369,6 +1371,9 @@
         if (config.class_groups && config.class_groups.length > 0 && config.class_groups.indexOf(student.classGroup) === -1) {
             student.classGroup = config.class_groups[0];
         }
+        if (config.report_logo_b64 && global.Win11Report && typeof global.Win11Report.preloadLogo === 'function') {
+            global.Win11Report.preloadLogo(config.report_logo_b64);
+        }
         notify();
     }
 
@@ -1532,6 +1537,9 @@
         }
         student.classGroup = (config.class_groups && config.class_groups[0]) || student.classGroup;
         student.mode = config.mode || 'training';
+        if (config.report_logo_b64 && global.Win11Report && typeof global.Win11Report.preloadLogo === 'function') {
+            global.Win11Report.preloadLogo(config.report_logo_b64);
+        }
         notify();
         return { ok: true, status: infState.status, format: parsed.format, config: config };
     }
